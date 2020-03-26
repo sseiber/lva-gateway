@@ -86,7 +86,7 @@ const AxisModuleProperties = {
 };
 
 interface IModuleSettings {
-    wpMasterEdgeProvisioningKey: string;
+    wpMasterDeviceProvisioningKey: string;
     wpScopeId: string;
     wpDeviceTemplateId: string;
     wpGatewayInstanceId: string;
@@ -163,7 +163,7 @@ export class ModuleService {
     private healthCheckFailStreak: number = 0;
     private moduleIpAddress: string = '127.0.0.1';
     private moduleSettings: IModuleSettings = {
-        wpMasterEdgeProvisioningKey: '',
+        wpMasterDeviceProvisioningKey: '',
         wpScopeId: '',
         wpDeviceTemplateId: '',
         wpGatewayInstanceId: '',
@@ -180,7 +180,7 @@ export class ModuleService {
         this.iotcModuleId = this.config.get('IOTEDGE_MODULEID') || '';
 
         this.moduleIpAddress = ipAddress.address() || '127.0.0.1';
-        this.moduleSettings.wpMasterEdgeProvisioningKey = this.config.get('IoTMasterDeviceProvisioningKey') || '';
+        this.moduleSettings.wpMasterDeviceProvisioningKey = this.config.get('IoTMasterDeviceProvisioningKey') || '';
         this.moduleSettings.wpScopeId = this.config.get('IoTAppScopeId') || '';
         this.moduleSettings.wpDeviceTemplateId = this.config.get('IoTAppTemplateId') || '';
         this.moduleSettings.wpGatewayInstanceId = this.config.get('IoTAppIotcGatewayId') || '';
@@ -461,7 +461,7 @@ export class ModuleService {
             axisDevice: null
         };
 
-        if (!this.moduleSettings.wpMasterEdgeProvisioningKey
+        if (!this.moduleSettings.wpMasterDeviceProvisioningKey
             || !this.moduleSettings.wpScopeId
             || !this.moduleSettings.wpDeviceTemplateId
             || !this.moduleSettings.wpGatewayInstanceId
@@ -474,7 +474,7 @@ export class ModuleService {
         }
 
         try {
-            const deviceKey = this.computeDeviceKey(deviceProps.deviceId, this.moduleSettings.wpMasterEdgeProvisioningKey);
+            const deviceKey = this.computeDeviceKey(deviceProps.deviceId, this.moduleSettings.wpMasterDeviceProvisioningKey);
             const dpsInfo: IDpsInfo = {
                 scopeId: this.moduleSettings.wpScopeId,
                 templateId: this.moduleSettings.wpDeviceTemplateId,
