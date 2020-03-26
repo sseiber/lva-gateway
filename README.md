@@ -1,7 +1,7 @@
 # Sample module to connect Axis network cameras to Azure IoT Central
-This is an IoT Central protocol translation module for the Axis network cameras. The Axis camera edge system components are required to communicate with this module (TBD).
+This is an IoT Central gateway module for the Axis network cameras. This module will manage and create leaf devices to represent Axis cameras. The Axis camera edge system components are required to communicate with this module (TBD).
 
-This module and accompanying IoT Central template will demonstrate how to use Device Capability Models to define functionality supported by the Axis network cameras. This module will communicate directly with the Axis system components to discover Axis networked cameras, configure the cameras, and receive telemetry from those networked cameras. The Telemetry received will be forwared with a unique device identity to the IoT Central application.
+This module and accompanying IoT Central templates will demonstrate how to use Device Capability Models to define functionality supported by the Axis network cameras. This module will communicate directly with the Axis system components to discover Axis networked cameras, configure the cameras, and receive telemetry from those networked cameras. The Telemetry received will be forwared with a unique device identity to the IoT Central application.
 
 ## Implementation
 Description TBD.
