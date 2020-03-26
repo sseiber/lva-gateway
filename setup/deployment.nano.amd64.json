@@ -1,0 +1,78 @@
+{
+    "modulesContent": {
+        "$edgeAgent": {
+            "properties.desired": {
+                "schemaVersion": "1.0",
+                "runtime": {
+                    "type": "docker",
+                    "settings": {
+                        "minDockerVersion": "v1.25",
+                        "loggingOptions": "",
+                        "registryCredentials": {
+                            "<YOUR_CONTAINER_REGISTRY_NAME>": {
+                                "address": "<YOUR_CONTAINER_REGISTRY_SERVER>",
+                                "password": "<YOUR_CONTAINER_REGISTRY_CREDENTIAL>",
+                                "username": "YOUR_CONTAINER_REGISTRY_NAME"
+                            }
+                        }
+                    }
+                },
+                "systemModules": {
+                    "edgeAgent": {
+                        "type": "docker",
+                        "settings": {
+                            "image": "mcr.microsoft.com/azureiotedge-agent:1.0",
+                            "createOptions": ""
+                        }
+                    },
+                    "edgeHub": {
+                        "type": "docker",
+                        "status": "running",
+                        "restartPolicy": "always",
+                        "settings": {
+                            "image": "mcr.microsoft.com/azureiotedge-hub:1.0",
+                            "createOptions": "{\"HostConfig\":{\"PortBindings\":{\"5671/tcp\":[{\"HostPort\":\"5671\"}],\"8883/tcp\":[{\"HostPort\":\"8883\"}],\"443/tcp\":[{\"HostPort\":\"443\"}]}}}"
+                        }
+                    }
+                },
+                "modules": {
+                    "AxisCameraManagementModule": {
+                        "settings": {
+                            "image": "<YOUR_MODULE_NAME>",
+                            "createOptions": "{\"HostConfig\":{\"PortBindings\":{\"9070/tcp\":[{\"HostPort\":\"9070\"}]},\"Binds\":[\"/data/misc:/data/misc\"]}}"
+                        },
+                        "type": "docker",
+                        "env": {
+                            "DEBUG_MODULE_TELEMETRY": {
+                                "value": "1"
+                            }
+                        },
+                        "status": "running",
+                        "restartPolicy": "always",
+                        "version": "1.0"
+                    }
+                }
+            }
+        },
+        "$edgeHub": {
+            "properties.desired": {
+                "schemaVersion": "1.0",
+                "routes": {
+                    "filterToIoTHub": "FROM /messages/* INTO $upstream"
+                },
+                "storeAndForwardConfiguration": {
+                    "timeToLiveSecs": 7200
+                }
+            }
+        },
+        "AxisCameraManagementModule": {
+            "properties.desired": {
+                "wpMasterDeviceProvisioningKey": "",
+                "wpScopeId": "",
+                "wpDeviceTemplateId": "",
+                "wpGatewayInstanceId": "",
+                "wpGatewayModuleId": ""
+            }
+        }
+    }
+}

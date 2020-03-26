@@ -1,0 +1,71 @@
+{
+  "name": "axis-iotc",
+  "version": "1.0.45",
+  "description": "Sample module to connect Axis network cameras to Azure IoT Central",
+  "main": "index.js",
+  "scripts": {
+    "test": "node ./node_modules/jest/bin/jest.js",
+    "tslint": "node ./node_modules/tslint/bin/tslint -p ./tsconfig.json",
+    "build": "node ./node_modules/typescript/bin/tsc -p .",
+    "dockerbuild": "node ./scripts/dockerBuild.js --docker-build",
+    "dockerpush": "node ./scripts/dockerBuild.js --docker-push",
+    "preversion": "npm test",
+    "version": "node ./scripts/dockerBuild.js --docker-build",
+    "postversion": "node ./scripts/dockerBuild.js --docker-push",
+    "postinstall": "node ./scripts/setupDevEnvironment.js"
+  },
+  "author": "sseiber",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:sseiber/axis-iotc.git"
+  },
+  "dependencies": {
+    "@hapi/boom": "^9.0.0",
+    "@hapi/good": "^9.0.0",
+    "@hapi/good-console": "^9.0.0",
+    "@hapi/good-squeeze": "^6.0.0",
+    "@hapi/hapi": "^19.1.1",
+    "azure-iot-device": "^1.13.0",
+    "azure-iot-device-mqtt": "^1.12.0",
+    "azure-iot-provisioning-device": "^1.8.0",
+    "azure-iot-provisioning-device-mqtt": "^1.7.0",
+    "azure-iot-security-symmetric-key": "^1.7.0",
+    "fs-extra": "^8.1.0",
+    "ip": "^1.1.5",
+    "lodash.get": "^4.4.2",
+    "lodash.random": "^3.2.0",
+    "lodash.set": "^4.3.2",
+    "nconf": "^0.10.0",
+    "pjson": "^1.0.9",
+    "query-string": "^6.11.1",
+    "rimraf": "^3.0.2",
+    "spryly": "^1.0.21",
+    "uuid": "^7.0.2"
+  },
+  "devDependencies": {
+    "@types/jest": "^25.1.1",
+    "@types/nconf": "0.10.0",
+    "@types/node": "^13.7.0",
+    "jest": "^25.1.0",
+    "ts-jest": "^25.2.0",
+    "tslint": "^5.20.1",
+    "typescript": "^3.7.5"
+  },
+  "jest": {
+    "rootDir": "./src/",
+    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "json"
+    ],
+    "transform": {
+      ".tsx?": "ts-jest"
+    },
+    "moduleNameMapper": {
+      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "./__mocks__/fileMock.js"
+    }
+  }
+}
