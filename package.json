@@ -1,6 +1,6 @@
 {
   "name": "axis-iotc",
-  "version": "1.0.48",
+  "version": "1.0.49",
   "description": "Sample module to connect Axis network cameras to Azure IoT Central",
   "main": "index.js",
   "scripts": {
