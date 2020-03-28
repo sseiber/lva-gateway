@@ -4,6 +4,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     net-tools \
     unzip \
     systemd-sysv \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 ENV WORKINGDIR /app
