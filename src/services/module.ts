@@ -86,7 +86,7 @@ const AxisModuleProperties = {
 };
 
 interface IModuleSettings {
-    wpMasterEdgeProvisioningKey: string;
+    wpMasterDeviceProvisioningKey: string;
     wpScopeId: string;
     wpDeviceTemplateId: string;
     wpGatewayInstanceId: string;
@@ -163,7 +163,14 @@ export class ModuleService {
     private healthCheckFailStreak: number = 0;
     private moduleIpAddress: string = '127.0.0.1';
     private moduleSettings: IModuleSettings = {
-        wpMasterEdgeProvisioningKey: '',
+        wpMasterDeviceProvisioningKey: '',
+        wpScopeId: '',
+        wpDeviceTemplateId: '',
+        wpGatewayInstanceId: '',
+        wpGatewayModuleId: ''
+    };
+    private moduleSettingsDefaults: IModuleSettings = {
+        wpMasterDeviceProvisioningKey: '',
         wpScopeId: '',
         wpDeviceTemplateId: '',
         wpGatewayInstanceId: '',
@@ -180,7 +187,7 @@ export class ModuleService {
         this.iotcModuleId = this.config.get('IOTEDGE_MODULEID') || '';
 
         this.moduleIpAddress = ipAddress.address() || '127.0.0.1';
-        this.moduleSettings.wpMasterEdgeProvisioningKey = this.config.get('IoTMasterDeviceProvisioningKey') || '';
+        this.moduleSettings.wpMasterDeviceProvisioningKey = this.config.get('IoTMasterDeviceProvisioningKey') || '';
         this.moduleSettings.wpScopeId = this.config.get('IoTAppScopeId') || '';
         this.moduleSettings.wpDeviceTemplateId = this.config.get('IoTAppTemplateId') || '';
         this.moduleSettings.wpGatewayInstanceId = this.config.get('IoTAppIotcGatewayId') || '';
@@ -461,7 +468,7 @@ export class ModuleService {
             axisDevice: null
         };
 
-        if (!this.moduleSettings.wpMasterEdgeProvisioningKey
+        if (!this.moduleSettings.wpMasterDeviceProvisioningKey
             || !this.moduleSettings.wpScopeId
             || !this.moduleSettings.wpDeviceTemplateId
             || !this.moduleSettings.wpGatewayInstanceId
@@ -474,7 +481,7 @@ export class ModuleService {
         }
 
         try {
-            const deviceKey = this.computeDeviceKey(deviceProps.deviceId, this.moduleSettings.wpMasterEdgeProvisioningKey);
+            const deviceKey = this.computeDeviceKey(deviceProps.deviceId, this.moduleSettings.wpMasterDeviceProvisioningKey);
             const dpsInfo: IDpsInfo = {
                 scopeId: this.moduleSettings.wpScopeId,
                 templateId: this.moduleSettings.wpDeviceTemplateId,
@@ -569,60 +576,91 @@ export class ModuleService {
                 });
             });
 
-            this.logger.log(['ModuleService', 'info'], `Module live properties updated: ${JSON.stringify(properties, null, 4)}`);
+            this.logger.log(['ModuleService', 'info'], `Module properties updated: ${JSON.stringify(properties, null, 4)}`);
         }
         catch (ex) {
-            this.logger.log(['ModuleService', 'error'], `Error while updating client properties: ${ex.message}`);
+            this.logger.log(['ModuleService', 'error'], `Error updating module properties: ${ex.message}`);
         }
     }
 
     @bind
     private async onHandleModuleProperties(desiredChangedSettings: any) {
-        try {
-            this.logger.log(['ModuleService', 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
+        this.logger.log(['ModuleService', 'info'], `desiredChangedSettings:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
 
-            const patchedProperties = {};
+        const patchedProperties = {};
+        const moduleSettingsForPatching = this.getModuleSettingsForPatching();
 
-            for (const setting in desiredChangedSettings) {
-                if (!desiredChangedSettings.hasOwnProperty(setting)) {
-                    continue;
-                }
+        for (const desiredSettingsKey in desiredChangedSettings) {
+            if (!desiredChangedSettings.hasOwnProperty(desiredSettingsKey)) {
+                continue;
+            }
 
-                if (setting === '$version') {
-                    continue;
-                }
+            if (desiredSettingsKey === '$version') {
+                continue;
+            }
 
+            try {
                 let changedSettingResult;
 
-                switch (setting) {
+                switch (desiredSettingsKey) {
                     case ModuleInterface.Setting.MasterDeviceProvisioningKey:
                     case ModuleInterface.Setting.ScopeId:
                     case ModuleInterface.Setting.DeviceTemplateId:
                     case ModuleInterface.Setting.GatewayInstanceId:
                     case ModuleInterface.Setting.GatewayModuleId:
-                        changedSettingResult = await this.moduleSettingChange(setting, _get(desiredChangedSettings, `${setting}`));
+                        changedSettingResult = await this.moduleSettingChange(moduleSettingsForPatching, desiredSettingsKey, _get(desiredChangedSettings, `${desiredSettingsKey}`));
                         break;
 
                     default:
-                        this.logger.log(['ModuleService', 'error'], `Received desired property change for unknown setting '${setting}'`);
+                        this.logger.log(['ModuleService', 'error'], `Received desired property change for unknown setting '${desiredSettingsKey}'`);
                         break;
                 }
 
                 if (_get(changedSettingResult, 'status') === true) {
-                    patchedProperties[setting] = changedSettingResult.value;
+                    patchedProperties[desiredSettingsKey] = _get(changedSettingResult, 'value');
                 }
             }
-
-            if (!emptyObj(patchedProperties)) {
-                await this.updateModuleProperties(patchedProperties);
+            catch (ex) {
+                this.logger.log(['ModuleService', 'error'], `Exception while handling desired properties: ${ex.message}`);
             }
         }
-        catch (ex) {
-            this.logger.log(['ModuleService', 'error'], `Exception while handling desired properties: ${ex.message}`);
+
+        for (const moduleSettingsKey in moduleSettingsForPatching) {
+            if (!moduleSettingsForPatching.hasOwnProperty(moduleSettingsKey)) {
+                continue;
+            }
+
+            if (!moduleSettingsForPatching[moduleSettingsKey].handled) {
+                this.logger.log(['ModuleService', 'info'], `Adding patched property '${moduleSettingsKey}' setting value to: '${this.moduleSettingsDefaults[moduleSettingsKey]}'`);
+                patchedProperties[moduleSettingsKey] = this.moduleSettingsDefaults[moduleSettingsKey];
+            }
+
+            this.moduleSettings[moduleSettingsKey] = moduleSettingsForPatching[moduleSettingsKey].value;
+        }
+
+        if (!emptyObj(patchedProperties)) {
+            await this.updateModuleProperties(patchedProperties);
         }
     }
 
-    private async moduleSettingChange(setting: string, value: any): Promise<any> {
+    private getModuleSettingsForPatching() {
+        const moduleSettingsForPatching = {};
+
+        for (const moduleSettingsKey in this.moduleSettings) {
+            if (!this.moduleSettings.hasOwnProperty(moduleSettingsKey)) {
+                continue;
+            }
+
+            moduleSettingsForPatching[moduleSettingsKey] = {
+                handled: false,
+                value: this.moduleSettings[moduleSettingsKey]
+            };
+        }
+
+        return moduleSettingsForPatching;
+    }
+
+    private async moduleSettingChange(moduleSettingsForPatching: any, setting: string, value: any): Promise<any> {
         this.logger.log(['ModuleService', 'info'], `Handle module setting change for '${setting}': ${typeof value === 'object' && value !== null ? JSON.stringify(value, null, 4) : value}`);
 
         const result = {
@@ -636,7 +674,8 @@ export class ModuleService {
             case ModuleInterface.Setting.DeviceTemplateId:
             case ModuleInterface.Setting.GatewayInstanceId:
             case ModuleInterface.Setting.GatewayModuleId:
-                result.value = this.moduleSettings[setting] = value || '';
+                result.value = moduleSettingsForPatching[setting].value = value || '';
+                moduleSettingsForPatching[setting].handled = true;
                 break;
 
             default:

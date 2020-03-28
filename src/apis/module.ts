@@ -31,7 +31,7 @@ export class ModuleRoutes extends RoutePlugin {
             const dpsProvisionResult = await this.module.createDevice(deviceProps);
             const resultMessage = dpsProvisionResult.dpsProvisionMessage || dpsProvisionResult.clientConnectionMessage;
             if (dpsProvisionResult.dpsProvisionStatus === false || dpsProvisionResult.clientConnectionStatus === false) {
-                return boom_badImplementation(resultMessage);
+                throw boom_badImplementation(resultMessage);
             }
 
             return h.response(resultMessage).code(201);
@@ -60,7 +60,7 @@ export class ModuleRoutes extends RoutePlugin {
 
             const sendTelemetryResult = await this.module.sendDeviceTelemetry(deviceId, telemetry);
             if (sendTelemetryResult.status === false) {
-                return boom_badImplementation(sendTelemetryResult.message);
+                throw boom_badImplementation(sendTelemetryResult.message);
             }
 
             return h.response(sendTelemetryResult.message).code(201);
