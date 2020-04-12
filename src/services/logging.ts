@@ -1,5 +1,6 @@
 import { service, inject } from 'spryly';
 import { Server } from '@hapi/hapi';
+import * as moment from 'moment';
 import * as _get from 'lodash.get';
 
 @service('logger')
@@ -17,7 +18,7 @@ export class LoggingService {
 
         if (!_get(this.server, 'settings.app.compositionDone')) {
             // tslint:disable-next-line:no-console
-            console.log(`[${new Date().toTimeString()}] [${tagsMessage}] ${message}`);
+            console.log(`[${moment().format('LLL')}] ${tagsMessage} ${message}`);
         }
         else {
             this.server.log(tagsMessage, message);

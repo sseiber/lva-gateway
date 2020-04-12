@@ -23,7 +23,12 @@ export class StorageService {
 
         this.storageDirectory = _get(this.server, 'settings.app.storageRootDirectory');
 
-        this.setup();
+        try {
+            this.setup();
+        }
+        catch (ex) {
+            this.logger.log(['StorageService', 'error'], `Exception during storage setup: ${ex.message}`);
+        }
     }
 
     public async get(scope: string, property?: string): Promise<any> {
@@ -99,14 +104,14 @@ export class StorageService {
     }
 
     private writeScope(scope, data) {
-        this.setup();
-
-        const writeOptions = {
-            spaces: 2,
-            throws: false
-        };
-
         try {
+            this.setup();
+
+            const writeOptions = {
+                spaces: 2,
+                throws: false
+            };
+
             fse.writeJsonSync(this.getScopePath(scope), data, writeOptions);
         }
         catch (ex) {

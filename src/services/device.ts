@@ -2,7 +2,9 @@ import { LoggingService } from './logging';
 import { HealthState } from './health';
 import {
     IDpsInfo,
-    IProvisionResult
+    IProvisionResult,
+    ICommandResponseParams,
+    ModuleService
 } from './module';
 import { Mqtt as IoTHubTransport } from 'azure-iot-device-mqtt';
 import {
@@ -19,29 +21,26 @@ import * as _get from 'lodash.get';
 import { bind, emptyObj } from '../utils';
 
 export interface IDeviceProps {
-    deviceId: string;
-    ipAddress: string;
+    cameraId: string;
+    cameraName: string;
     rtspUrl: string;
+    rtspAuthUsername: string;
+    rtspAuthPassword: string;
     manufacturer: string;
     model: string;
-    swVersion: string;
-    osName: string;
-    processorArchitecture: string;
-    processorManufacturer: string;
-    totalStorage: string;
-    totalMemory: string;
 }
 
-const AxisDeviceProperties = {
-    Manufacturer: 'manufacturer',
-    Model: 'model',
-    SwVersion: 'swVersion',
-    OsName: 'osName',
-    ProcessorArchitecture: 'processorArchitecture',
-    ProcessorManufacturer: 'processorManufacturer',
-    TotalStorage: 'totalStorage',
-    TotalMemory: 'totalMemory'
-};
+export interface IInference {
+    cameraId: string;
+    className: string;
+    confidence: number;
+    roi: {
+        left: number;
+        top: number;
+        right: number;
+        bottom: number;
+    };
+}
 
 interface IDeviceSettings {
     wpDetectionClass: string;
@@ -57,10 +56,6 @@ enum CameraState {
     Active = 'active'
 }
 
-enum RestartCameraCommandParams {
-    Timeout = 'cmpRestartCameraTimeout'
-}
-
 const DeviceInterface = {
     Telemetry: {
         SystemHeartbeat: 'tlSystemHeartbeat',
@@ -72,27 +67,36 @@ const DeviceInterface = {
         CameraState: 'stCameraState'
     },
     Event: {
-        CameraProvision: 'evCameraProvision',
+        CreateCamera: 'evCreateCamera',
+        UpdateCamera: 'evUpdateCamera',
         CameraProcessingStarted: 'evCameraProcessingStarted',
         CameraProcessingStopped: 'evCameraProcessingStopped',
-        CameraRestart: 'evCameraRestart'
+        StartLva: 'evStartLva',
+        CameraSnippet: 'evCameraSnippet'
     },
     Setting: {
         DetectionClass: 'wpDetectionClass'
     },
     Property: {
-        CameraIpAddress: 'rpCameraIpAddress',
-        RtspUrl: 'rpRtspUrl'
+        CameraName: 'rpCameraName',
+        RtspUrl: 'rpRtspUrl',
+        RtspAuthUsername: 'rpRtspAuthUsername',
+        RtspAuthPassword: 'rpRtspAuthPassword',
+        Manufacturer: 'rpManufacturer',
+        Model: 'rpModel'
     },
     Command: {
-        RestartCamera: 'cmRestartCamera'
+        StartLva: 'cmStartLva',
+        RecordCameraSnippet: 'cmRecordCameraSnippet'
     }
 };
 
 const defaultDpsProvisioningHost: string = 'global.azure-devices-provisioning.net';
 
 export class AxisDevice {
-    public static async createAndProvisionAxisDevice(logger: LoggingService, dpsInfo: IDpsInfo, deviceProps: IDeviceProps): Promise<IProvisionResult> {
+    public static async createAndProvisionAxisDevice(axisCameraManagementModule: ModuleService, dpsInfo: IDpsInfo, deviceProps: IDeviceProps): Promise<IProvisionResult> {
+        const logger = axisCameraManagementModule.getLogger();
+
         logger.log(['AxisDevice', 'info'], `Provisioning new device - id: ${dpsInfo.deviceId}, key: ${dpsInfo.deviceKey}`);
 
         const deviceProvisionResult: IProvisionResult = {
@@ -142,7 +146,7 @@ export class AxisDevice {
             deviceProvisionResult.dpsProvisionMessage = `IoT Central successfully provisioned device: ${dpsInfo.deviceId}`;
             deviceProvisionResult.dpsHubConnectionString = dpsConnectionString;
 
-            deviceProvisionResult.axisDevice = new AxisDevice(logger, deviceProps);
+            deviceProvisionResult.axisDevice = new AxisDevice(axisCameraManagementModule, deviceProps);
 
             const { clientConnectionStatus, clientConnectionMessage } = await deviceProvisionResult.axisDevice.connectDeviceClient(deviceProvisionResult.dpsHubConnectionString);
             deviceProvisionResult.clientConnectionStatus = clientConnectionStatus;
@@ -158,6 +162,7 @@ export class AxisDevice {
         return deviceProvisionResult;
     }
 
+    private axisCameraManagementModule: ModuleService;
     private logger: LoggingService;
     private deviceProps: IDeviceProps;
     private deviceClient: IoTDeviceClient = null;
@@ -167,17 +172,11 @@ export class AxisDevice {
     private deviceSettings: IDeviceSettings = {
         wpDetectionClass: ''
     };
-    private debugDeviceTelemetry: string = '';
 
-    constructor(logger: LoggingService, deviceProps: IDeviceProps) {
-        this.logger = logger;
+    constructor(axisCameraMangementModule: ModuleService, deviceProps: IDeviceProps) {
+        this.axisCameraManagementModule = axisCameraMangementModule;
+        this.logger = axisCameraMangementModule.getLogger();
         this.deviceProps = deviceProps;
-
-        this.debugDeviceTelemetry = _get(process.env, 'DEBUG_DEVICE_TELEMETRY') || '';
-    }
-
-    public async sendTelemetry(telemetryData: any) {
-        await this.sendMeasurement(telemetryData);
     }
 
     @bind
@@ -187,6 +186,73 @@ export class AxisDevice {
         });
 
         return this.healthState;
+    }
+
+    public async updateCamera(deviceProps: any): Promise<void> {
+        this.logger.log(['AxisDevice', 'info'], `Updating camera properties for cameraId: ${this.deviceProps.cameraId}`);
+
+        this.deviceProps = {
+            ...deviceProps
+        };
+
+        await this.updateDeviceProperties({
+            [DeviceInterface.Property.CameraName]: this.deviceProps.cameraName,
+            [DeviceInterface.Property.RtspUrl]: this.deviceProps.rtspUrl,
+            [DeviceInterface.Property.RtspAuthUsername]: this.deviceProps.rtspAuthUsername,
+            [DeviceInterface.Property.RtspAuthPassword]: this.deviceProps.rtspAuthPassword,
+            [DeviceInterface.Property.Manufacturer]: this.deviceProps.manufacturer,
+            [DeviceInterface.Property.Model]: this.deviceProps.model
+        });
+
+        await this.sendMeasurement({
+            [DeviceInterface.Event.UpdateCamera]: this.deviceProps.cameraId
+        });
+    }
+
+    public async deleteCamera(): Promise<void> {
+        this.logger.log(['AxisDevice', 'info'], `Deleting camera camera device instance for cameraId: ${this.deviceProps.cameraId}`);
+
+        await this.sendMeasurement({
+            [DeviceInterface.Event.CameraProcessingStopped]: 'Axis IoT Central Device',
+            [DeviceInterface.State.CameraState]: CameraState.Inactive
+        });
+    }
+
+    public async sendTelemetry(telemetryData: any): Promise<void> {
+        return this.sendMeasurement(telemetryData);
+    }
+
+    public async processAxisInferences(inferences: IInference[]): Promise<void> {
+        if (!inferences || !Array.isArray(inferences) || !this.deviceClient) {
+            this.logger.log(['AxisDevice', 'error'], `Missing inferences array or client not connected`);
+            return;
+        }
+
+        if (_get(process.env, 'DEBUG_DEVICE_TELEMETRY') === this.deviceProps.cameraId) {
+            this.logger.log(['AxisDevice', 'info'], `processAxisInferences: ${inferences}`);
+        }
+
+        try {
+            let inferenceCount = 0;
+
+            for (const inference of inferences) {
+                if (inference.className.toUpperCase() === this.deviceSettings.wpDetectionClass.toUpperCase()) {
+                    ++inferenceCount;
+                    await this.sendMeasurement({
+                        [DeviceInterface.Telemetry.Inference]: inference
+                    });
+                }
+            }
+
+            if (inferenceCount > 0) {
+                await this.sendMeasurement({
+                    [DeviceInterface.Telemetry.InferenceCount]: inferenceCount
+                });
+            }
+        }
+        catch (ex) {
+            this.logger.log(['AxisDevice', 'error'], `Error processing downstream message: ${ex.message}`);
+        }
     }
 
     private async connectDeviceClient(dpsHubConnectionString: string): Promise<any> {
@@ -204,11 +270,11 @@ export class AxisDevice {
             this.deviceClient = await IoTDeviceClient.fromConnectionString(dpsHubConnectionString, IoTHubTransport);
             if (!this.deviceClient) {
                 result.clientConnectionStatus = false;
-                result.clientConnectionMessage = `Failed to connect device client interface from connection string - device: ${this.deviceProps.deviceId}`;
+                result.clientConnectionMessage = `Failed to connect device client interface from connection string - device: ${this.deviceProps.cameraId}`;
             }
             else {
                 result.clientConnectionStatus = true;
-                result.clientConnectionMessage = `Successfully connected to IoT Central - device: ${this.deviceProps.deviceId}`;
+                result.clientConnectionMessage = `Successfully connected to IoT Central - device: ${this.deviceProps.cameraId}`;
             }
         }
         catch (ex) {
@@ -232,26 +298,24 @@ export class AxisDevice {
 
             this.deviceClient.on('error', this.onDeviceClientError);
 
-            this.deviceClient.onDeviceMethod(DeviceInterface.Command.RestartCamera, this.restartCameraDirectMethod);
+            this.deviceClient.onDeviceMethod(DeviceInterface.Command.StartLva, this.startLva);
+            this.deviceClient.onDeviceMethod(DeviceInterface.Command.RecordCameraSnippet, this.recordCameraSnippetDirectMethod);
             this.deviceClient.on('inputMessage', this.onHandleDownstreamMessages);
 
             await this.updateDeviceProperties({
-                [DeviceInterface.Property.CameraIpAddress]: this.deviceProps.ipAddress,
+                [DeviceInterface.Property.CameraName]: this.deviceProps.cameraName,
                 [DeviceInterface.Property.RtspUrl]: this.deviceProps.rtspUrl,
-                [AxisDeviceProperties.Manufacturer]: this.deviceProps.manufacturer,
-                [AxisDeviceProperties.Model]: this.deviceProps.model,
-                [AxisDeviceProperties.OsName]: this.deviceProps.osName,
-                [AxisDeviceProperties.SwVersion]: this.deviceProps.swVersion,
-                [AxisDeviceProperties.ProcessorArchitecture]: this.deviceProps.processorArchitecture,
-                [AxisDeviceProperties.ProcessorManufacturer]: this.deviceProps.processorManufacturer,
-                [AxisDeviceProperties.TotalMemory]: this.deviceProps.totalMemory,
-                [AxisDeviceProperties.TotalStorage]: this.deviceProps.totalStorage
+                [DeviceInterface.Property.RtspAuthUsername]: this.deviceProps.rtspAuthUsername,
+                [DeviceInterface.Property.RtspAuthPassword]: this.deviceProps.rtspAuthPassword,
+                [DeviceInterface.Property.Manufacturer]: this.deviceProps.manufacturer,
+                [DeviceInterface.Property.Model]: this.deviceProps.model
             });
 
             await this.sendMeasurement({
                 [DeviceInterface.State.IoTCentralClientState]: IoTCentralClientState.Connected,
                 [DeviceInterface.State.CameraState]: CameraState.Active,
-                [DeviceInterface.Event.CameraProcessingStarted]: 'Axis IoT Central Device'
+                [DeviceInterface.Event.CameraProcessingStarted]: this.deviceProps.cameraId,
+                [DeviceInterface.Event.CreateCamera]: this.deviceProps.cameraId
             });
 
             result.clientConnectionStatus = true;
@@ -277,7 +341,7 @@ export class AxisDevice {
 
             await this.deviceClient.sendEvent(iotcMessage);
 
-            if (this.debugDeviceTelemetry === this.deviceProps.deviceId) {
+            if (_get(process.env, 'DEBUG_DEVICE_TELEMETRY') === this.deviceProps.cameraId) {
                 this.logger.log(['AxisDevice', 'info'], `sendEvent: ${JSON.stringify(data, null, 4)}`);
             }
         }
@@ -325,15 +389,21 @@ export class AxisDevice {
                     continue;
                 }
 
+                const value = _get(desiredChangedSettings, `${setting}.value`);
+                if (!value) {
+                    this.logger.log(['AxisDevice', 'error'], `No value field found for desired property '${setting}'`);
+                    continue;
+                }
+
                 let changedSettingResult;
 
                 switch (setting) {
                     case DeviceInterface.Setting.DetectionClass:
-                        changedSettingResult = await this.deviceSettingChange(setting, _get(desiredChangedSettings, `${setting}`));
+                        changedSettingResult = await this.deviceSettingChange(setting, value);
                         break;
 
                     default:
-                        this.logger.log(['AxisDevice', 'error'], `Received desired property change for unknown setting '${setting}'`);
+                        this.logger.log(['AxisDevice', 'warning'], `Received desired property change for unknown setting '${setting}'`);
                         break;
                 }
 
@@ -412,35 +482,66 @@ export class AxisDevice {
     }
 
     @bind
-    private async restartCameraDirectMethod(commandRequest: DeviceMethodRequest, commandResponse: DeviceMethodResponse) {
-        this.logger.log(['AxisDevice', 'info'], `${DeviceInterface.Command.RestartCamera} command received`);
+    private async startLva(commandRequest: DeviceMethodRequest, commandResponse: DeviceMethodResponse) {
+        this.logger.log(['AxisDevice', 'info'], `${DeviceInterface.Command.StartLva} command received`);
 
-        try {
-            await commandResponse.send(200);
-        }
-        catch (ex) {
-            this.logger.log(['AxisDevice', 'error'], `Error sending response for ${DeviceInterface.Command.RestartCamera} command: ${ex.message}`);
-        }
-
-        const timeout = _get(commandRequest, `payload.${RestartCameraCommandParams.Timeout}`);
+        let cameraSnippetResponse: ICommandResponseParams = {
+            statusCode: 201,
+            message: 'Succeeded'
+        };
 
         try {
             await this.sendMeasurement({
-                [DeviceInterface.Event.CameraRestart]: 'DirectMethod called for camera restart',
-                [DeviceInterface.Event.CameraProcessingStopped]: 'Axis IoT Central Device',
-                [DeviceInterface.State.CameraState]: CameraState.Inactive
+                [DeviceInterface.Event.StartLva]: 'DirectMethod called to start LVA'
             });
 
-            if (timeout > 0) {
-                await new Promise((resolve) => {
-                    setTimeout(() => {
-                        return resolve();
-                    }, 1000 * timeout);
-                });
-            }
+            const graphName;
+
+            cameraSnippetResponse = await this.axisCameraManagementModule.startLva(graphName);
         }
         catch (ex) {
+            cameraSnippetResponse = {
+                statusCode: 400,
+                message: ex.message
+            };
+
             this.logger.log(['AxisDevice', 'error'], `${ex.message}`);
         }
+
+        await commandResponse.send(cameraSnippetResponse.statusCode, cameraSnippetResponse);
+    }
+
+    @bind
+    // @ts-ignore
+    private async recordCameraSnippetDirectMethod(commandRequest: DeviceMethodRequest, commandResponse: DeviceMethodResponse) {
+        this.logger.log(['AxisDevice', 'info'], `${DeviceInterface.Command.RecordCameraSnippet} command received`);
+
+        let cameraSnippetResponse: ICommandResponseParams = {
+            statusCode: 201,
+            message: 'Succeeded'
+        };
+
+        try {
+            await this.sendMeasurement({
+                [DeviceInterface.Event.CameraSnippet]: 'DirectMethod called for camera snippet'
+            });
+
+            const cameraInfo = {
+                cameraName: 'Scotts Nook Camera',
+                cameraId: 'Axis1367'
+            };
+
+            cameraSnippetResponse = await this.axisCameraManagementModule.recordFromCamera(cameraInfo);
+        }
+        catch (ex) {
+            cameraSnippetResponse = {
+                statusCode: 400,
+                message: ex.message
+            };
+
+            this.logger.log(['AxisDevice', 'error'], `${ex.message}`);
+        }
+
+        await commandResponse.send(cameraSnippetResponse.statusCode, cameraSnippetResponse);
     }
 }

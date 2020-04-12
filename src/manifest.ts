@@ -10,7 +10,7 @@ export function manifest(config?: any): ComposeManifest {
             port: PORT,
             app: {
                 rootDirectory: pathResolve(__dirname, '..'),
-                storageRootDirectory: process.env.DATAMISC_ROOT || '/data/misc/storage',
+                storageRootDirectory: process.env.DATAMISC_ROOT || '/data/storage',
                 slogan: 'Axis IoT Central Protocol Translation Module'
             }
         },

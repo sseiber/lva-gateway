@@ -42,6 +42,73 @@ export class ModuleRoutes extends RoutePlugin {
     }
 
     @route({
+        method: 'PUT',
+        path: '/api/v1/module/device/{deviceId}',
+        options: {
+            tags: ['module'],
+            description: 'Update a leaf device'
+        }
+    })
+    public async putUpdateDevice(request: Request, h: ResponseToolkit) {
+        try {
+            const deviceId = _get(request, 'params.deviceId');
+            const deviceProps = _get(request, 'payload.deviceProps') || {};
+
+            if (!deviceId || emptyObj(deviceProps)) {
+                throw boom_badRequest('Missing deviceId or deviceProps');
+            }
+
+            const operationResult = await this.module.updateDevice({
+                deviceId,
+                operationInfo: deviceProps
+            });
+
+            if (operationResult.status === false) {
+                throw boom_badImplementation(operationResult.message);
+            }
+
+            return h.response(operationResult.message).code(204);
+        }
+        catch (ex) {
+            throw boom_badRequest(ex.message);
+        }
+    }
+
+    @route({
+        method: 'DELETE',
+        path: '/api/v1/module/device/{deviceId}',
+        options: {
+            tags: ['module'],
+            description: 'Delete a leaf device'
+        }
+    })
+    public async deleteDevice(request: Request, h: ResponseToolkit) {
+        try {
+            const deviceId = _get(request, 'params.deviceId');
+
+            if (!deviceId) {
+                throw boom_badRequest('Missing deviceId');
+            }
+
+            const operationResult = await this.module.deleteDevice({
+                deviceId,
+                operationInfo: {
+                    required: '1'
+                }
+            });
+
+            if (operationResult.status === false) {
+                throw boom_badImplementation(operationResult.message);
+            }
+
+            return h.response(operationResult.message).code(204);
+        }
+        catch (ex) {
+            throw boom_badRequest(ex.message);
+        }
+    }
+
+    @route({
         method: 'POST',
         path: '/api/v1/module/device/{deviceId}/telemetry',
         options: {
@@ -58,12 +125,49 @@ export class ModuleRoutes extends RoutePlugin {
                 throw boom_badRequest('Missing deviceId or telemetry');
             }
 
-            const sendTelemetryResult = await this.module.sendDeviceTelemetry(deviceId, telemetry);
-            if (sendTelemetryResult.status === false) {
-                throw boom_badImplementation(sendTelemetryResult.message);
+            const operationResult = await this.module.sendDeviceTelemetry({
+                deviceId,
+                operationInfo: telemetry
+            });
+
+            if (operationResult.status === false) {
+                throw boom_badImplementation(operationResult.message);
             }
 
-            return h.response(sendTelemetryResult.message).code(201);
+            return h.response(operationResult.message).code(201);
+        }
+        catch (ex) {
+            throw boom_badRequest(ex.message);
+        }
+    }
+
+    @route({
+        method: 'POST',
+        path: '/api/v1/module/device/{deviceId}/inferences',
+        options: {
+            tags: ['module'],
+            description: 'Send inference telemetry to a leaf device'
+        }
+    })
+    public async postSendDeviceInferenceTelemetry(request: Request, h: ResponseToolkit) {
+        try {
+            const deviceId = _get(request, 'params.deviceId');
+            const inferences = _get(request, 'payload.inferences') || [];
+
+            if (!deviceId || emptyObj(inferences)) {
+                throw boom_badRequest('Missing deviceId or telemetry');
+            }
+
+            const operationResult = await this.module.sendDeviceInferences({
+                deviceId,
+                operationInfo: inferences
+            });
+
+            if (operationResult.status === false) {
+                throw boom_badImplementation(operationResult.message);
+            }
+
+            return h.response(operationResult.message).code(201);
         }
         catch (ex) {
             throw boom_badRequest(ex.message);

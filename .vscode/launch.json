@@ -29,7 +29,8 @@
                 "DATAMISC_ROOT": "${workspaceFolder}/storage",
                 "LOCAL_DEBUG": "0",
                 "DEBUG_MODULE_TELEMETRY": "1",
-                "DEBUG_ROUTING_DATA": "0"
+                "DEBUG_ROUTING_TELEMETRY": "0",
+                "DEBUG_DEVICE_TELEMETRY": "axiscamera2"
             }
         },
         {

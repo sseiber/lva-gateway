@@ -276,9 +276,53 @@
                                             "SemanticType/Event"
                                         ],
                                         "displayName": {
-                                            "en": "Camera Provision"
+                                            "en": "Create Camera"
                                         },
-                                        "name": "evCameraProvision",
+                                        "name": "evCreateCamera",
+                                        "schema": "string"
+                                    },
+                                    {
+                                        "@type": [
+                                            "Telemetry",
+                                            "SemanticType/Event"
+                                        ],
+                                        "displayName": {
+                                            "en": "Update Camera"
+                                        },
+                                        "name": "evUpdateCamera",
+                                        "schema": "string"
+                                    },
+                                    {
+                                        "@type": [
+                                            "Telemetry",
+                                            "SemanticType/Event"
+                                        ],
+                                        "displayName": {
+                                            "en": "Delete Camera"
+                                        },
+                                        "name": "evDeleteCamera",
+                                        "schema": "string"
+                                    },
+                                    {
+                                        "@type": [
+                                            "Telemetry",
+                                            "SemanticType/Event"
+                                        ],
+                                        "displayName": {
+                                            "en": "Module Started"
+                                        },
+                                        "name": "evModuleStarted",
+                                        "schema": "string"
+                                    },
+                                    {
+                                        "@type": [
+                                            "Telemetry",
+                                            "SemanticType/Event"
+                                        ],
+                                        "displayName": {
+                                            "en": "Module Stopped"
+                                        },
+                                        "name": "evModuleStopped",
                                         "schema": "string"
                                     },
                                     {
@@ -306,15 +350,171 @@
                                         "request": {
                                             "@type": "SchemaField",
                                             "displayName": {
-                                                "en": "Timeout"
+                                                "en": "RestartModuleRequest"
                                             },
-                                            "name": "cmpRestartModuleTimeout",
-                                            "schema": "integer"
+                                            "name": "RestartModuleRequest",
+                                            "schema": {
+                                                "@type": "Object",
+                                                "displayName": {
+                                                    "en": "Object"
+                                                },
+                                                "fields": [
+                                                    {
+                                                        "@type": "SchemaField",
+                                                        "displayName": {
+                                                            "en": "Timeout"
+                                                        },
+                                                        "name": "RestartModuleRequestParams_Timeout",
+                                                        "schema": "integer"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "response": {
+                                            "@type": "SchemaField",
+                                            "displayName": {
+                                                "en": "RestartModuleResponse"
+                                            },
+                                            "name": "RestartModuleResponse",
+                                            "schema": {
+                                                "@type": "Object",
+                                                "displayName": {
+                                                    "en": "Object"
+                                                },
+                                                "fields": [
+                                                    {
+                                                        "@type": "SchemaField",
+                                                        "displayName": {
+                                                            "en": "StatusCode"
+                                                        },
+                                                        "name": "statusCode",
+                                                        "schema": "integer"
+                                                    },
+                                                    {
+                                                        "@type": "SchemaField",
+                                                        "displayName": {
+                                                            "en": "Message"
+                                                        },
+                                                        "name": "message",
+                                                        "schema": "string"
+                                                    }
+                                                ]
+                                            }
                                         },
                                         "displayName": {
                                             "en": "Restart Module"
                                         },
                                         "name": "cmRestartModule"
+                                    },
+                                    {
+                                        "@type": "Command",
+                                        "commandType": "asynchronous",
+                                        "request": {
+                                            "@type": "SchemaField",
+                                            "displayName": {
+                                                "en": "AddCameraRequest"
+                                            },
+                                            "name": "AddCameraRequest",
+                                            "schema": {
+                                                "@type": "Object",
+                                                "displayName": {
+                                                    "en": "Object"
+                                                },
+                                                "fields": [
+                                                    {
+                                                        "@type": "SchemaField",
+                                                        "displayName": {
+                                                            "en": "CameraId"
+                                                        },
+                                                        "name": "AddCameraRequestParams_CameraId",
+                                                        "schema": "string"
+                                                    },
+                                                    {
+                                                        "@type": "SchemaField",
+                                                        "displayName": {
+                                                            "en": "CameraName"
+                                                        },
+                                                        "name": "AddCameraRequestParams_CameraName",
+                                                        "schema": "string"
+                                                    },
+                                                    {
+                                                        "@type": "SchemaField",
+                                                        "displayName": {
+                                                            "en": "RtspUrl"
+                                                        },
+                                                        "name": "AddCameraRequestParams_RtspUrl",
+                                                        "schema": "string"
+                                                    },
+                                                    {
+                                                        "@type": "SchemaField",
+                                                        "displayName": {
+                                                            "en": "RtspAuthUsername"
+                                                        },
+                                                        "name": "AddCameraRequestParams_RtspAuthUsername",
+                                                        "schema": "string"
+                                                    },
+                                                    {
+                                                        "@type": "SchemaField",
+                                                        "displayName": {
+                                                            "en": "RtspAuthPassword"
+                                                        },
+                                                        "name": "AddCameraRequestParams_RtspAuthPassword",
+                                                        "schema": "string"
+                                                    },
+                                                    {
+                                                        "@type": "SchemaField",
+                                                        "displayName": {
+                                                            "en": "Manufacturer"
+                                                        },
+                                                        "name": "AddCameraRequestParams_Manufacturer",
+                                                        "schema": "string"
+                                                    },
+                                                    {
+                                                        "@type": "SchemaField",
+                                                        "displayName": {
+                                                            "en": "Model"
+                                                        },
+                                                        "name": "AddCameraRequestParams_Model",
+                                                        "schema": "string"
+                                                    },
+                                                ]
+                                            }
+                                        },
+                                        "response": {
+                                            "@type": "SchemaField",
+                                            "displayName": {
+                                                "en": "AddCameraResponse"
+                                            },
+                                            "name": "AddCameraResponse",
+                                            "schema": {
+                                                "@type": "Object",
+                                                "displayName": {
+                                                    "en": "Object"
+                                                },
+                                                "fields": [
+                                                    {
+                                                        "@type": "SchemaField",
+                                                        "displayName": {
+                                                            "en": "StatusCode"
+                                                        },
+                                                        "name": "statusCode",
+                                                        "schema": "integer"
+                                                    },
+                                                    {
+                                                        "@type": "SchemaField",
+                                                        "displayName": {
+                                                            "en": "Message"
+                                                        },
+                                                        "name": "message",
+                                                        "schema": "string"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "displayName": {
+                                            "en": "Add Camera"
+                                        },
+                                        "name": "cmAddCamera"
                                     }
                                 ]
                             }
