@@ -323,6 +323,85 @@
                     {
                         "@type": "Command",
                         "commandType": "asynchronous",
+                        "request": {
+                            "@type": "SchemaField",
+                            "displayName": {
+                                "en": "StartLVARequest"
+                            },
+                            "name": "StartLVARequest",
+                            "schema": {
+                                "@type": "Enum",
+                                "displayName": {
+                                    "en": "Enum"
+                                },
+                                "valueSchema": "string",
+                                "enumValues": [
+                                    {
+                                        "@type": "EnumValue",
+                                        "displayName": {
+                                            "en": "Motion Detection"
+                                        },
+                                        "enumValue": "StartLVARequestEnum_MotionDetection",
+                                        "name": "StartLVARequestEnum_MotionDetection"
+                                    },
+                                    {
+                                        "@type": "EnumValue",
+                                        "displayName": {
+                                            "en": "People Detection"
+                                        },
+                                        "enumValue": "StartLVARequestEnum_PeopleDetection",
+                                        "name": "StartLVARequestEnum_PeopleDetection"
+                                    },
+                                    {
+                                        "@type": "EnumValue",
+                                        "displayName": {
+                                            "en": "Car Detection"
+                                        },
+                                        "enumValue": "StartLVARequestEnum_CarDetection",
+                                        "name": "StartLVARequestEnum_CarDetection"
+                                    }
+                                ]
+                            }
+                        },
+                        "response": {
+                            "@type": "SchemaField",
+                            "displayName": {
+                                "en": "StartLVAResponse"
+                            },
+                            "name": "StartLVAResponse",
+                            "schema": {
+                                "@type": "Object",
+                                "displayName": {
+                                    "en": "Object"
+                                },
+                                "fields": [
+                                    {
+                                        "@type": "SchemaField",
+                                        "displayName": {
+                                            "en": "StatusCode"
+                                        },
+                                        "name": "statusCode",
+                                        "schema": "integer"
+                                    },
+                                    {
+                                        "@type": "SchemaField",
+                                        "displayName": {
+                                            "en": "Message"
+                                        },
+                                        "name": "message",
+                                        "schema": "string"
+                                    }
+                                ]
+                            }
+                        },
+                        "displayName": {
+                            "en": "Start LVA"
+                        },
+                        "name": "cmStartLva"
+                    },
+                    {
+                        "@type": "Command",
+                        "commandType": "asynchronous",
                         "response": {
                             "@type": "SchemaField",
                             "displayName": {

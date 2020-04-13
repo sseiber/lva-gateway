@@ -173,6 +173,15 @@
                                         "name": "wpGatewayModuleId",
                                         "writable": true,
                                         "schema": "string"
+                                    },
+                                    {
+                                        "@type": "Property",
+                                        "displayName": {
+                                            "en": "LVA Edge Module Id"
+                                        },
+                                        "name": "wpLvaEdgeModuleId",
+                                        "writable": true,
+                                        "schema": "string"
                                     }
                                 ]
                             }
@@ -476,7 +485,7 @@
                                                         },
                                                         "name": "AddCameraRequestParams_Model",
                                                         "schema": "string"
-                                                    },
+                                                    }
                                                 ]
                                             }
                                         },

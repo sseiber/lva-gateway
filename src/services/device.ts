@@ -42,6 +42,12 @@ export interface IInference {
     };
 }
 
+export enum StartLVARequestEnum {
+    MotionDetection = 'StartLVARequestEnum_MotionDetection',
+    PeopleDetection = 'StartLVARequestEnum_PeopleDetection',
+    CarDetection = 'StartLVARequestEnum_CarDetection'
+}
+
 interface IDeviceSettings {
     wpDetectionClass: string;
 }
@@ -125,7 +131,7 @@ export class AxisDevice {
             provisioningClient.setProvisioningPayload({
                 iotcModelId: dpsInfo.templateId,
                 iotcGateway: {
-                    iotcGatewayId: dpsInfo.iotcGatewayId,
+                    iotcGatewayId: dpsInfo.iotcGatewayInstanceId,
                     iotcModuleId: dpsInfo.iotcModuleId
                 }
             });
@@ -213,7 +219,7 @@ export class AxisDevice {
         this.logger.log(['AxisDevice', 'info'], `Deleting camera camera device instance for cameraId: ${this.deviceProps.cameraId}`);
 
         await this.sendMeasurement({
-            [DeviceInterface.Event.CameraProcessingStopped]: 'Axis IoT Central Device',
+            [DeviceInterface.Event.CameraProcessingStopped]: this.deviceProps.cameraId,
             [DeviceInterface.State.CameraState]: CameraState.Inactive
         });
     }
@@ -313,8 +319,7 @@ export class AxisDevice {
 
             await this.sendMeasurement({
                 [DeviceInterface.State.IoTCentralClientState]: IoTCentralClientState.Connected,
-                [DeviceInterface.State.CameraState]: CameraState.Active,
-                [DeviceInterface.Event.CameraProcessingStarted]: this.deviceProps.cameraId,
+                [DeviceInterface.State.CameraState]: CameraState.Inactive,
                 [DeviceInterface.Event.CreateCamera]: this.deviceProps.cameraId
             });
 
@@ -485,30 +490,42 @@ export class AxisDevice {
     private async startLva(commandRequest: DeviceMethodRequest, commandResponse: DeviceMethodResponse) {
         this.logger.log(['AxisDevice', 'info'], `${DeviceInterface.Command.StartLva} command received`);
 
-        let cameraSnippetResponse: ICommandResponseParams = {
+        let startLvaResponse: ICommandResponseParams = {
             statusCode: 201,
             message: 'Succeeded'
         };
 
         try {
+            const paramPayload = _get(commandRequest, 'payload');
+            if (!paramPayload) {
+                throw new Error(`Missing or wrong payload time for command: ${DeviceInterface.Command.StartLva}`);
+            }
+
+            this.logger.log(['AxisDevice', 'info'], `paramPayload is: ${paramPayload}`);
+
             await this.sendMeasurement({
-                [DeviceInterface.Event.StartLva]: 'DirectMethod called to start LVA'
+                [DeviceInterface.Event.StartLva]: this.deviceProps.cameraId
             });
 
-            const graphName;
+            startLvaResponse = await this.axisCameraManagementModule.startLvaGraph(this.deviceProps, paramPayload);
 
-            cameraSnippetResponse = await this.axisCameraManagementModule.startLva(graphName);
+            if (startLvaResponse.statusCode === 201) {
+                await this.sendMeasurement({
+                    [DeviceInterface.Event.CameraProcessingStarted]: this.deviceProps.cameraId,
+                    [DeviceInterface.State.CameraState]: CameraState.Active
+                });
+            }
         }
         catch (ex) {
-            cameraSnippetResponse = {
+            startLvaResponse = {
                 statusCode: 400,
                 message: ex.message
             };
 
-            this.logger.log(['AxisDevice', 'error'], `${ex.message}`);
+            this.logger.log(['AxisDevice', 'error'], `Error starting LVA: ${ex.message}`);
         }
 
-        await commandResponse.send(cameraSnippetResponse.statusCode, cameraSnippetResponse);
+        await commandResponse.send(startLvaResponse.statusCode, startLvaResponse);
     }
 
     @bind
