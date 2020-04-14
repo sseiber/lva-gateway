@@ -18,6 +18,8 @@ This project includes scripts for building the Docker image and for initial proj
 
 ### To do
 * Manage the "delete camera" flow
-* If the gateway module goes through a restart - need to reconsitute the devices instances.
-* keep track of current graph assigned to a device so you can stop it if another graph request comes in
-* graphInstanceName is used to stop and delete a graph, not the full graphInstance file
+  - polling on the heath check to determine if still connected to the Hub
+  - gateway module should received the error that device is disconnected so gateway can manage the delete and re-provision of the device
+  - device needs to return to what it was doing (rtsp feed, ai model, etc.)
+* Gateway module needs to keep track of devices in case it reboot and needs to re-provision each
+  - need to store/persist device name, rtsp feed/creds, ai model etc.
