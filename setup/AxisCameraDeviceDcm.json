@@ -267,6 +267,17 @@
                             "SemanticType/Event"
                         ],
                         "displayName": {
+                            "en": "Stop LVA"
+                        },
+                        "name": "evStopLva",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
                             "en": "Camera Snippet"
                         },
                         "name": "evCameraSnippet",
@@ -398,6 +409,45 @@
                             "en": "Start LVA"
                         },
                         "name": "cmStartLva"
+                    },
+                    {
+                        "@type": "Command",
+                        "commandType": "asynchronous",
+                        "response": {
+                            "@type": "SchemaField",
+                            "displayName": {
+                                "en": "StopLVAResponse"
+                            },
+                            "name": "StopLVAResponse",
+                            "schema": {
+                                "@type": "Object",
+                                "displayName": {
+                                    "en": "Object"
+                                },
+                                "fields": [
+                                    {
+                                        "@type": "SchemaField",
+                                        "displayName": {
+                                            "en": "StatusCode"
+                                        },
+                                        "name": "statusCode",
+                                        "schema": "integer"
+                                    },
+                                    {
+                                        "@type": "SchemaField",
+                                        "displayName": {
+                                            "en": "Message"
+                                        },
+                                        "name": "message",
+                                        "schema": "string"
+                                    }
+                                ]
+                            }
+                        },
+                        "displayName": {
+                            "en": "Stop LVA"
+                        },
+                        "name": "cmStopLva"
                     },
                     {
                         "@type": "Command",

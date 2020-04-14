@@ -116,7 +116,7 @@ enum AddCameraCommandRequestParams {
     Model = 'AddCameraRequestParams_Model'
 }
 
-export interface ICommandResponseParams {
+export interface ICommandResponse {
     statusCode: number;
     message: string;
 }
@@ -143,7 +143,8 @@ export const ModuleInterface = {
         ScopeId: 'wpScopeId',
         DeviceTemplateId: 'wpDeviceTemplateId',
         GatewayInstanceId: 'wpGatewayInstanceId',
-        GatewayModuleId: 'wpGatewayModuleId'
+        GatewayModuleId: 'wpGatewayModuleId',
+        LvaEdgeModuleId: 'wpLvaEdgeModuleId'
     },
     Property: {
         ModuleIpAddress: 'rpModuleIpAddress'
@@ -359,7 +360,7 @@ export class ModuleService {
         process.exit(1);
     }
 
-    public async startLvaGraph(deviceProps: IDeviceProps, graphType: string): Promise<ICommandResponseParams> {
+    public async startLvaGraph(deviceProps: IDeviceProps, graphType: string): Promise<{ startLvaGraphResponse: ICommandResponse, graphInstance: any, graphTopology: any }> {
         this.logger.log(['ModuleService', 'info'], `startLvaGraph with graphType: ${graphType}`);
 
         try {
@@ -380,27 +381,27 @@ export class ModuleService {
             }
 
             const graphInstancePath = pathResolve(_get(this.server, 'settings.app.storageRootDirectory'), `${graphName}GraphInstance.json`);
-            const graphInstanceData = fse.readJSONSync(graphInstancePath);
+            const graphInstance = fse.readJSONSync(graphInstancePath);
 
-            graphInstanceData.name = (_get(graphInstanceData, 'name') || '').replace('###RtspCameraId', deviceProps.cameraId);
-            graphInstanceData.properties.topologyName = (_get(graphInstanceData, 'properties.topologyName') || '').replace('###RtspCameraId', deviceProps.cameraId);
+            graphInstance.name = (_get(graphInstance, 'name') || '').replace('###RtspCameraId', deviceProps.cameraId);
+            graphInstance.properties.topologyName = (_get(graphInstance, 'properties.topologyName') || '###RtspCameraId').replace('###RtspCameraId', deviceProps.cameraId);
 
             this.logger.log(['ModuleService', 'info'], `### graphFilePath: ${graphInstancePath}`);
-            this.logger.log(['ModuleService', 'info'], `### graphData: ${JSON.stringify(graphInstanceData, null, 4)}`);
+            this.logger.log(['ModuleService', 'info'], `### graphData: ${JSON.stringify(graphInstance, null, 4)}`);
 
-            const graphTopologyPath = pathResolve(_get(this.server, 'settings.app.storageRootDirectory'), `${graphName}GraphInstance.json`);
-            const graphTopologyData = fse.readJSONSync(graphTopologyPath);
+            const graphTopologyPath = pathResolve(_get(this.server, 'settings.app.storageRootDirectory'), `${graphName}GraphTopology.json`);
+            const graphTopology = fse.readJSONSync(graphTopologyPath);
 
-            graphTopologyData.name = (_get(graphTopologyData, 'name') || '').replace('###RtspCameraId', deviceProps.cameraId);
-            graphTopologyData.properties.sources[0].name = deviceProps.cameraId;
-            graphTopologyData.properties.sources[0].endpoint.url = deviceProps.rtspUrl;
-            graphTopologyData.properties.sources[0].endpoint.credentials.username = deviceProps.rtspAuthUsername;
-            graphTopologyData.properties.sources[0].endpoint.credentials.password = deviceProps.rtspAuthPassword;
-            graphTopologyData.properties.processors[0].inputs[1].moduleName = deviceProps.cameraId;
-            graphTopologyData.properties.sinks[0].filePathPattern = (_get(graphTopologyData, 'properties.sinks.0.filePathPattern') || '').replace('###RtspCameraId', deviceProps.cameraId);
+            graphTopology.name = (_get(graphTopology, 'name') || '').replace('###RtspCameraId', deviceProps.cameraId);
+            graphTopology.properties.sources[0].name = deviceProps.cameraId;
+            graphTopology.properties.sources[0].endpoint.url = deviceProps.rtspUrl;
+            graphTopology.properties.sources[0].endpoint.credentials.username = deviceProps.rtspAuthUsername;
+            graphTopology.properties.sources[0].endpoint.credentials.password = deviceProps.rtspAuthPassword;
+            graphTopology.properties.processors[0].inputs[1].moduleName = deviceProps.cameraId;
+            graphTopology.properties.sinks[0].filePathPattern = (_get(graphTopology, 'properties.sinks.0.filePathPattern') || '###RtspCameraId').replace('###RtspCameraId', deviceProps.cameraId);
 
             this.logger.log(['ModuleService', 'info'], `### graphFilePath: ${graphTopologyPath}`);
-            this.logger.log(['ModuleService', 'info'], `### graphData: ${JSON.stringify(graphTopologyData, null, 4)}`);
+            this.logger.log(['ModuleService', 'info'], `### graphData: ${JSON.stringify(graphTopology, null, 4)}`);
 
             const methodParams = {
                 methodName: ``,
@@ -409,36 +410,83 @@ export class ModuleService {
                 responseTimeoutInSeconds: 30
             };
 
-            // Invoke GraphTopologySet
             this.logger.log(['ModuleService', 'info'], `### GraphTopologySet`);
             methodParams.methodName = `GraphTopologySet`;
-            methodParams.payload = graphTopologyData;
+            methodParams.payload = graphTopology;
             await this.moduleClient.invokeMethod(this.moduleSettings.wpGatewayInstanceId, this.moduleSettings.wpLvaEdgeModuleId, methodParams);
 
-            // Stop and Delete Graph Instance if Graph already exists from prior runs
-            // await this.invokeModuleMethod('GraphInstanceStop', `instance.json`, this.moduleSettings.wpGatewayInstanceId, this.moduleSettings.wpLvaEdgeModuleId);
-            // await this.invokeModuleMethod('GraphInstanceDelete', `instance.json`, this.moduleSettings.wpGatewayInstanceId, this.moduleSettings.wpLvaEdgeModuleId);
-
-            // Invoke GraphInstanceSet
             this.logger.log(['ModuleService', 'info'], `### GraphInstanceSet`);
             methodParams.methodName = `GraphInstanceSet`;
-            methodParams.payload = graphInstanceData;
+            methodParams.payload = graphInstance;
             await this.moduleClient.invokeMethod(this.moduleSettings.wpGatewayInstanceId, this.moduleSettings.wpLvaEdgeModuleId, methodParams);
 
-            // Start the Graph Instance
             this.logger.log(['ModuleService', 'info'], `### GraphInstanceStart`);
             methodParams.methodName = `GraphInstanceStart`;
-            methodParams.payload = graphInstanceData;
+            methodParams.payload = graphInstance;
             await this.moduleClient.invokeMethod(this.moduleSettings.wpGatewayInstanceId, this.moduleSettings.wpLvaEdgeModuleId, methodParams);
+
+            return {
+                startLvaGraphResponse: {
+                    statusCode: 201,
+                    message: 'Start LVA Graph done'
+                },
+                graphInstance,
+                graphTopology
+            };
         }
         catch (ex) {
-            this.logger.log(['ModuleService', 'error'], `invokeModuleMethod: ${ex.message}`);
-        }
+            this.logger.log(['ModuleService', 'error'], `startLvaGraph error: ${ex.message}`);
 
-        return {
-            statusCode: 201,
-            message: 'statLvaGraph done'
-        };
+            return {
+                startLvaGraphResponse: {
+                    statusCode: 400,
+                    message: ex.mesage
+                },
+                graphInstance: null,
+                graphTopology: null
+            };
+        }
+    }
+
+    public async stopLvaGraph(graphInstance: any, graphTopology: any): Promise<ICommandResponse> {
+        try {
+            const methodParams = {
+                methodName: ``,
+                payload: null,
+                connectTimeoutInSeconds: 30,
+                responseTimeoutInSeconds: 30
+            };
+
+            if (graphInstance && graphTopology) {
+                this.logger.log(['ModuleService', 'info'], `### GraphInstanceStop`);
+                methodParams.methodName = `GraphInstanceStop`;
+                methodParams.payload = graphInstance;
+                await this.moduleClient.invokeMethod(this.moduleSettings.wpGatewayInstanceId, this.moduleSettings.wpLvaEdgeModuleId, methodParams);
+
+                this.logger.log(['ModuleService', 'info'], `### GraphInstanceDelete`);
+                methodParams.methodName = `GraphInstanceDelete`;
+                methodParams.payload = graphInstance;
+                await this.moduleClient.invokeMethod(this.moduleSettings.wpGatewayInstanceId, this.moduleSettings.wpLvaEdgeModuleId, methodParams);
+
+                this.logger.log(['ModuleService', 'info'], `### GraphTopologyDelete`);
+                methodParams.methodName = `GraphTopologyDelete`;
+                methodParams.payload = graphTopology;
+                await this.moduleClient.invokeMethod(this.moduleSettings.wpGatewayInstanceId, this.moduleSettings.wpLvaEdgeModuleId, methodParams);
+            }
+
+            return {
+                statusCode: 201,
+                message: `Successfully stopped LVA graph: ${_get(graphInstance, 'name') || '(no graph was running)'}`
+            };
+        }
+        catch (ex) {
+            this.logger.log(['ModuleService', 'error'], `stopLvaGraph error: ${ex.message}`);
+
+            return {
+                statusCode: 400,
+                message: ex.message
+            };
+        }
     }
 
     public async recordFromCamera(cameraInfo: any): Promise<any> {
@@ -801,6 +849,7 @@ export class ModuleService {
                     case ModuleInterface.Setting.DeviceTemplateId:
                     case ModuleInterface.Setting.GatewayInstanceId:
                     case ModuleInterface.Setting.GatewayModuleId:
+                    case ModuleInterface.Setting.LvaEdgeModuleId:
                         changedSettingResult = await this.moduleSettingChange(moduleSettingsForPatching, desiredSettingsKey, _get(desiredChangedSettings, `${desiredSettingsKey}`));
                         break;
 
@@ -867,6 +916,7 @@ export class ModuleService {
             case ModuleInterface.Setting.DeviceTemplateId:
             case ModuleInterface.Setting.GatewayInstanceId:
             case ModuleInterface.Setting.GatewayModuleId:
+            case ModuleInterface.Setting.LvaEdgeModuleId:
                 result.value = moduleSettingsForPatching[setting].value = value || '';
                 moduleSettingsForPatching[setting].handled = true;
                 break;
@@ -905,17 +955,12 @@ export class ModuleService {
     @bind
     // @ts-ignore
     private async addCameraDirectMethod(commandRequest: DeviceMethodRequest, commandResponse: DeviceMethodResponse) {
-        this.logger.log(['ModuleService', 'info'], `${ModuleInterface.Command.RestartModule} command received`);
-
-        let addCameraResponse: ICommandResponseParams = {
-            statusCode: 201,
-            message: 'Succeeded'
-        };
+        this.logger.log(['ModuleService', 'info'], `${ModuleInterface.Command.AddCamera} command received`);
 
         try {
             const paramPayload = _get(commandRequest, 'payload');
             if (typeof paramPayload !== 'object') {
-                throw new Error(`Missing or wrong payload time for command: ${ModuleInterface.Command.RestartModule}`);
+                throw new Error(`Missing or wrong payload time for command: ${ModuleInterface.Command.AddCamera}`);
             }
 
             const deviceProps = {
@@ -928,24 +973,21 @@ export class ModuleService {
                 model: _get(paramPayload, AddCameraCommandRequestParams.Model)
             };
 
-            this.logger.log(['ModuleService', 'info'], `Calling createAxisDevice with deviceProps: ${JSON.stringify(deviceProps, null, 4)}`);
-
             const provisionResult = await this.createAxisDevice(deviceProps);
 
-            addCameraResponse = {
-                statusCode: (provisionResult.dpsProvisionStatus === true && provisionResult.clientConnectionStatus === true) ? 201 : 400,
+            const statusCode = (provisionResult.dpsProvisionStatus === true && provisionResult.clientConnectionStatus === true) ? 201 : 400;
+            await commandResponse.send(statusCode, {
+                statusCode,
                 message: provisionResult.clientConnectionMessage
-            };
+            });
         }
         catch (ex) {
-            addCameraResponse = {
+            this.logger.log(['ModuleService', 'error'], `Error creating Axis camera device: ${ex.message}`);
+
+            await commandResponse.send(400, {
                 statusCode: 400,
                 message: ex.message
-            };
-
-            this.logger.log(['ModuleService', 'error'], `Error creating Axis camera device: ${ex.message}`);
+            });
         }
-
-        await commandResponse.send(addCameraResponse.statusCode, addCameraResponse);
     }
 }

@@ -3,7 +3,6 @@ import { HealthState } from './health';
 import {
     IDpsInfo,
     IProvisionResult,
-    ICommandResponseParams,
     ModuleService
 } from './module';
 import { Mqtt as IoTHubTransport } from 'azure-iot-device-mqtt';
@@ -78,6 +77,7 @@ const DeviceInterface = {
         CameraProcessingStarted: 'evCameraProcessingStarted',
         CameraProcessingStopped: 'evCameraProcessingStopped',
         StartLva: 'evStartLva',
+        StopLva: 'evStopLva',
         CameraSnippet: 'evCameraSnippet'
     },
     Setting: {
@@ -93,6 +93,7 @@ const DeviceInterface = {
     },
     Command: {
         StartLva: 'cmStartLva',
+        StopLva: 'cmStopLva',
         RecordCameraSnippet: 'cmRecordCameraSnippet'
     }
 };
@@ -178,6 +179,9 @@ export class AxisDevice {
     private deviceSettings: IDeviceSettings = {
         wpDetectionClass: ''
     };
+
+    private graphInstance: null;
+    private graphTopology: null;
 
     constructor(axisCameraMangementModule: ModuleService, deviceProps: IDeviceProps) {
         this.axisCameraManagementModule = axisCameraMangementModule;
@@ -305,6 +309,7 @@ export class AxisDevice {
             this.deviceClient.on('error', this.onDeviceClientError);
 
             this.deviceClient.onDeviceMethod(DeviceInterface.Command.StartLva, this.startLva);
+            this.deviceClient.onDeviceMethod(DeviceInterface.Command.StopLva, this.stopLva);
             this.deviceClient.onDeviceMethod(DeviceInterface.Command.RecordCameraSnippet, this.recordCameraSnippetDirectMethod);
             this.deviceClient.on('inputMessage', this.onHandleDownstreamMessages);
 
@@ -352,6 +357,20 @@ export class AxisDevice {
         }
         catch (ex) {
             this.logger.log(['AxisDevice', 'error'], `sendMeasurement: ${ex.message}`);
+            this.logger.log(['AxisDevice', 'error'], `inspect the error: ${JSON.stringify(ex, null, 4)}`);
+
+            // TODO:
+            // Detect DPS/Hub reprovisioning scenarios - sample exeption:
+            //
+            // [12:41:54 GMT+0000], [log,[AxisDevice, error]] data: inspect the error: {
+            //     "name": "UnauthorizedError",
+            //     "transportError": {
+            //         "name": "NotConnectedError",
+            //         "transportError": {
+            //             "code": 5
+            //         }
+            //     }
+            // }
         }
     }
 
@@ -490,53 +509,88 @@ export class AxisDevice {
     private async startLva(commandRequest: DeviceMethodRequest, commandResponse: DeviceMethodResponse) {
         this.logger.log(['AxisDevice', 'info'], `${DeviceInterface.Command.StartLva} command received`);
 
-        let startLvaResponse: ICommandResponseParams = {
-            statusCode: 201,
-            message: 'Succeeded'
-        };
-
         try {
-            const paramPayload = _get(commandRequest, 'payload');
-            if (!paramPayload) {
+            const graphType = _get(commandRequest, 'payload');
+            if (!graphType) {
                 throw new Error(`Missing or wrong payload time for command: ${DeviceInterface.Command.StartLva}`);
             }
 
-            this.logger.log(['AxisDevice', 'info'], `paramPayload is: ${paramPayload}`);
+            this.logger.log(['AxisDevice', 'info'], `graphType is: ${graphType}`);
 
             await this.sendMeasurement({
                 [DeviceInterface.Event.StartLva]: this.deviceProps.cameraId
             });
 
-            startLvaResponse = await this.axisCameraManagementModule.startLvaGraph(this.deviceProps, paramPayload);
+            const stopLvaGraphResponse = await this.axisCameraManagementModule.stopLvaGraph(this.graphInstance, this.graphTopology);
+            if (stopLvaGraphResponse.statusCode !== 201) {
+                return commandResponse.send(stopLvaGraphResponse.statusCode, stopLvaGraphResponse);
+            }
 
-            if (startLvaResponse.statusCode === 201) {
+            const {
+                startLvaGraphResponse,
+                graphInstance,
+                graphTopology
+            } = await this.axisCameraManagementModule.startLvaGraph(this.deviceProps, graphType);
+            this.logger.log(['AxisDevice', 'info'], `Axis camera mangement gateway returned with status: ${startLvaGraphResponse.statusCode}`);
+
+            if (_get(startLvaGraphResponse, 'statusCode') === 201) {
+                this.graphInstance = graphInstance;
+                this.graphTopology = graphTopology;
+
                 await this.sendMeasurement({
                     [DeviceInterface.Event.CameraProcessingStarted]: this.deviceProps.cameraId,
                     [DeviceInterface.State.CameraState]: CameraState.Active
                 });
             }
+
+            await commandResponse.send(startLvaGraphResponse.statusCode, startLvaGraphResponse);
         }
         catch (ex) {
-            startLvaResponse = {
+            this.logger.log(['AxisDevice', 'error'], `startLva error: ${ex.message}`);
+
+            await commandResponse.send(400, {
                 statusCode: 400,
                 message: ex.message
-            };
-
-            this.logger.log(['AxisDevice', 'error'], `Error starting LVA: ${ex.message}`);
+            });
         }
+    }
 
-        await commandResponse.send(startLvaResponse.statusCode, startLvaResponse);
+    @bind
+    // @ts-ignore
+    private async stopLva(commandRequest: DeviceMethodRequest, commandResponse: DeviceMethodResponse) {
+        this.logger.log(['AxisDevice', 'info'], `${DeviceInterface.Command.StopLva} command received`);
+
+        try {
+            await this.sendMeasurement({
+                [DeviceInterface.Event.StopLva]: this.deviceProps.cameraId
+            });
+
+            const stopLvaGraphResponse = await this.axisCameraManagementModule.stopLvaGraph(this.graphInstance, this.graphTopology);
+            this.logger.log(['AxisDevice', 'info'], `Axis camera mangement gateway returned with status: ${stopLvaGraphResponse.statusCode}`);
+
+            if (_get(stopLvaGraphResponse, 'statusCode') === 201) {
+                await this.sendMeasurement({
+                    [DeviceInterface.Event.CameraProcessingStopped]: this.deviceProps.cameraId,
+                    [DeviceInterface.State.CameraState]: CameraState.Inactive
+                });
+            }
+
+            await commandResponse.send(stopLvaGraphResponse.statusCode, stopLvaGraphResponse);
+        }
+        catch (ex) {
+            this.logger.log(['AxisDevice', 'error'], `Stop LVA error ${ex.message}`);
+
+            await commandResponse.send(400, {
+                statusCode: 400,
+                message: ex.message
+            });
+        }
     }
 
     @bind
     // @ts-ignore
     private async recordCameraSnippetDirectMethod(commandRequest: DeviceMethodRequest, commandResponse: DeviceMethodResponse) {
         this.logger.log(['AxisDevice', 'info'], `${DeviceInterface.Command.RecordCameraSnippet} command received`);
-
-        let cameraSnippetResponse: ICommandResponseParams = {
-            statusCode: 201,
-            message: 'Succeeded'
-        };
 
         try {
             await this.sendMeasurement({
@@ -548,17 +602,17 @@ export class AxisDevice {
                 cameraId: 'Axis1367'
             };
 
-            cameraSnippetResponse = await this.axisCameraManagementModule.recordFromCamera(cameraInfo);
+            const cameraSnippetResponse = await this.axisCameraManagementModule.recordFromCamera(cameraInfo);
+
+            await commandResponse.send(cameraSnippetResponse.statusCode, cameraSnippetResponse);
         }
         catch (ex) {
-            cameraSnippetResponse = {
+            this.logger.log(['AxisDevice', 'error'], `${ex.message}`);
+
+            await commandResponse.send(400, {
                 statusCode: 400,
                 message: ex.message
-            };
-
-            this.logger.log(['AxisDevice', 'error'], `${ex.message}`);
+            });
         }
-
-        await commandResponse.send(cameraSnippetResponse.statusCode, cameraSnippetResponse);
     }
 }

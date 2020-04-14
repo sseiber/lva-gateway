@@ -59,7 +59,7 @@ export class ModuleRoutes extends RoutePlugin {
             }
 
             const operationResult = await this.module.updateDevice({
-                deviceId,
+                cameraId: deviceId,
                 operationInfo: deviceProps
             });
 
@@ -91,7 +91,7 @@ export class ModuleRoutes extends RoutePlugin {
             }
 
             const operationResult = await this.module.deleteDevice({
-                deviceId,
+                cameraId: deviceId,
                 operationInfo: {
                     required: '1'
                 }
@@ -126,7 +126,7 @@ export class ModuleRoutes extends RoutePlugin {
             }
 
             const operationResult = await this.module.sendDeviceTelemetry({
-                deviceId,
+                cameraId: deviceId,
                 operationInfo: telemetry
             });
 
@@ -159,7 +159,7 @@ export class ModuleRoutes extends RoutePlugin {
             }
 
             const operationResult = await this.module.sendDeviceInferences({
-                deviceId,
+                cameraId: deviceId,
                 operationInfo: inferences
             });
 
