@@ -19,7 +19,7 @@ This project includes scripts for building the Docker image and for initial proj
 ### To do
 * Manage the "delete camera" flow
   - polling on the heath check to determine if still connected to the Hub
-  - gateway module should received the error that device is disconnected so gateway can manage the delete and re-provision of the device
+  - gateway module should receive the error that device is disconnected so gateway can manage the delete and re-provision of the device
   - device needs to return to what it was doing (rtsp feed, ai model, etc.)
-* Gateway module needs to keep track of devices in case it reboot and needs to re-provision each
+* Gateway module needs to keep track of devices in case it reboots and needs to re-provision each
   - need to store/persist device name, rtsp feed/creds, ai model etc.
