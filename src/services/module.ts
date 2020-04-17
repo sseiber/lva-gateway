@@ -4,12 +4,11 @@ import { LoggingService } from './logging';
 import { ConfigService } from './config';
 import { StorageService } from './storage';
 import { HealthState } from './health';
-import {
-    IDeviceProps,
-    StartLVARequestEnum,
-    AxisDevice
-} from './device';
+import { AmsCameraDevice } from './device';
 import { Mqtt } from 'azure-iot-device-mqtt';
+import { SymmetricKeySecurityClient } from 'azure-iot-security-symmetric-key';
+import { ProvisioningDeviceClient } from 'azure-iot-provisioning-device';
+import { Mqtt as ProvisioningTransport } from 'azure-iot-provisioning-device-mqtt';
 import {
     ModuleClient,
     Twin,
@@ -34,16 +33,7 @@ import * as _get from 'lodash.get';
 import * as _random from 'lodash.random';
 import { bind, emptyObj, forget } from '../utils';
 
-export interface IDpsInfo {
-    scopeId: string;
-    templateId: string;
-    iotcGatewayInstanceId: string;
-    iotcModuleId: string;
-    deviceId: string;
-    deviceKey: string;
-}
-
-type DeviceOperation = 'UPDATE_CAMERA' | 'DELETE_CAMERA' | 'SEND_TELEMETRY' | 'SEND_INFERENCES';
+type DeviceOperation = 'DELETE_CAMERA' | 'SEND_TELEMETRY' | 'SEND_INFERENCES';
 
 export interface ICameraOperationInfo {
     cameraId: string;
@@ -56,7 +46,7 @@ export interface IProvisionResult {
     dpsHubConnectionString: string;
     clientConnectionStatus: boolean;
     clientConnectionMessage: string;
-    axisDevice: AxisDevice;
+    amsCameraDevice: AmsCameraDevice;
 }
 
 export interface IDeviceOperationResult {
@@ -108,17 +98,7 @@ enum RestartModuleCommandRequestParams {
 
 enum AddCameraCommandRequestParams {
     CameraId = 'AddCameraRequestParams_CameraId',
-    CameraName = 'AddCameraRequestParams_CameraName',
-    RtspUrl = 'AddCameraRequestParams_RtspUrl',
-    RtspAuthUsername = 'AddCameraRequestParams_RtspAuthUsername',
-    RtspAuthPassword = 'AddCameraRequestParams_RtspAuthPassword',
-    Manufacturer = 'AddCameraRequestParams_Manufacturer',
-    Model = 'AddCameraRequestParams_Model'
-}
-
-export interface ICommandResponse {
-    statusCode: number;
-    message: string;
+    CameraName = 'AddCameraRequestParams_CameraName'
 }
 
 export const ModuleInterface = {
@@ -132,7 +112,6 @@ export const ModuleInterface = {
     },
     Event: {
         CreateCamera: 'evCreateCamera',
-        UpdateCamera: 'evUpdateCamera',
         DeleteCamera: 'evDeleteCamera',
         ModuleStarted: 'evModuleStarted',
         ModuleStopped: 'evModuleStopped',
@@ -162,12 +141,12 @@ const AxisManagementEdgeInputs = {
 
 const AxisManagementCommands = {
     CreateCamera: 'createcamera',
-    UpdateCamera: 'updatecamera',
     DeleteCamera: 'deletecamera',
     SendDeviceTelemetry: 'senddevicetelemetry',
     SendDeviceInferences: 'senddeviceinferences'
 };
 
+const defaultDpsProvisioningHost: string = 'global.azure-devices-provisioning.net';
 const defaultHealthCheckRetries: number = 3;
 
 @service('module')
@@ -206,12 +185,9 @@ export class ModuleService {
         wpGatewayModuleId: '',
         wpLvaEdgeModuleId: ''
     };
-    private axisDeviceMap = new Map<string, AxisDevice>();
+    private amsCameraDeviceMap = new Map<string, AmsCameraDevice>();
+    private dpsProvisioningHost: string = defaultDpsProvisioningHost;
     private healthCheckRetries: number = defaultHealthCheckRetries;
-
-    public getLogger() {
-        return this.logger;
-    }
 
     public async init(): Promise<void> {
         this.logger.log(['ModuleService', 'info'], 'initialize');
@@ -222,6 +198,7 @@ export class ModuleService {
 
         this.moduleIpAddress = ipAddress.address() || '127.0.0.1';
 
+        this.dpsProvisioningHost = this.config.get('dpsProvisioningHost') || defaultDpsProvisioningHost;
         this.healthCheckRetries = this.config.get('healthCheckRetries') || defaultHealthCheckRetries;
     }
 
@@ -241,24 +218,20 @@ export class ModuleService {
         this.healthState = result === true ? HealthState.Good : HealthState.Critical;
     }
 
-    public async createDevice(deviceProps: IDeviceProps): Promise<IProvisionResult> {
-        return this.createAxisDevice(deviceProps);
+    public async createCamera(cameraId: string, cameraName: string): Promise<IProvisionResult> {
+        return this.createAmsCameraDevice(cameraId, cameraName);
     }
 
-    public async updateDevice(cameraOperationInfo: ICameraOperationInfo): Promise<IDeviceOperationResult> {
-        return this.axisDeviceOperation('UPDATE_CAMERA', cameraOperationInfo);
+    public async deleteCamera(cameraOperationInfo: ICameraOperationInfo): Promise<IDeviceOperationResult> {
+        return this.amsCameraDeviceOperation('DELETE_CAMERA', cameraOperationInfo);
     }
 
-    public async deleteDevice(cameraOperationInfo: ICameraOperationInfo): Promise<IDeviceOperationResult> {
-        return this.axisDeviceOperation('DELETE_CAMERA', cameraOperationInfo);
+    public async sendCameraTelemetry(cameraOperationInfo: ICameraOperationInfo): Promise<IDeviceOperationResult> {
+        return this.amsCameraDeviceOperation('SEND_TELEMETRY', cameraOperationInfo);
     }
 
-    public async sendDeviceTelemetry(cameraOperationInfo: ICameraOperationInfo): Promise<IDeviceOperationResult> {
-        return this.axisDeviceOperation('SEND_TELEMETRY', cameraOperationInfo);
-    }
-
-    public async sendDeviceInferences(cameraOperationInfo: ICameraOperationInfo): Promise<IDeviceOperationResult> {
-        return this.axisDeviceOperation('SEND_INFERENCES', cameraOperationInfo);
+    public async sendCameraInferences(cameraOperationInfo: ICameraOperationInfo): Promise<IDeviceOperationResult> {
+        return this.amsCameraDeviceOperation('SEND_INFERENCES', cameraOperationInfo);
     }
 
     @bind
@@ -289,7 +262,7 @@ export class ModuleService {
 
             this.healthState = healthState;
 
-            for (const device of this.axisDeviceMap) {
+            for (const device of this.amsCameraDeviceMap) {
                 forget(device[1].getHealth);
             }
         }
@@ -334,6 +307,11 @@ export class ModuleService {
         }
     }
 
+    @bind
+    public async invokeMethod(methodParams: any) {
+        await this.moduleClient.invokeMethod(this.moduleSettings.wpGatewayInstanceId, this.moduleSettings.wpLvaEdgeModuleId, methodParams);
+    }
+
     public async restartModule(timeout: number, reason: string): Promise<void> {
         this.logger.log(['ModuleService', 'info'], `Module restart requested...`);
 
@@ -358,150 +336,6 @@ export class ModuleService {
         // let Docker restart our container
         this.logger.log(['ModuleService', 'error'], `Exiting container now`);
         process.exit(1);
-    }
-
-    public async startLvaGraph(deviceProps: IDeviceProps, graphType: string): Promise<{ startLvaGraphResponse: ICommandResponse, graphInstance: any, graphTopology: any }> {
-        this.logger.log(['ModuleService', 'info'], `startLvaGraph with graphType: ${graphType}`);
-
-        try {
-            let graphName = '';
-
-            switch (graphType) {
-                case StartLVARequestEnum.MotionDetection:
-                    graphName = 'motion';
-                    break;
-
-                case StartLVARequestEnum.PeopleDetection:
-                    graphName = 'people';
-                    break;
-
-                case StartLVARequestEnum.CarDetection:
-                    graphName = 'car';
-                    break;
-            }
-
-            const graphInstancePath = pathResolve(_get(this.server, 'settings.app.storageRootDirectory'), `${graphName}GraphInstance.json`);
-            const graphInstance = fse.readJSONSync(graphInstancePath);
-
-            graphInstance.name = (_get(graphInstance, 'name') || '').replace('###RtspCameraId', deviceProps.cameraId);
-            graphInstance.properties.topologyName = (_get(graphInstance, 'properties.topologyName') || '###RtspCameraId').replace('###RtspCameraId', deviceProps.cameraId);
-
-            this.logger.log(['ModuleService', 'info'], `### graphFilePath: ${graphInstancePath}`);
-            this.logger.log(['ModuleService', 'info'], `### graphData: ${JSON.stringify(graphInstance, null, 4)}`);
-
-            const graphTopologyPath = pathResolve(_get(this.server, 'settings.app.storageRootDirectory'), `${graphName}GraphTopology.json`);
-            const graphTopology = fse.readJSONSync(graphTopologyPath);
-
-            graphTopology.name = (_get(graphTopology, 'name') || '').replace('###RtspCameraId', deviceProps.cameraId);
-            graphTopology.properties.sources[0].name = deviceProps.cameraId;
-            graphTopology.properties.sources[0].endpoint.url = deviceProps.rtspUrl;
-            graphTopology.properties.sources[0].endpoint.credentials.username = deviceProps.rtspAuthUsername;
-            graphTopology.properties.sources[0].endpoint.credentials.password = deviceProps.rtspAuthPassword;
-            graphTopology.properties.processors[0].inputs[1].moduleName = deviceProps.cameraId;
-            graphTopology.properties.sinks[0].filePathPattern = (_get(graphTopology, 'properties.sinks.0.filePathPattern') || '###RtspCameraId').replace('###RtspCameraId', deviceProps.cameraId);
-
-            this.logger.log(['ModuleService', 'info'], `### graphFilePath: ${graphTopologyPath}`);
-            this.logger.log(['ModuleService', 'info'], `### graphData: ${JSON.stringify(graphTopology, null, 4)}`);
-
-            const methodParams = {
-                methodName: ``,
-                payload: null,
-                connectTimeoutInSeconds: 30,
-                responseTimeoutInSeconds: 30
-            };
-
-            this.logger.log(['ModuleService', 'info'], `### GraphTopologySet`);
-            methodParams.methodName = `GraphTopologySet`;
-            methodParams.payload = graphTopology;
-            await this.moduleClient.invokeMethod(this.moduleSettings.wpGatewayInstanceId, this.moduleSettings.wpLvaEdgeModuleId, methodParams);
-
-            this.logger.log(['ModuleService', 'info'], `### GraphInstanceSet`);
-            methodParams.methodName = `GraphInstanceSet`;
-            methodParams.payload = graphInstance;
-            await this.moduleClient.invokeMethod(this.moduleSettings.wpGatewayInstanceId, this.moduleSettings.wpLvaEdgeModuleId, methodParams);
-
-            this.logger.log(['ModuleService', 'info'], `### GraphInstanceStart`);
-            methodParams.methodName = `GraphInstanceStart`;
-            methodParams.payload = graphInstance;
-            await this.moduleClient.invokeMethod(this.moduleSettings.wpGatewayInstanceId, this.moduleSettings.wpLvaEdgeModuleId, methodParams);
-
-            return {
-                startLvaGraphResponse: {
-                    statusCode: 201,
-                    message: 'Start LVA Graph done'
-                },
-                graphInstance,
-                graphTopology
-            };
-        }
-        catch (ex) {
-            this.logger.log(['ModuleService', 'error'], `startLvaGraph error: ${ex.message}`);
-
-            return {
-                startLvaGraphResponse: {
-                    statusCode: 400,
-                    message: ex.mesage
-                },
-                graphInstance: null,
-                graphTopology: null
-            };
-        }
-    }
-
-    public async stopLvaGraph(graphInstance: any, graphTopology: any): Promise<ICommandResponse> {
-        try {
-            const methodParams = {
-                methodName: ``,
-                payload: null,
-                connectTimeoutInSeconds: 30,
-                responseTimeoutInSeconds: 30
-            };
-
-            if (graphInstance && graphTopology) {
-                this.logger.log(['ModuleService', 'info'], `### GraphInstanceStop`);
-                methodParams.methodName = `GraphInstanceStop`;
-                methodParams.payload = graphInstance;
-                await this.moduleClient.invokeMethod(this.moduleSettings.wpGatewayInstanceId, this.moduleSettings.wpLvaEdgeModuleId, methodParams);
-
-                this.logger.log(['ModuleService', 'info'], `### GraphInstanceDelete`);
-                methodParams.methodName = `GraphInstanceDelete`;
-                methodParams.payload = graphInstance;
-                await this.moduleClient.invokeMethod(this.moduleSettings.wpGatewayInstanceId, this.moduleSettings.wpLvaEdgeModuleId, methodParams);
-
-                this.logger.log(['ModuleService', 'info'], `### GraphTopologyDelete`);
-                methodParams.methodName = `GraphTopologyDelete`;
-                methodParams.payload = graphTopology;
-                await this.moduleClient.invokeMethod(this.moduleSettings.wpGatewayInstanceId, this.moduleSettings.wpLvaEdgeModuleId, methodParams);
-            }
-
-            return {
-                statusCode: 201,
-                message: `Successfully stopped LVA graph: ${_get(graphInstance, 'name') || '(no graph was running)'}`
-            };
-        }
-        catch (ex) {
-            this.logger.log(['ModuleService', 'error'], `stopLvaGraph error: ${ex.message}`);
-
-            return {
-                statusCode: 400,
-                message: ex.message
-            };
-        }
-    }
-
-    public async recordFromCamera(cameraInfo: any): Promise<any> {
-        const triggerData = {
-            eventType: 'Microsoft.Media.Signaling.IoTHub',
-            eventTarget: cameraInfo.cameraId
-        };
-        const iotcMessage = new Message(JSON.stringify(triggerData));
-
-        await this.moduleClient.sendOutputEvent('lvaTrigger', iotcMessage);
-
-        return {
-            statusCode: 201,
-            message: 'recordFromCamera request sent'
-        };
     }
 
     private async getSystemProperties(): Promise<ISystemProperties> {
@@ -631,23 +465,19 @@ export class ModuleService {
 
                     switch (edgeInputCameraCommand) {
                         case AxisManagementCommands.CreateCamera:
-                            await this.createAxisDevice(edgeInputCameraCommandData);
-                            break;
-
-                        case AxisManagementCommands.UpdateCamera:
-                            await this.axisDeviceOperation('UPDATE_CAMERA', edgeInputCameraCommandData);
+                            await this.createAmsCameraDevice(_get(edgeInputCameraCommandData, 'cameraId'), _get(edgeInputCameraCommandData, 'cameraName'));
                             break;
 
                         case AxisManagementCommands.DeleteCamera:
-                            await this.axisDeviceOperation('DELETE_CAMERA', edgeInputCameraCommandData);
+                            await this.amsCameraDeviceOperation('DELETE_CAMERA', edgeInputCameraCommandData);
                             break;
 
                         case AxisManagementCommands.SendDeviceTelemetry:
-                            await this.axisDeviceOperation('SEND_TELEMETRY', edgeInputCameraCommandData);
+                            await this.amsCameraDeviceOperation('SEND_TELEMETRY', edgeInputCameraCommandData);
                             break;
 
                         case AxisManagementCommands.SendDeviceInferences:
-                            await this.axisDeviceOperation('SEND_INFERENCES', edgeInputCameraCommandData);
+                            await this.amsCameraDeviceOperation('SEND_INFERENCES', edgeInputCameraCommandData);
                             break;
 
                         default:
@@ -671,8 +501,8 @@ export class ModuleService {
         }
     }
 
-    private async createAxisDevice(deviceProps: IDeviceProps): Promise<IProvisionResult> {
-        this.logger.log(['ModuleService', 'info'], `createAxisDevice with provisionInfo: ${JSON.stringify(deviceProps, null, 4)}`);
+    private async createAmsCameraDevice(cameraId: string, cameraName: string): Promise<IProvisionResult> {
+        this.logger.log(['ModuleService', 'info'], `createAmsCameraDevice - cameraId: ${cameraId}, cameraName: ${cameraName}`);
 
         let deviceProvisionResult: IProvisionResult = {
             dpsProvisionStatus: false,
@@ -680,44 +510,101 @@ export class ModuleService {
             dpsHubConnectionString: '',
             clientConnectionStatus: false,
             clientConnectionMessage: '',
-            axisDevice: null
+            amsCameraDevice: null
         };
 
-        if (!this.moduleSettings.wpMasterDeviceProvisioningKey
-            || !this.moduleSettings.wpScopeId
-            || !this.moduleSettings.wpDeviceTemplateId
-            || !this.moduleSettings.wpGatewayInstanceId
-            || !this.moduleSettings.wpGatewayModuleId) {
-            deviceProvisionResult.dpsProvisionStatus = false;
-            deviceProvisionResult.dpsProvisionMessage = `Missing camera management settings (Master provision key, scopeId, deviceTemplateId, gatewayInstanceId, gatewayModuleId)`;
-            this.logger.log(['ModuleService', 'error'], deviceProvisionResult.dpsProvisionMessage);
-
-            return deviceProvisionResult;
-        }
-
         try {
-            const deviceKey = this.computeDeviceKey(deviceProps.cameraId, this.moduleSettings.wpMasterDeviceProvisioningKey);
-            const dpsInfo: IDpsInfo = {
-                scopeId: this.moduleSettings.wpScopeId,
-                templateId: this.moduleSettings.wpDeviceTemplateId,
-                iotcGatewayInstanceId: this.moduleSettings.wpGatewayInstanceId,
-                iotcModuleId: this.moduleSettings.wpGatewayModuleId,
-                deviceId: deviceProps.cameraId,
-                deviceKey
-            };
+            if (!cameraId) {
+                deviceProvisionResult.dpsProvisionStatus = false;
+                deviceProvisionResult.dpsProvisionMessage = `Missing device configuration - skipping DPS provisioning`;
 
-            deviceProvisionResult = await AxisDevice.createAndProvisionAxisDevice(this, dpsInfo, deviceProps);
+                this.logger.log(['ModuleService', 'error'], deviceProvisionResult.dpsProvisionMessage);
+
+                return deviceProvisionResult;
+            }
+
+            if (!this.moduleSettings.wpMasterDeviceProvisioningKey
+                || !this.moduleSettings.wpScopeId
+                || !this.moduleSettings.wpDeviceTemplateId
+                || !this.moduleSettings.wpGatewayInstanceId
+                || !this.moduleSettings.wpGatewayModuleId) {
+                deviceProvisionResult.dpsProvisionStatus = false;
+                deviceProvisionResult.dpsProvisionMessage = `Missing camera management settings (Master provision key, scopeId, deviceTemplateId, gatewayInstanceId, gatewayModuleId)`;
+                this.logger.log(['ModuleService', 'error'], deviceProvisionResult.dpsProvisionMessage);
+
+                return deviceProvisionResult;
+            }
+
+            deviceProvisionResult = await this.createAndProvisionAmsCameraDevice(cameraId, cameraName);
             if (deviceProvisionResult.dpsProvisionStatus === true && deviceProvisionResult.clientConnectionStatus === true) {
-                this.logger.log(['ModuleService', 'info'], `Succesfully provisioned device with id: ${deviceProps.cameraId}`);
+                this.logger.log(['ModuleService', 'info'], `Succesfully provisioned camera device with id: ${cameraId}`);
 
-                this.axisDeviceMap.set(deviceProps.cameraId, deviceProvisionResult.axisDevice);
+                this.amsCameraDeviceMap.set(cameraId, deviceProvisionResult.amsCameraDevice);
 
-                await this.sendMeasurement({ [ModuleInterface.Event.CreateCamera]: deviceProps.cameraId });
+                await this.sendMeasurement({ [ModuleInterface.Event.CreateCamera]: cameraId });
             }
         }
         catch (ex) {
             deviceProvisionResult.dpsProvisionStatus = false;
             deviceProvisionResult.dpsProvisionMessage = `Error while processing downstream message: ${ex.message}`;
+
+            this.logger.log(['ModuleService', 'error'], deviceProvisionResult.dpsProvisionMessage);
+        }
+
+        return deviceProvisionResult;
+    }
+
+    private async createAndProvisionAmsCameraDevice(cameraId: string, cameraName: string): Promise<IProvisionResult> {
+        this.logger.log(['ModuleService', 'info'], `Provisioning new device - id: ${cameraId}`);
+
+        const deviceProvisionResult: IProvisionResult = {
+            dpsProvisionStatus: false,
+            dpsProvisionMessage: '',
+            dpsHubConnectionString: '',
+            clientConnectionStatus: false,
+            clientConnectionMessage: '',
+            amsCameraDevice: null
+        };
+
+        try {
+            const deviceKey = this.computeDeviceKey(cameraId, this.moduleSettings.wpMasterDeviceProvisioningKey);
+            const provisioningSecurityClient = new SymmetricKeySecurityClient(cameraId, deviceKey);
+            const provisioningClient = ProvisioningDeviceClient.create(this.dpsProvisioningHost, this.moduleSettings.wpScopeId, new ProvisioningTransport(), provisioningSecurityClient);
+
+            provisioningClient.setProvisioningPayload({
+                iotcModelId: this.moduleSettings.wpDeviceTemplateId,
+                iotcGateway: {
+                    iotcGatewayId: this.moduleSettings.wpGatewayInstanceId,
+                    iotcModuleId: this.moduleSettings.wpGatewayModuleId
+                }
+            });
+
+            const dpsConnectionString = await new Promise<string>((resolve, reject) => {
+                provisioningClient.register((dpsError, dpsResult) => {
+                    if (dpsError) {
+                        return reject(dpsError);
+                    }
+
+                    this.logger.log(['ModuleService', 'info'], `DPS registration succeeded - hub: ${dpsResult.assignedHub}`);
+
+                    return resolve(`HostName=${dpsResult.assignedHub};DeviceId=${dpsResult.deviceId};SharedAccessKey=${deviceKey}`);
+                });
+            });
+
+            deviceProvisionResult.dpsProvisionStatus = true;
+            deviceProvisionResult.dpsProvisionMessage = `IoT Central successfully provisioned device: ${cameraId}`;
+            deviceProvisionResult.dpsHubConnectionString = dpsConnectionString;
+
+            deviceProvisionResult.amsCameraDevice = new AmsCameraDevice(this.server.log, this.invokeMethod, this.graphInstance, this.graphTopology, cameraId, cameraName);
+
+            const { clientConnectionStatus, clientConnectionMessage } = await deviceProvisionResult.amsCameraDevice.connectDeviceClient(deviceProvisionResult.dpsHubConnectionString);
+            deviceProvisionResult.clientConnectionStatus = clientConnectionStatus;
+            deviceProvisionResult.clientConnectionMessage = clientConnectionMessage;
+        }
+        catch (ex) {
+            deviceProvisionResult.dpsProvisionStatus = false;
+            deviceProvisionResult.dpsProvisionMessage = `Error while provisioning device: ${ex.message}`;
+
             this.logger.log(['ModuleService', 'error'], deviceProvisionResult.dpsProvisionMessage);
         }
 
@@ -728,7 +615,32 @@ export class ModuleService {
         return crypto.createHmac('SHA256', Buffer.from(masterKey, 'base64')).update(deviceId, 'utf8').digest('base64');
     }
 
-    private async axisDeviceOperation(deviceOperation: DeviceOperation, cameraOperationInfo: ICameraOperationInfo): Promise<IDeviceOperationResult> {
+    private loadCameraGraph() {
+        const graphInstancePath = pathResolve(_get(this.server, 'settings.app.storageRootDirectory'), `${graphName}GraphInstance.json`);
+        const graphInstance = fse.readJSONSync(graphInstancePath);
+
+        graphInstance.name = (_get(graphInstance, 'name') || '').replace('###RtspCameraId', deviceProps.cameraId);
+        graphInstance.properties.topologyName = (_get(graphInstance, 'properties.topologyName') || '###RtspCameraId').replace('###RtspCameraId', deviceProps.cameraId);
+
+        this.logger.log(['ModuleService', 'info'], `### graphFilePath: ${graphInstancePath}`);
+        this.logger.log(['ModuleService', 'info'], `### graphData: ${JSON.stringify(graphInstance, null, 4)}`);
+
+        const graphTopologyPath = pathResolve(_get(this.server, 'settings.app.storageRootDirectory'), `${graphName}GraphTopology.json`);
+        const graphTopology = fse.readJSONSync(graphTopologyPath);
+
+        graphTopology.name = (_get(graphTopology, 'name') || '').replace('###RtspCameraId', deviceProps.cameraId);
+        graphTopology.properties.sources[0].name = deviceProps.cameraId;
+        graphTopology.properties.sources[0].endpoint.url = deviceProps.rtspUrl;
+        graphTopology.properties.sources[0].endpoint.credentials.username = deviceProps.rtspAuthUsername;
+        graphTopology.properties.sources[0].endpoint.credentials.password = deviceProps.rtspAuthPassword;
+        graphTopology.properties.processors[0].inputs[1].moduleName = deviceProps.cameraId;
+        graphTopology.properties.sinks[0].filePathPattern = (_get(graphTopology, 'properties.sinks.0.filePathPattern') || '###RtspCameraId').replace('###RtspCameraId', deviceProps.cameraId);
+
+        this.logger.log(['ModuleService', 'info'], `### graphFilePath: ${graphTopologyPath}`);
+        this.logger.log(['ModuleService', 'info'], `### graphData: ${JSON.stringify(graphTopology, null, 4)}`);
+    }
+
+    private async amsCameraDeviceOperation(deviceOperation: DeviceOperation, cameraOperationInfo: ICameraOperationInfo): Promise<IDeviceOperationResult> {
         this.logger.log(['ModuleService', 'info'], `Sending Axis telemetry: ${JSON.stringify(cameraOperationInfo, null, 4)}`);
 
         const operationResult = {
@@ -745,8 +657,8 @@ export class ModuleService {
             return operationResult;
         }
 
-        const axisDevice = this.axisDeviceMap.get(cameraId);
-        if (!axisDevice) {
+        const amsCameraDevice = this.amsCameraDeviceMap.get(cameraId);
+        if (!amsCameraDevice) {
             operationResult.message = `Error: Not device exists with cameraId: ${cameraId}`;
 
             this.logger.log(['ModuleService', 'error'], operationResult.message);
@@ -755,7 +667,7 @@ export class ModuleService {
         }
 
         const operationInfo = _get(cameraOperationInfo, 'operationInfo');
-        if (!operationInfo || emptyObj(operationInfo)) {
+        if (!operationInfo) {
             operationResult.message = `Error: missing operationInfo data`;
 
             this.logger.log(['ModuleService', 'error'], operationResult.message);
@@ -764,24 +676,18 @@ export class ModuleService {
         }
 
         switch (deviceOperation) {
-            case 'UPDATE_CAMERA':
-                await this.sendMeasurement({ [ModuleInterface.Event.UpdateCamera]: cameraId });
-
-                await axisDevice.updateCamera(operationInfo);
-                break;
-
             case 'DELETE_CAMERA':
                 await this.sendMeasurement({ [ModuleInterface.Event.DeleteCamera]: cameraId });
 
-                await axisDevice.deleteCamera();
+                await amsCameraDevice.deleteCamera();
                 break;
 
             case 'SEND_TELEMETRY':
-                await axisDevice.sendTelemetry(operationInfo);
+                await amsCameraDevice.sendTelemetry(operationInfo);
                 break;
 
             case 'SEND_INFERENCES':
-                await axisDevice.processAxisInferences(operationInfo);
+                await amsCameraDevice.processAxisInferences(operationInfo);
                 break;
 
             default:
@@ -963,19 +869,13 @@ export class ModuleService {
                 throw new Error(`Missing or wrong payload time for command: ${ModuleInterface.Command.AddCamera}`);
             }
 
-            const deviceProps = {
-                cameraId: _get(paramPayload, AddCameraCommandRequestParams.CameraId),
-                cameraName: _get(paramPayload, AddCameraCommandRequestParams.CameraName),
-                rtspUrl: _get(paramPayload, AddCameraCommandRequestParams.RtspUrl),
-                rtspAuthUsername: _get(paramPayload, AddCameraCommandRequestParams.RtspAuthUsername),
-                rtspAuthPassword: _get(paramPayload, AddCameraCommandRequestParams.RtspAuthPassword),
-                manufacturer: _get(paramPayload, AddCameraCommandRequestParams.Manufacturer),
-                model: _get(paramPayload, AddCameraCommandRequestParams.Model)
-            };
+            const cameraId = _get(paramPayload, AddCameraCommandRequestParams.CameraId);
+            const cameraName = _get(paramPayload, AddCameraCommandRequestParams.CameraName);
 
-            const provisionResult = await this.createAxisDevice(deviceProps);
+            const provisionResult = await this.createAmsCameraDevice(cameraId, cameraName);
 
             const statusCode = (provisionResult.dpsProvisionStatus === true && provisionResult.clientConnectionStatus === true) ? 201 : 400;
+
             await commandResponse.send(statusCode, {
                 statusCode,
                 message: provisionResult.clientConnectionMessage

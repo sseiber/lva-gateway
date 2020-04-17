@@ -36,7 +36,7 @@
                     }
                 },
                 "modules": {
-                    "AxisCameraManagementModule": {
+                    "lvaGateway": {
                         "settings": {
                             "image": "<YOUR_MODULE_NAME>",
                             "createOptions": "{\"HostConfig\":{\"PortBindings\":{\"9070/tcp\":[{\"HostPort\":\"9070\"}]},\"Binds\":[\"/data/misc:/data/misc\"]}}"
@@ -65,7 +65,7 @@
                 }
             }
         },
-        "AxisCameraManagementModule": {
+        "lvaGateway": {
             "properties.desired": {
                 "wpMasterDeviceProvisioningKey": "",
                 "wpScopeId": "",

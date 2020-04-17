@@ -1,28 +1,174 @@
 {
-    "@id": "urn:AxisCommunications:AxisCamera:1",
+    "@id": "urn:AzureMediaServices:AmsCameraDevice:1",
     "@type": "CapabilityModel",
     "implements": [
         {
             "@type": "InterfaceInstance",
             "displayName": {
-                "en": "Settings"
+                "en": "AMS LVA Interface"
             },
-            "name": "AxisCameraSettings",
+            "name": "LvaInterface",
             "schema": {
-                "@id": "urn:AxisCommunications:AxisCameraSettings:1",
+                "@id": "urn:AzureMediaServices:LvaInterface:1",
                 "@type": "Interface",
                 "displayName": {
-                    "en": "Settings"
+                    "en": "LVA Interface"
                 },
                 "contents": [
                     {
-                        "@type": "Property",
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
                         "displayName": {
-                            "en": "Detection Class"
+                            "en": "Graph Instance Created"
                         },
-                        "name": "wpDetectionClass",
-                        "writable": true,
+                        "name": "evGraphInstanceCreated",
                         "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Graph Instance Deleted"
+                        },
+                        "name": "evGraphInstanceDeleted",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Graph Instance Started"
+                        },
+                        "name": "evGraphInstanceStarted",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Graph Instance Stopped"
+                        },
+                        "name": "evGraphInstanceStopped",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Media Recording Started"
+                        },
+                        "name": "evMediaRecordingStarted",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Start LVA Command"
+                        },
+                        "name": "evStartLvaGraphCommandReceived",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Stop LVA Command"
+                        },
+                        "name": "evStopLvaGraphCommandReceived",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": "Command",
+                        "commandType": "asynchronous",
+                        "response": {
+                            "@type": "SchemaField",
+                            "displayName": {
+                                "en": "StartLVAResponse"
+                            },
+                            "name": "StartLVAResponse",
+                            "schema": {
+                                "@type": "Object",
+                                "displayName": {
+                                    "en": "Object"
+                                },
+                                "fields": [
+                                    {
+                                        "@type": "SchemaField",
+                                        "displayName": {
+                                            "en": "StatusCode"
+                                        },
+                                        "name": "statusCode",
+                                        "schema": "integer"
+                                    },
+                                    {
+                                        "@type": "SchemaField",
+                                        "displayName": {
+                                            "en": "Message"
+                                        },
+                                        "name": "message",
+                                        "schema": "string"
+                                    }
+                                ]
+                            }
+                        },
+                        "displayName": {
+                            "en": "Start LVA Processing"
+                        },
+                        "name": "cmStartLvaProcessing"
+                    },
+                    {
+                        "@type": "Command",
+                        "commandType": "asynchronous",
+                        "response": {
+                            "@type": "SchemaField",
+                            "displayName": {
+                                "en": "StopLVAResponse"
+                            },
+                            "name": "StopLVAResponse",
+                            "schema": {
+                                "@type": "Object",
+                                "displayName": {
+                                    "en": "Object"
+                                },
+                                "fields": [
+                                    {
+                                        "@type": "SchemaField",
+                                        "displayName": {
+                                            "en": "StatusCode"
+                                        },
+                                        "name": "statusCode",
+                                        "schema": "integer"
+                                    },
+                                    {
+                                        "@type": "SchemaField",
+                                        "displayName": {
+                                            "en": "Message"
+                                        },
+                                        "name": "message",
+                                        "schema": "string"
+                                    }
+                                ]
+                            }
+                        },
+                        "displayName": {
+                            "en": "Stop LVA Processing"
+                        },
+                        "name": "cmStopLvaProcessing"
                     }
                 ]
             }
@@ -30,14 +176,14 @@
         {
             "@type": "InterfaceInstance",
             "displayName": {
-                "en": "Camera Information"
+                "en": "AMS Camera Device Interface"
             },
-            "name": "AxisCameraInterface",
+            "name": "AmsCameraDeviceInterface",
             "schema": {
-                "@id": "urn:AxisCommunications:AxisCameraInterface:1",
+                "@id": "urn:AzureMediaServices:AmsCameraDeviceInterface:1",
                 "@type": "Interface",
                 "displayName": {
-                    "en": "Camera Information"
+                    "en": "AMS Camera Device Interface"
                 },
                 "contents": [
                     {
@@ -207,112 +353,11 @@
                         }
                     },
                     {
-                        "@type": [
-                            "Telemetry",
-                            "SemanticType/Event"
-                        ],
-                        "displayName": {
-                            "en": "Create Camera"
-                        },
-                        "name": "evCreateCamera",
-                        "schema": "string"
-                    },
-                    {
-                        "@type": [
-                            "Telemetry",
-                            "SemanticType/Event"
-                        ],
-                        "displayName": {
-                            "en": "Update Camera"
-                        },
-                        "name": "evUpdateCamera",
-                        "schema": "string"
-                    },
-                    {
-                        "@type": [
-                            "Telemetry",
-                            "SemanticType/Event"
-                        ],
-                        "displayName": {
-                            "en": "Camera Processing Started"
-                        },
-                        "name": "evCameraProcessingStarted",
-                        "schema": "string"
-                    },
-                    {
-                        "@type": [
-                            "Telemetry",
-                            "SemanticType/Event"
-                        ],
-                        "displayName": {
-                            "en": "Camera Processing Stopped"
-                        },
-                        "name": "evCameraProcessingStopped",
-                        "schema": "string"
-                    },
-                    {
-                        "@type": [
-                            "Telemetry",
-                            "SemanticType/Event"
-                        ],
-                        "displayName": {
-                            "en": "Start LVA"
-                        },
-                        "name": "evStartLva",
-                        "schema": "string"
-                    },
-                    {
-                        "@type": [
-                            "Telemetry",
-                            "SemanticType/Event"
-                        ],
-                        "displayName": {
-                            "en": "Stop LVA"
-                        },
-                        "name": "evStopLva",
-                        "schema": "string"
-                    },
-                    {
-                        "@type": [
-                            "Telemetry",
-                            "SemanticType/Event"
-                        ],
-                        "displayName": {
-                            "en": "Camera Snippet"
-                        },
-                        "name": "evCameraSnippet",
-                        "schema": "string"
-                    },
-                    {
                         "@type": "Property",
                         "displayName": {
                             "en": "Camera Name"
                         },
                         "name": "rpCameraName",
-                        "schema": "string"
-                    },
-                    {
-                        "@type": "Property",
-                        "displayName": {
-                            "en": "RTSP Url"
-                        },
-                        "name": "rpRtspUrl",
-                        "schema": "string"
-                    },
-                    {
-                        "@type": "Property",
-                        "displayName": {
-                            "en": "RTSP Auth Username"
-                        },
-                        "name": "rtspAuthUsername",
-                        "schema": "string"
-                    },
-                    {
-                        "@type": "Property",
-                        "displayName": {
-                            "en": "RTSP Auth Password"
-                        },
-                        "name": "rtspAuthPassword",
                         "schema": "string"
                     },
                     {
@@ -332,168 +377,38 @@
                         "schema": "string"
                     },
                     {
-                        "@type": "Command",
-                        "commandType": "asynchronous",
-                        "request": {
-                            "@type": "SchemaField",
-                            "displayName": {
-                                "en": "StartLVARequest"
-                            },
-                            "name": "StartLVARequest",
-                            "schema": {
-                                "@type": "Enum",
-                                "displayName": {
-                                    "en": "Enum"
-                                },
-                                "valueSchema": "string",
-                                "enumValues": [
-                                    {
-                                        "@type": "EnumValue",
-                                        "displayName": {
-                                            "en": "Motion Detection"
-                                        },
-                                        "enumValue": "StartLVARequestEnum_MotionDetection",
-                                        "name": "StartLVARequestEnum_MotionDetection"
-                                    },
-                                    {
-                                        "@type": "EnumValue",
-                                        "displayName": {
-                                            "en": "People Detection"
-                                        },
-                                        "enumValue": "StartLVARequestEnum_PeopleDetection",
-                                        "name": "StartLVARequestEnum_PeopleDetection"
-                                    },
-                                    {
-                                        "@type": "EnumValue",
-                                        "displayName": {
-                                            "en": "Car Detection"
-                                        },
-                                        "enumValue": "StartLVARequestEnum_CarDetection",
-                                        "name": "StartLVARequestEnum_CarDetection"
-                                    }
-                                ]
-                            }
-                        },
-                        "response": {
-                            "@type": "SchemaField",
-                            "displayName": {
-                                "en": "StartLVAResponse"
-                            },
-                            "name": "StartLVAResponse",
-                            "schema": {
-                                "@type": "Object",
-                                "displayName": {
-                                    "en": "Object"
-                                },
-                                "fields": [
-                                    {
-                                        "@type": "SchemaField",
-                                        "displayName": {
-                                            "en": "StatusCode"
-                                        },
-                                        "name": "statusCode",
-                                        "schema": "integer"
-                                    },
-                                    {
-                                        "@type": "SchemaField",
-                                        "displayName": {
-                                            "en": "Message"
-                                        },
-                                        "name": "message",
-                                        "schema": "string"
-                                    }
-                                ]
-                            }
-                        },
+                        "@type": "Property",
                         "displayName": {
-                            "en": "Start LVA"
+                            "en": "RTSP Url"
                         },
-                        "name": "cmStartLva"
+                        "name": "wpRtspUrl",
+                        "writable": true,
+                        "schema": "string"
                     },
                     {
-                        "@type": "Command",
-                        "commandType": "asynchronous",
-                        "response": {
-                            "@type": "SchemaField",
-                            "displayName": {
-                                "en": "StopLVAResponse"
-                            },
-                            "name": "StopLVAResponse",
-                            "schema": {
-                                "@type": "Object",
-                                "displayName": {
-                                    "en": "Object"
-                                },
-                                "fields": [
-                                    {
-                                        "@type": "SchemaField",
-                                        "displayName": {
-                                            "en": "StatusCode"
-                                        },
-                                        "name": "statusCode",
-                                        "schema": "integer"
-                                    },
-                                    {
-                                        "@type": "SchemaField",
-                                        "displayName": {
-                                            "en": "Message"
-                                        },
-                                        "name": "message",
-                                        "schema": "string"
-                                    }
-                                ]
-                            }
-                        },
+                        "@type": "Property",
                         "displayName": {
-                            "en": "Stop LVA"
+                            "en": "RTSP Auth Username"
                         },
-                        "name": "cmStopLva"
+                        "name": "wpRtspAuthUsername",
+                        "writable": true,
+                        "schema": "string"
                     },
                     {
-                        "@type": "Command",
-                        "commandType": "asynchronous",
-                        "response": {
-                            "@type": "SchemaField",
-                            "displayName": {
-                                "en": "RecordCameraSnippetResponse"
-                            },
-                            "name": "RecordCameraSnippetResponse",
-                            "schema": {
-                                "@type": "Object",
-                                "displayName": {
-                                    "en": "Object"
-                                },
-                                "fields": [
-                                    {
-                                        "@type": "SchemaField",
-                                        "displayName": {
-                                            "en": "StatusCode"
-                                        },
-                                        "name": "statusCode",
-                                        "schema": "integer"
-                                    },
-                                    {
-                                        "@type": "SchemaField",
-                                        "displayName": {
-                                            "en": "Message"
-                                        },
-                                        "name": "message",
-                                        "schema": "string"
-                                    }
-                                ]
-                            }
-                        },
+                        "@type": "Property",
                         "displayName": {
-                            "en": "Record Camera Snippet"
+                            "en": "RTSP Auth Password"
                         },
-                        "name": "cmRecordCameraSnippet"
+                        "name": "wpRtspAuthPassword",
+                        "writable": true,
+                        "schema": "string"
                     }
                 ]
             }
         }
     ],
     "displayName": {
-        "en": "Axis Camera Device"
+        "en": "AMS Camera Device"
     },
     "@context": [
         "http://azureiot.com/v1/contexts/IoTModel.json"
