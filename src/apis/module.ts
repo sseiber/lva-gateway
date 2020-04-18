@@ -5,7 +5,6 @@ import {
     badRequest as boom_badRequest,
     badImplementation as boom_badImplementation
 } from '@hapi/boom';
-import * as _get from 'lodash.get';
 import { emptyObj } from '../utils';
 
 export class ModuleRoutes extends RoutePlugin {
@@ -22,8 +21,8 @@ export class ModuleRoutes extends RoutePlugin {
     })
     public async postCreateCamera(request: Request, h: ResponseToolkit) {
         try {
-            const cameraId = _get(request, 'payload.cameraId') || '';
-            const cameraName = _get(request, 'payload.cameraName') || 'Unkonwn';
+            const cameraId = request?.payload?.cameraId || '';
+            const cameraName = request?.payload?.cameraName || 'Unkonwn';
 
             if (!cameraId || !cameraName) {
                 throw boom_badRequest('Missing cameraId or cameraName');
@@ -52,8 +51,7 @@ export class ModuleRoutes extends RoutePlugin {
     })
     public async deleteCamera(request: Request, h: ResponseToolkit) {
         try {
-            const cameraId = _get(request, 'params.cameraId');
-
+            const cameraId = request?.params?.cameraId;
             if (!cameraId) {
                 throw boom_badRequest('Missing cameraId');
             }
@@ -84,10 +82,10 @@ export class ModuleRoutes extends RoutePlugin {
     })
     public async postSendCameraTelemetry(request: Request, h: ResponseToolkit) {
         try {
-            const cameraId = _get(request, 'params.cameraId');
-            const telemetry = _get(request, 'payload.telemetry') || {};
+            const cameraId = request?.params?.cameraId;
+            const telemetry = request?.payload?.telemetry;
 
-            if (!cameraId || emptyObj(telemetry)) {
+            if (!cameraId || !telemetry) {
                 throw boom_badRequest('Missing cameraId or telemetry');
             }
 
@@ -117,8 +115,8 @@ export class ModuleRoutes extends RoutePlugin {
     })
     public async postSendCameraInferenceTelemetry(request: Request, h: ResponseToolkit) {
         try {
-            const cameraId = _get(request, 'params.cameraId');
-            const inferences = _get(request, 'payload.inferences') || [];
+            const cameraId = request?.params?.cameraId;
+            const inferences = request?.payload?.inferences;
 
             if (!cameraId || emptyObj(inferences)) {
                 throw boom_badRequest('Missing cameraId or telemetry');

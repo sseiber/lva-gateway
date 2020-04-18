@@ -1,11 +1,11 @@
 {
-    "@id": "urn:AzureMediaServices:AmsCameraDevice:1",
+    "@id": "urn:AzureMediaServices:LvaCameraDevice:1",
     "@type": "CapabilityModel",
     "implements": [
         {
             "@type": "InterfaceInstance",
             "displayName": {
-                "en": "AMS LVA Interface"
+                "en": "Lva Interface"
             },
             "name": "LvaInterface",
             "schema": {
@@ -176,14 +176,14 @@
         {
             "@type": "InterfaceInstance",
             "displayName": {
-                "en": "AMS Camera Device Interface"
+                "en": "IoT Camera Device Interface"
             },
-            "name": "AmsCameraDeviceInterface",
+            "name": "IoTCameraDeviceInterface",
             "schema": {
-                "@id": "urn:AzureMediaServices:AmsCameraDeviceInterface:1",
+                "@id": "urn:AzureMediaServices:IoTCameraDeviceInterface:1",
                 "@type": "Interface",
                 "displayName": {
-                    "en": "AMS Camera Device Interface"
+                    "en": "IoT Camera Device Interface"
                 },
                 "contents": [
                     {
@@ -408,7 +408,7 @@
         }
     ],
     "displayName": {
-        "en": "AMS Camera Device"
+        "en": "Lva Camera Device"
     },
     "@context": [
         "http://azureiot.com/v1/contexts/IoTModel.json"

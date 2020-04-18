@@ -4,7 +4,6 @@ import { HealthService } from '../services/health';
 import {
     badRequest as boom_badRequest
 } from '@hapi/boom';
-import * as _get from 'lodash.get';
 
 export class HealthRoutes extends RoutePlugin {
     @inject('health')

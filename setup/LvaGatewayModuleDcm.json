@@ -3,7 +3,7 @@
     "@type": "CapabilityModel",
     "implements": [],
     "displayName": {
-        "en": "Axis Camera Management Module"
+        "en": "LVA Edge Gateway Module"
     },
     "contents": [
         {
@@ -13,7 +13,7 @@
                 "SemanticType/EdgeModule"
             ],
             "displayName": {
-                "en": "Axis Camera Management Module"
+                "en": "LVA Edge Gateway Module"
             },
             "name": "LvaGatewayModule",
             "maxMultiplicity": 1,
@@ -123,14 +123,14 @@
                         {
                             "@type": "InterfaceInstance",
                             "displayName": {
-                                "en": "Settings"
+                                "en": "LvaGatewaySettings"
                             },
                             "name": "LvaGatewaySettings",
                             "schema": {
                                 "@id": "urn:AzureMediaServices:LvaGatewaySettings:1",
                                 "@type": "Interface",
                                 "displayName": {
-                                    "en": "Settings"
+                                    "en": "LvaGatewaySettings"
                                 },
                                 "contents": [
                                     {
@@ -194,13 +194,13 @@
                             "@type": "InterfaceInstance",
                             "name": "LvaGatewayInterface",
                             "displayName": {
-                                "en": "Module Information"
+                                "en": "Lva Gateway Interface"
                             },
                             "schema": {
                                 "@id": "urn:AzureMediaServices:LvaGatewayInterface:1",
                                 "@type": "Interface",
                                 "displayName": {
-                                    "en": "Module Information"
+                                    "en": "Lva Gateway Interface"
                                 },
                                 "contents": [
                                     {
@@ -483,7 +483,7 @@
                         }
                     ],
                     "displayName": {
-                        "en": "Axis IoT Central Module"
+                        "en": "LVA Edge Gateway Module"
                     },
                     "contents": [],
                     "@context": [

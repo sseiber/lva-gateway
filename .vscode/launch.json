@@ -7,7 +7,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Axis IoTC Local Debug",
+            "name": "LVA IoTC Local Debug",
             "console": "integratedTerminal",
             "program": "${workspaceFolder}/src/index.ts",
             "protocol": "inspector",
@@ -30,11 +30,11 @@
                 "LOCAL_DEBUG": "0",
                 "DEBUG_MODULE_TELEMETRY": "1",
                 "DEBUG_ROUTING_TELEMETRY": "0",
-                "DEBUG_DEVICE_TELEMETRY": "axiscamera2"
+                "DEBUG_DEVICE_TELEMETRY": ""
             }
         },
         {
-            "name": "Axis IoTC Remote Debug",
+            "name": "LVA IoTC Remote Debug",
             "type": "node",
             "request": "attach",
             "port": 9229,

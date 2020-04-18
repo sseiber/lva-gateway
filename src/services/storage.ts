@@ -4,7 +4,6 @@ import { Server } from '@hapi/hapi';
 import { LoggingService } from './logging';
 import * as fse from 'fs-extra';
 import { resolve as pathResolve } from 'path';
-import * as _get from 'lodash.get';
 import * as _set from 'lodash.set';
 
 @service('storage')
@@ -21,7 +20,7 @@ export class StorageService {
     public async init() {
         this.logger.log(['StorageService', 'info'], 'initialize');
 
-        this.storageDirectory = _get(this.server, 'settings.app.storageRootDirectory');
+        this.storageDirectory = this.server?.settings?.app?.storageRootDirectory;
 
         try {
             this.setup();
@@ -46,7 +45,7 @@ export class StorageService {
             return obj;
         }
 
-        return _get(obj, property);
+        return obj?.[property];
     }
 
     public async set(scope: string, property: any, value?: any) {

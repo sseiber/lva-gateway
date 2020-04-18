@@ -29,18 +29,17 @@ import * as fse from 'fs-extra';
 import { resolve as pathResolve } from 'path';
 import * as crypto from 'crypto';
 import * as ipAddress from 'ip';
-import * as _get from 'lodash.get';
 import * as _random from 'lodash.random';
 import { bind, emptyObj, forget } from '../utils';
 
 type DeviceOperation = 'DELETE_CAMERA' | 'SEND_TELEMETRY' | 'SEND_INFERENCES';
 
-export interface ICameraOperationInfo {
+interface ICameraOperationInfo {
     cameraId: string;
     operationInfo: any;
 }
 
-export interface IProvisionResult {
+interface IProvisionResult {
     dpsProvisionStatus: boolean;
     dpsProvisionMessage: string;
     dpsHubConnectionString: string;
@@ -49,7 +48,7 @@ export interface IProvisionResult {
     amsCameraDevice: AmsCameraDevice;
 }
 
-export interface IDeviceOperationResult {
+interface IDeviceOperationResult {
     status: boolean;
     message: string;
 }
@@ -62,24 +61,33 @@ interface ISystemProperties {
     freeMemory: number;
 }
 
-const AxisModuleProperties = {
-    Manufacturer: 'manufacturer',
-    Model: 'model',
-    SwVersion: 'swVersion',
-    OsName: 'osName',
-    ProcessorArchitecture: 'processorArchitecture',
-    ProcessorManufacturer: 'processorManufacturer',
-    TotalStorage: 'totalStorage',
-    TotalMemory: 'totalMemory'
-};
+enum LvaGatewayDeviceProperties {
+    Manufacturer = 'manufacturer',
+    Model = 'model',
+    SwVersion = 'swVersion',
+    OsName = 'osName',
+    ProcessorArchitecture = 'processorArchitecture',
+    ProcessorManufacturer = 'processorManufacturer',
+    TotalStorage = 'totalStorage',
+    TotalMemory = 'totalMemory'
+}
 
-interface IModuleSettings {
-    wpMasterDeviceProvisioningKey: string;
-    wpScopeId: string;
-    wpDeviceTemplateId: string;
-    wpGatewayInstanceId: string;
-    wpGatewayModuleId: string;
-    wpLvaEdgeModuleId: string;
+enum LvaGatewaySettings {
+    MasterDeviceProvisioningKey = 'wpMasterDeviceProvisioningKey',
+    ScopeId = 'wpScopeId',
+    DeviceTemplateId = 'wpDeviceTemplateId',
+    GatewayInstanceId = 'wpGatewayInstanceId',
+    GatewayModuleId = 'wpGatewayModuleId',
+    LvaEdgeModuleId = 'wpLvaEdgeModuleId'
+}
+
+interface ILvaGatewaySettings {
+    [LvaGatewaySettings.MasterDeviceProvisioningKey]: string;
+    [LvaGatewaySettings.ScopeId]: string;
+    [LvaGatewaySettings.DeviceTemplateId]: string;
+    [LvaGatewaySettings.GatewayInstanceId]: string;
+    [LvaGatewaySettings.GatewayModuleId]: string;
+    [LvaGatewaySettings.LvaEdgeModuleId]: string;
 }
 
 enum IoTCentralClientState {
@@ -101,7 +109,7 @@ enum AddCameraCommandRequestParams {
     CameraName = 'AddCameraRequestParams_CameraName'
 }
 
-export const ModuleInterface = {
+const LvaGatewayInterface = {
     Telemetry: {
         SystemHeartbeat: 'tlSystemHeartbeat',
         FreeMemory: 'tlFreeMemory'
@@ -118,12 +126,12 @@ export const ModuleInterface = {
         ModuleRestart: 'evModuleRestart'
     },
     Setting: {
-        MasterDeviceProvisioningKey: 'wpMasterDeviceProvisioningKey',
-        ScopeId: 'wpScopeId',
-        DeviceTemplateId: 'wpDeviceTemplateId',
-        GatewayInstanceId: 'wpGatewayInstanceId',
-        GatewayModuleId: 'wpGatewayModuleId',
-        LvaEdgeModuleId: 'wpLvaEdgeModuleId'
+        MasterDeviceProvisioningKey: LvaGatewaySettings.MasterDeviceProvisioningKey,
+        ScopeId: LvaGatewaySettings.ScopeId,
+        DeviceTemplateId: LvaGatewaySettings.DeviceTemplateId,
+        GatewayInstanceId: LvaGatewaySettings.GatewayInstanceId,
+        GatewayModuleId: LvaGatewaySettings.GatewayModuleId,
+        LvaEdgeModuleId: LvaGatewaySettings.LvaEdgeModuleId
     },
     Property: {
         ModuleIpAddress: 'rpModuleIpAddress'
@@ -134,12 +142,12 @@ export const ModuleInterface = {
     }
 };
 
-const AxisManagementEdgeInputs = {
+const LvaGatewayEdgeInputs = {
     CameraCommand: 'cameracommand',
     LvaTelemetry: 'lvaTelemetry'
 };
 
-const AxisManagementCommands = {
+const LvaGatewayCommands = {
     CreateCamera: 'createcamera',
     DeleteCamera: 'deletecamera',
     SendDeviceTelemetry: 'senddevicetelemetry',
@@ -169,21 +177,21 @@ export class ModuleService {
     private healthState = HealthState.Good;
     private healthCheckFailStreak: number = 0;
     private moduleIpAddress: string = '127.0.0.1';
-    private moduleSettings: IModuleSettings = {
-        wpMasterDeviceProvisioningKey: '',
-        wpScopeId: '',
-        wpDeviceTemplateId: '',
-        wpGatewayInstanceId: '',
-        wpGatewayModuleId: '',
-        wpLvaEdgeModuleId: ''
+    private moduleSettings: ILvaGatewaySettings = {
+        [LvaGatewaySettings.MasterDeviceProvisioningKey]: '',
+        [LvaGatewaySettings.ScopeId]: '',
+        [LvaGatewaySettings.DeviceTemplateId]: '',
+        [LvaGatewaySettings.GatewayInstanceId]: '',
+        [LvaGatewaySettings.GatewayModuleId]: '',
+        [LvaGatewaySettings.LvaEdgeModuleId]: ''
     };
-    private moduleSettingsDefaults: IModuleSettings = {
-        wpMasterDeviceProvisioningKey: '',
-        wpScopeId: '',
-        wpDeviceTemplateId: '',
-        wpGatewayInstanceId: '',
-        wpGatewayModuleId: '',
-        wpLvaEdgeModuleId: ''
+    private moduleSettingsDefaults: ILvaGatewaySettings = {
+        [LvaGatewaySettings.MasterDeviceProvisioningKey]: '',
+        [LvaGatewaySettings.ScopeId]: '',
+        [LvaGatewaySettings.DeviceTemplateId]: '',
+        [LvaGatewaySettings.GatewayInstanceId]: '',
+        [LvaGatewaySettings.GatewayModuleId]: '',
+        [LvaGatewaySettings.LvaEdgeModuleId]: ''
     };
     private amsCameraDeviceMap = new Map<string, AmsCameraDevice>();
     private dpsProvisioningHost: string = defaultDpsProvisioningHost;
@@ -240,9 +248,9 @@ export class ModuleService {
 
         try {
             const systemProperties = await this.getSystemProperties();
-            const freeMemory = _get(systemProperties, 'freeMemory') || 0;
+            const freeMemory = systemProperties?.freeMemory || 0;
 
-            await this.sendMeasurement({ [ModuleInterface.Telemetry.FreeMemory]: freeMemory });
+            await this.sendMeasurement({ [LvaGatewayInterface.Telemetry.FreeMemory]: freeMemory });
 
             // TODO:
             // Find the right threshold for this metric
@@ -250,7 +258,7 @@ export class ModuleService {
                 healthState = HealthState.Critical;
             }
 
-            await this.sendMeasurement({ [ModuleInterface.Telemetry.SystemHeartbeat]: healthState });
+            await this.sendMeasurement({ [LvaGatewayInterface.Telemetry.SystemHeartbeat]: healthState });
 
             if (healthState < HealthState.Good) {
                 this.logger.log(['HealthService', 'warning'], `Health check watch: ${healthState}`);
@@ -285,7 +293,7 @@ export class ModuleService {
 
             await this.moduleClient.sendOutputEvent('iotc', iotcMessage);
 
-            if (_get(process.env, 'DEBUG_MODULE_TELEMETRY') === '1') {
+            if (process.env.DEBUG_MODULE_TELEMETRY === '1') {
                 this.logger.log(['ModuleService', 'info'], `sendEvent: ${JSON.stringify(data, null, 4)}`);
             }
         }
@@ -309,7 +317,7 @@ export class ModuleService {
 
     @bind
     public async invokeMethod(methodParams: any) {
-        await this.moduleClient.invokeMethod(this.moduleSettings.wpGatewayInstanceId, this.moduleSettings.wpLvaEdgeModuleId, methodParams);
+        await this.moduleClient.invokeMethod(this.moduleSettings[LvaGatewaySettings.GatewayInstanceId], this.moduleSettings[LvaGatewaySettings.LvaEdgeModuleId], methodParams);
     }
 
     public async restartModule(timeout: number, reason: string): Promise<void> {
@@ -317,8 +325,8 @@ export class ModuleService {
 
         try {
             await this.sendMeasurement({
-                [ModuleInterface.Event.ModuleRestart]: reason,
-                [ModuleInterface.State.ModuleState]: ModuleState.Inactive
+                [LvaGatewayInterface.Event.ModuleRestart]: reason,
+                [LvaGatewayInterface.State.ModuleState]: ModuleState.Inactive
             });
 
             if (timeout > 0) {
@@ -343,8 +351,8 @@ export class ModuleService {
         const cpuUsageSamples = osLoadAvg();
 
         return {
-            cpuModel: Array.isArray(cpus) ? cpus[0].model : 'Unknown',
-            cpuCores: Array.isArray(cpus) ? cpus.length : 0,
+            cpuModel: cpus[0]?.model || 'Unknown',
+            cpuCores: cpus?.length || 0,
             cpuUsage: cpuUsageSamples[0],
             totalMemory: osTotalMem() / 1024,
             freeMemory: osFreeMem() / 1024
@@ -406,8 +414,8 @@ export class ModuleService {
 
                 this.moduleClient.on('error', this.onModuleClientError);
 
-                this.moduleClient.onMethod(ModuleInterface.Command.RestartModule, this.restartModuleDirectMethod);
-                this.moduleClient.onMethod(ModuleInterface.Command.AddCamera, this.addCameraDirectMethod);
+                this.moduleClient.onMethod(LvaGatewayInterface.Command.RestartModule, this.restartModuleDirectMethod);
+                this.moduleClient.onMethod(LvaGatewayInterface.Command.AddCamera, this.addCameraDirectMethod);
                 this.moduleClient.on('inputMessage', this.onHandleDownstreamMessages);
 
                 const systemProperties = await this.getSystemProperties();
@@ -415,18 +423,18 @@ export class ModuleService {
 
                 const deviceProperties = {
                     ...moduleProperties,
-                    [AxisModuleProperties.OsName]: osPlatform() || '',
-                    [AxisModuleProperties.SwVersion]: osRelease() || '',
-                    [AxisModuleProperties.ProcessorArchitecture]: osArch() || '',
-                    [AxisModuleProperties.TotalMemory]: systemProperties.totalMemory,
-                    [ModuleInterface.Property.ModuleIpAddress]: this.moduleIpAddress
+                    [LvaGatewayDeviceProperties.OsName]: osPlatform() || '',
+                    [LvaGatewayDeviceProperties.SwVersion]: osRelease() || '',
+                    [LvaGatewayDeviceProperties.ProcessorArchitecture]: osArch() || '',
+                    [LvaGatewayDeviceProperties.TotalMemory]: systemProperties.totalMemory,
+                    [LvaGatewayInterface.Property.ModuleIpAddress]: this.moduleIpAddress
                 };
 
                 await this.updateModuleProperties(deviceProperties);
 
                 await this.sendMeasurement({
-                    [ModuleInterface.State.IoTCentralClientState]: IoTCentralClientState.Connected,
-                    [ModuleInterface.State.ModuleState]: ModuleState.Active
+                    [LvaGatewayInterface.State.IoTCentralClientState]: IoTCentralClientState.Connected,
+                    [LvaGatewayInterface.State.ModuleState]: ModuleState.Active
                 });
             }
             catch (ex) {
@@ -459,24 +467,24 @@ export class ModuleService {
             const messageJson = JSON.parse(messageData);
 
             switch (inputName) {
-                case AxisManagementEdgeInputs.CameraCommand: {
-                    const edgeInputCameraCommand = _get(messageJson, 'command');
-                    const edgeInputCameraCommandData = _get(messageJson, 'data');
+                case LvaGatewayEdgeInputs.CameraCommand: {
+                    const edgeInputCameraCommand = messageJson?.command;
+                    const edgeInputCameraCommandData = messageJson?.data;
 
                     switch (edgeInputCameraCommand) {
-                        case AxisManagementCommands.CreateCamera:
-                            await this.createAmsCameraDevice(_get(edgeInputCameraCommandData, 'cameraId'), _get(edgeInputCameraCommandData, 'cameraName'));
+                        case LvaGatewayCommands.CreateCamera:
+                            await this.createAmsCameraDevice(edgeInputCameraCommandData?.cameraId, edgeInputCameraCommandData?.cameraName);
                             break;
 
-                        case AxisManagementCommands.DeleteCamera:
+                        case LvaGatewayCommands.DeleteCamera:
                             await this.amsCameraDeviceOperation('DELETE_CAMERA', edgeInputCameraCommandData);
                             break;
 
-                        case AxisManagementCommands.SendDeviceTelemetry:
+                        case LvaGatewayCommands.SendDeviceTelemetry:
                             await this.amsCameraDeviceOperation('SEND_TELEMETRY', edgeInputCameraCommandData);
                             break;
 
-                        case AxisManagementCommands.SendDeviceInferences:
+                        case LvaGatewayCommands.SendDeviceInferences:
                             await this.amsCameraDeviceOperation('SEND_INFERENCES', edgeInputCameraCommandData);
                             break;
 
@@ -488,7 +496,7 @@ export class ModuleService {
                     break;
                 }
 
-                case AxisManagementEdgeInputs.LvaTelemetry:
+                case LvaGatewayEdgeInputs.LvaTelemetry:
                     break;
 
                 default:
@@ -523,11 +531,11 @@ export class ModuleService {
                 return deviceProvisionResult;
             }
 
-            if (!this.moduleSettings.wpMasterDeviceProvisioningKey
-                || !this.moduleSettings.wpScopeId
-                || !this.moduleSettings.wpDeviceTemplateId
-                || !this.moduleSettings.wpGatewayInstanceId
-                || !this.moduleSettings.wpGatewayModuleId) {
+            if (!this.moduleSettings[LvaGatewaySettings.MasterDeviceProvisioningKey]
+                || !this.moduleSettings[LvaGatewaySettings.ScopeId]
+                || !this.moduleSettings[LvaGatewaySettings.DeviceTemplateId]
+                || !this.moduleSettings[LvaGatewaySettings.GatewayInstanceId]
+                || !this.moduleSettings[LvaGatewaySettings.GatewayModuleId]) {
                 deviceProvisionResult.dpsProvisionStatus = false;
                 deviceProvisionResult.dpsProvisionMessage = `Missing camera management settings (Master provision key, scopeId, deviceTemplateId, gatewayInstanceId, gatewayModuleId)`;
                 this.logger.log(['ModuleService', 'error'], deviceProvisionResult.dpsProvisionMessage);
@@ -541,7 +549,7 @@ export class ModuleService {
 
                 this.amsCameraDeviceMap.set(cameraId, deviceProvisionResult.amsCameraDevice);
 
-                await this.sendMeasurement({ [ModuleInterface.Event.CreateCamera]: cameraId });
+                await this.sendMeasurement({ [LvaGatewayInterface.Event.CreateCamera]: cameraId });
             }
         }
         catch (ex) {
@@ -567,15 +575,19 @@ export class ModuleService {
         };
 
         try {
-            const deviceKey = this.computeDeviceKey(cameraId, this.moduleSettings.wpMasterDeviceProvisioningKey);
+            const deviceKey = this.computeDeviceKey(cameraId, this.moduleSettings[LvaGatewaySettings.MasterDeviceProvisioningKey]);
             const provisioningSecurityClient = new SymmetricKeySecurityClient(cameraId, deviceKey);
-            const provisioningClient = ProvisioningDeviceClient.create(this.dpsProvisioningHost, this.moduleSettings.wpScopeId, new ProvisioningTransport(), provisioningSecurityClient);
+            const provisioningClient = ProvisioningDeviceClient.create(
+                this.dpsProvisioningHost,
+                this.moduleSettings[LvaGatewaySettings.ScopeId],
+                new ProvisioningTransport(),
+                provisioningSecurityClient);
 
             provisioningClient.setProvisioningPayload({
-                iotcModelId: this.moduleSettings.wpDeviceTemplateId,
+                iotcModelId: this.moduleSettings[LvaGatewaySettings.DeviceTemplateId],
                 iotcGateway: {
-                    iotcGatewayId: this.moduleSettings.wpGatewayInstanceId,
-                    iotcModuleId: this.moduleSettings.wpGatewayModuleId
+                    iotcGatewayId: this.moduleSettings[LvaGatewaySettings.GatewayInstanceId],
+                    iotcModuleId: this.moduleSettings[LvaGatewaySettings.GatewayModuleId]
                 }
             });
 
@@ -615,40 +627,40 @@ export class ModuleService {
         return crypto.createHmac('SHA256', Buffer.from(masterKey, 'base64')).update(deviceId, 'utf8').digest('base64');
     }
 
-    private loadCameraGraph() {
-        const graphInstancePath = pathResolve(_get(this.server, 'settings.app.storageRootDirectory'), `${graphName}GraphInstance.json`);
+    private loadCameraGraph(graphType: string) {
+        const graphInstancePath = pathResolve(this.server?.settings?.app?.storageRootDirectory, `${graphName}GraphInstance.json`);
         const graphInstance = fse.readJSONSync(graphInstancePath);
 
-        graphInstance.name = (_get(graphInstance, 'name') || '').replace('###RtspCameraId', deviceProps.cameraId);
-        graphInstance.properties.topologyName = (_get(graphInstance, 'properties.topologyName') || '###RtspCameraId').replace('###RtspCameraId', deviceProps.cameraId);
+        graphInstance.name = (graphInstance?.name || '').replace('###RtspCameraId', deviceProps.cameraId);
+        graphInstance.properties.topologyName = (graphInstance?.properties?.topologyName || '###RtspCameraId').replace('###RtspCameraId', deviceProps.cameraId);
 
         this.logger.log(['ModuleService', 'info'], `### graphFilePath: ${graphInstancePath}`);
         this.logger.log(['ModuleService', 'info'], `### graphData: ${JSON.stringify(graphInstance, null, 4)}`);
 
-        const graphTopologyPath = pathResolve(_get(this.server, 'settings.app.storageRootDirectory'), `${graphName}GraphTopology.json`);
+        const graphTopologyPath = pathResolve(this.server?.settings?.app?.storageRootDirectory, `${graphName}GraphTopology.json`);
         const graphTopology = fse.readJSONSync(graphTopologyPath);
 
-        graphTopology.name = (_get(graphTopology, 'name') || '').replace('###RtspCameraId', deviceProps.cameraId);
+        graphTopology.name = (graphTopology?.name || '').replace('###RtspCameraId', deviceProps.cameraId);
         graphTopology.properties.sources[0].name = deviceProps.cameraId;
         graphTopology.properties.sources[0].endpoint.url = deviceProps.rtspUrl;
         graphTopology.properties.sources[0].endpoint.credentials.username = deviceProps.rtspAuthUsername;
         graphTopology.properties.sources[0].endpoint.credentials.password = deviceProps.rtspAuthPassword;
         graphTopology.properties.processors[0].inputs[1].moduleName = deviceProps.cameraId;
-        graphTopology.properties.sinks[0].filePathPattern = (_get(graphTopology, 'properties.sinks.0.filePathPattern') || '###RtspCameraId').replace('###RtspCameraId', deviceProps.cameraId);
+        graphTopology.properties.sinks[0].filePathPattern = (graphTopology?.properties?.sinks[0]?.filePathPattern || '###RtspCameraId').replace('###RtspCameraId', deviceProps.cameraId);
 
         this.logger.log(['ModuleService', 'info'], `### graphFilePath: ${graphTopologyPath}`);
         this.logger.log(['ModuleService', 'info'], `### graphData: ${JSON.stringify(graphTopology, null, 4)}`);
     }
 
     private async amsCameraDeviceOperation(deviceOperation: DeviceOperation, cameraOperationInfo: ICameraOperationInfo): Promise<IDeviceOperationResult> {
-        this.logger.log(['ModuleService', 'info'], `Sending Axis telemetry: ${JSON.stringify(cameraOperationInfo, null, 4)}`);
+        this.logger.log(['ModuleService', 'info'], `Processing LVA Edge gateway operation: ${JSON.stringify(cameraOperationInfo, null, 4)}`);
 
         const operationResult = {
             status: false,
             message: ''
         };
 
-        const cameraId = _get(cameraOperationInfo, 'cameraId');
+        const cameraId = cameraOperationInfo?.cameraId;
         if (!cameraId) {
             operationResult.message = `Error: missing cameraId`;
 
@@ -666,7 +678,7 @@ export class ModuleService {
             return operationResult;
         }
 
-        const operationInfo = _get(cameraOperationInfo, 'operationInfo');
+        const operationInfo = cameraOperationInfo?.operationInfo;
         if (!operationInfo) {
             operationResult.message = `Error: missing operationInfo data`;
 
@@ -677,7 +689,7 @@ export class ModuleService {
 
         switch (deviceOperation) {
             case 'DELETE_CAMERA':
-                await this.sendMeasurement({ [ModuleInterface.Event.DeleteCamera]: cameraId });
+                await this.sendMeasurement({ [LvaGatewayInterface.Event.DeleteCamera]: cameraId });
 
                 await amsCameraDevice.deleteCamera();
                 break;
@@ -687,7 +699,7 @@ export class ModuleService {
                 break;
 
             case 'SEND_INFERENCES':
-                await amsCameraDevice.processAxisInferences(operationInfo);
+                await amsCameraDevice.processLvaInferences(operationInfo);
                 break;
 
             default:
@@ -750,13 +762,13 @@ export class ModuleService {
                 let changedSettingResult;
 
                 switch (desiredSettingsKey) {
-                    case ModuleInterface.Setting.MasterDeviceProvisioningKey:
-                    case ModuleInterface.Setting.ScopeId:
-                    case ModuleInterface.Setting.DeviceTemplateId:
-                    case ModuleInterface.Setting.GatewayInstanceId:
-                    case ModuleInterface.Setting.GatewayModuleId:
-                    case ModuleInterface.Setting.LvaEdgeModuleId:
-                        changedSettingResult = await this.moduleSettingChange(moduleSettingsForPatching, desiredSettingsKey, _get(desiredChangedSettings, `${desiredSettingsKey}`));
+                    case LvaGatewayInterface.Setting.MasterDeviceProvisioningKey:
+                    case LvaGatewayInterface.Setting.ScopeId:
+                    case LvaGatewayInterface.Setting.DeviceTemplateId:
+                    case LvaGatewayInterface.Setting.GatewayInstanceId:
+                    case LvaGatewayInterface.Setting.GatewayModuleId:
+                    case LvaGatewayInterface.Setting.LvaEdgeModuleId:
+                        changedSettingResult = await this.moduleSettingChange(moduleSettingsForPatching, desiredSettingsKey, desiredChangedSettings?.[`${desiredSettingsKey}`]);
                         break;
 
                     default:
@@ -764,8 +776,8 @@ export class ModuleService {
                         break;
                 }
 
-                if (_get(changedSettingResult, 'status') === true) {
-                    patchedProperties[desiredSettingsKey] = _get(changedSettingResult, 'value');
+                if (changedSettingResult?.status === true) {
+                    patchedProperties[desiredSettingsKey] = changedSettingResult?.value;
                 }
             }
             catch (ex) {
@@ -817,12 +829,12 @@ export class ModuleService {
         };
 
         switch (setting) {
-            case ModuleInterface.Setting.MasterDeviceProvisioningKey:
-            case ModuleInterface.Setting.ScopeId:
-            case ModuleInterface.Setting.DeviceTemplateId:
-            case ModuleInterface.Setting.GatewayInstanceId:
-            case ModuleInterface.Setting.GatewayModuleId:
-            case ModuleInterface.Setting.LvaEdgeModuleId:
+            case LvaGatewayInterface.Setting.MasterDeviceProvisioningKey:
+            case LvaGatewayInterface.Setting.ScopeId:
+            case LvaGatewayInterface.Setting.DeviceTemplateId:
+            case LvaGatewayInterface.Setting.GatewayInstanceId:
+            case LvaGatewayInterface.Setting.GatewayModuleId:
+            case LvaGatewayInterface.Setting.LvaEdgeModuleId:
                 result.value = moduleSettingsForPatching[setting].value = value || '';
                 moduleSettingsForPatching[setting].handled = true;
                 break;
@@ -837,7 +849,7 @@ export class ModuleService {
 
     @bind
     private async restartModuleDirectMethod(commandRequest: DeviceMethodRequest, commandResponse: DeviceMethodResponse) {
-        this.logger.log(['ModuleService', 'info'], `${ModuleInterface.Command.RestartModule} command received`);
+        this.logger.log(['ModuleService', 'info'], `${LvaGatewayInterface.Command.RestartModule} command received`);
 
         try {
             // sending response before processing, since this is a restart request
@@ -846,31 +858,31 @@ export class ModuleService {
                 message: 'Success'
             });
 
-            const paramPayload = _get(commandRequest, 'payload');
+            const paramPayload = commandRequest?.payload;
             if (typeof paramPayload !== 'object') {
                 throw new Error(`Missing or wrong payload time for command`);
             }
 
-            await this.restartModule(_get(paramPayload, RestartModuleCommandRequestParams.Timeout) || 0, 'RestartModule command received');
+            await this.restartModule(paramPayload?.[RestartModuleCommandRequestParams.Timeout] || 0, 'RestartModule command received');
         }
         catch (ex) {
-            this.logger.log(['ModuleService', 'error'], `Error sending response for ${ModuleInterface.Command.RestartModule} command: ${ex.message}`);
+            this.logger.log(['ModuleService', 'error'], `Error sending response for ${LvaGatewayInterface.Command.RestartModule} command: ${ex.message}`);
         }
     }
 
     @bind
     // @ts-ignore
     private async addCameraDirectMethod(commandRequest: DeviceMethodRequest, commandResponse: DeviceMethodResponse) {
-        this.logger.log(['ModuleService', 'info'], `${ModuleInterface.Command.AddCamera} command received`);
+        this.logger.log(['ModuleService', 'info'], `${LvaGatewayInterface.Command.AddCamera} command received`);
 
         try {
-            const paramPayload = _get(commandRequest, 'payload');
+            const paramPayload = commandRequest?.payload;
             if (typeof paramPayload !== 'object') {
-                throw new Error(`Missing or wrong payload time for command: ${ModuleInterface.Command.AddCamera}`);
+                throw new Error(`Missing or wrong payload time for command: ${LvaGatewayInterface.Command.AddCamera}`);
             }
 
-            const cameraId = _get(paramPayload, AddCameraCommandRequestParams.CameraId);
-            const cameraName = _get(paramPayload, AddCameraCommandRequestParams.CameraName);
+            const cameraId = paramPayload?.[AddCameraCommandRequestParams.CameraId];
+            const cameraName = paramPayload?.[AddCameraCommandRequestParams.CameraName];
 
             const provisionResult = await this.createAmsCameraDevice(cameraId, cameraName);
 
@@ -882,7 +894,7 @@ export class ModuleService {
             });
         }
         catch (ex) {
-            this.logger.log(['ModuleService', 'error'], `Error creating Axis camera device: ${ex.message}`);
+            this.logger.log(['ModuleService', 'error'], `Error creating LVA Edge gateway camera device: ${ex.message}`);
 
             await commandResponse.send(400, {
                 statusCode: 400,
