@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-ENV DATADIR /data/storage
+ENV DATADIR /data/content
 WORKDIR ${DATADIR}
 
 ADD ./setup/motionGraphInstance.json ${DATADIR}/motionGraphInstance.json

@@ -32,6 +32,11 @@ import * as ipAddress from 'ip';
 import * as _random from 'lodash.random';
 import { bind, emptyObj, forget } from '../utils';
 
+export interface ICommandResponse {
+    statusCode: number;
+    message: string;
+}
+
 type DeviceOperation = 'DELETE_CAMERA' | 'SEND_TELEMETRY' | 'SEND_INFERENCES';
 
 interface ICameraOperationInfo {
@@ -233,6 +238,10 @@ export class ModuleService {
         this.healthState = result === true ? HealthState.Good : HealthState.Critical;
     }
 
+    public log(tags: any, message: any) {
+        this.logger.log(tags, message);
+    }
+
     public async createCamera(cameraId: string, cameraName: string, detectionType: AddCameraDetectionType): Promise<IProvisionResult> {
         return this.createAmsCameraDevice(cameraId, cameraName, detectionType);
     }
@@ -322,9 +331,91 @@ export class ModuleService {
         }
     }
 
-    @bind
-    public async invokeMethod(methodParams: any) {
-        await this.moduleClient.invokeMethod(this.moduleSettings[LvaGatewaySettings.GatewayInstanceId], this.moduleSettings[LvaGatewaySettings.LvaEdgeModuleId], methodParams);
+    public async startLvaGraph(graphInstance: any, graphTopology: any): Promise<ICommandResponse> {
+        this.logger.log(['ModuleService', 'info'], `startLvaGraph`);
+
+        try {
+            const methodParams = {
+                methodName: ``,
+                payload: null,
+                connectTimeoutInSeconds: 30,
+                responseTimeoutInSeconds: 30
+            };
+
+            this.logger.log(['ModuleService', 'info'], `### GraphTopologySet`);
+            methodParams.methodName = `GraphTopologySet`;
+            methodParams.payload = graphTopology;
+            await this.moduleClient.invokeMethod(this.moduleSettings[LvaGatewaySettings.GatewayInstanceId], this.moduleSettings[LvaGatewaySettings.LvaEdgeModuleId], methodParams);
+
+            this.logger.log(['ModuleService', 'info'], `### GraphInstanceSet`);
+            methodParams.methodName = `GraphInstanceSet`;
+            methodParams.payload = graphInstance;
+            await this.moduleClient.invokeMethod(this.moduleSettings[LvaGatewaySettings.GatewayInstanceId], this.moduleSettings[LvaGatewaySettings.LvaEdgeModuleId], methodParams);
+
+            this.logger.log(['ModuleService', 'info'], `### GraphInstanceStart`);
+            methodParams.methodName = `GraphInstanceStart`;
+            methodParams.payload = graphInstance;
+            await this.moduleClient.invokeMethod(this.moduleSettings[LvaGatewaySettings.GatewayInstanceId], this.moduleSettings[LvaGatewaySettings.LvaEdgeModuleId], methodParams);
+
+            const message = `Requested to start LVA Edge graph: ${graphInstance?.name || ''}`;
+            this.logger.log(['ModuleService', 'info'], message);
+
+            return {
+                statusCode: 201,
+                message
+            };
+        }
+        catch (ex) {
+            this.logger.log(['ModuleService', 'error'], `startLvaGraph error: ${ex.message}`);
+
+            return {
+                statusCode: 400,
+                message: ex.mesage
+            };
+        }
+    }
+
+    public async stopLvaGraph(graphInstance: any, graphTopology: any): Promise<ICommandResponse> {
+        try {
+            const methodParams = {
+                methodName: ``,
+                payload: null,
+                connectTimeoutInSeconds: 30,
+                responseTimeoutInSeconds: 30
+            };
+
+            if (graphInstance && graphTopology) {
+                this.logger.log(['ModuleService', 'info'], `### GraphInstanceStop`);
+                methodParams.methodName = `GraphInstanceStop`;
+                methodParams.payload = graphInstance;
+                await this.moduleClient.invokeMethod(this.moduleSettings[LvaGatewaySettings.GatewayInstanceId], this.moduleSettings[LvaGatewaySettings.LvaEdgeModuleId], methodParams);
+
+                this.logger.log(['ModuleService', 'info'], `### GraphInstanceDelete`);
+                methodParams.methodName = `GraphInstanceDelete`;
+                methodParams.payload = graphInstance;
+                await this.moduleClient.invokeMethod(this.moduleSettings[LvaGatewaySettings.GatewayInstanceId], this.moduleSettings[LvaGatewaySettings.LvaEdgeModuleId], methodParams);
+
+                this.logger.log(['ModuleService', 'info'], `### GraphTopologyDelete`);
+                methodParams.methodName = `GraphTopologyDelete`;
+                methodParams.payload = graphTopology;
+                await this.moduleClient.invokeMethod(this.moduleSettings[LvaGatewaySettings.GatewayInstanceId], this.moduleSettings[LvaGatewaySettings.LvaEdgeModuleId], methodParams);
+            }
+
+            const message = `Requested to stop LVA Edge graph: ${graphInstance?.name || '(no graph was running)'}`;
+
+            return {
+                statusCode: 201,
+                message
+            };
+        }
+        catch (ex) {
+            this.logger.log(['ModuleService', 'error'], `stopLvaGraph error: ${ex.message}`);
+
+            return {
+                statusCode: 400,
+                message: ex.message
+            };
+        }
     }
 
     public async restartModule(timeout: number, reason: string): Promise<void> {
@@ -626,7 +717,7 @@ export class ModuleService {
             deviceProvisionResult.dpsProvisionMessage = `IoT Central successfully provisioned device: ${cameraId}`;
             deviceProvisionResult.dpsHubConnectionString = dpsConnectionString;
 
-            deviceProvisionResult.amsCameraDevice = new AmsCameraDevice(this.server.log, this.invokeMethod, graphInstance, graphTopology, cameraId, cameraName);
+            deviceProvisionResult.amsCameraDevice = new AmsCameraDevice(this, graphInstance, graphTopology, cameraId, cameraName);
 
             const { clientConnectionStatus, clientConnectionMessage } = await deviceProvisionResult.amsCameraDevice.connectDeviceClient(deviceProvisionResult.dpsHubConnectionString);
             deviceProvisionResult.clientConnectionStatus = clientConnectionStatus;
@@ -651,7 +742,9 @@ export class ModuleService {
         let graphTopology;
 
         try {
-            const graphInstancePath = pathResolve(this.server?.settings?.app?.storageRootDirectory, `${detectionType}GraphInstance.json`);
+            const contentRoot = this.server?.settings?.app?.contentRootDirectory;
+
+            const graphInstancePath = pathResolve(contentRoot, `${detectionType}GraphInstance.json`);
             graphInstance = fse.readJSONSync(graphInstancePath);
 
             graphInstance.name = (graphInstance?.name || '').replace('###RtspCameraId', cameraId);
@@ -660,7 +753,7 @@ export class ModuleService {
             this.logger.log(['ModuleService', 'info'], `### graphFilePath: ${graphInstancePath}`);
             this.logger.log(['ModuleService', 'info'], `### graphData: ${JSON.stringify(graphInstance, null, 4)}`);
 
-            const graphTopologyPath = pathResolve(this.server?.settings?.app?.storageRootDirectory, `${detectionType}GraphTopology.json`);
+            const graphTopologyPath = pathResolve(contentRoot, `${detectionType}GraphTopology.json`);
             graphTopology = fse.readJSONSync(graphTopologyPath);
 
             graphTopology.name = (graphTopology?.name || '').replace('###RtspCameraId', cameraId);

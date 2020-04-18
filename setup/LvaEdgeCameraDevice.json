@@ -1,18 +1,18 @@
 {
-    "@id": "urn:AzureMediaServices:LvaCameraDevice:1",
+    "@id": "urn:AzureMediaServices:LvaEdgeCameraDevice:1",
     "@type": "CapabilityModel",
     "implements": [
         {
             "@type": "InterfaceInstance",
             "displayName": {
-                "en": "Lva Interface"
+                "en": "Lva Edge Interface"
             },
-            "name": "LvaInterface",
+            "name": "LvaEdgeInterface",
             "schema": {
-                "@id": "urn:AzureMediaServices:LvaInterface:1",
+                "@id": "urn:AzureMediaServices:LvaEdgeInterface:1",
                 "@type": "Interface",
                 "displayName": {
-                    "en": "LVA Interface"
+                    "en": "Lva Edge Interface"
                 },
                 "contents": [
                     {
@@ -98,9 +98,9 @@
                         "response": {
                             "@type": "SchemaField",
                             "displayName": {
-                                "en": "StartLVAResponse"
+                                "en": "StartLvaResponse"
                             },
-                            "name": "StartLVAResponse",
+                            "name": "StartLvaResponse",
                             "schema": {
                                 "@type": "Object",
                                 "displayName": {
@@ -137,9 +137,9 @@
                         "response": {
                             "@type": "SchemaField",
                             "displayName": {
-                                "en": "StopLVAResponse"
+                                "en": "StopLvaResponse"
                             },
-                            "name": "StopLVAResponse",
+                            "name": "StopLvaResponse",
                             "schema": {
                                 "@type": "Object",
                                 "displayName": {
@@ -408,7 +408,7 @@
         }
     ],
     "displayName": {
-        "en": "Lva Camera Device"
+        "en": "Lva Edge Camera Device"
     },
     "@context": [
         "http://azureiot.com/v1/contexts/IoTModel.json"
