@@ -510,10 +510,12 @@ export class AmsCameraDevice {
             methodParams.payload = this.graphInstance;
             await this.invokeMethod(methodParams);
 
-            const message = `Sent request to LVA Edge to start graph: ${this.graphInstance?.name || ''}`; // xxx
+            const message = `Requested to start LVA Edge graph: ${this.graphInstance?.name || ''}`;
+            this.log(['ModuleService', 'info'], message);
+
             return {
                 statusCode: 201,
-                message: 'Start LVA Graph done'
+                message
             };
         }
         catch (ex) {
@@ -552,9 +554,11 @@ export class AmsCameraDevice {
                 await this.invokeMethod(methodParams);
             }
 
+            const message = `Requested to stop LVA Edge graph: ${this.graphInstance?.name || '(no graph was running)'}`;
+
             return {
                 statusCode: 201,
-                message: `Successfully stopped LVA graph: ${graphInstance?.name || '(no graph was running)'}`
+                message
             };
         }
         catch (ex) {

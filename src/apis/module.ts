@@ -23,12 +23,13 @@ export class ModuleRoutes extends RoutePlugin {
         try {
             const cameraId = request?.payload?.cameraId || '';
             const cameraName = request?.payload?.cameraName || 'Unkonwn';
+            const detectionType = request?.payload?.detectionType || 'cat';
 
-            if (!cameraId || !cameraName) {
-                throw boom_badRequest('Missing cameraId or cameraName');
+            if (!cameraId || !cameraName || !detectionType) {
+                throw boom_badRequest('Missing parameters (cameraId, cameraName, detectionType)');
             }
 
-            const dpsProvisionResult = await this.module.createCamera(cameraId, cameraName);
+            const dpsProvisionResult = await this.module.createCamera(cameraId, cameraName, detectionType);
             const resultMessage = dpsProvisionResult.dpsProvisionMessage || dpsProvisionResult.clientConnectionMessage;
             if (dpsProvisionResult.dpsProvisionStatus === false || dpsProvisionResult.clientConnectionStatus === false) {
                 throw boom_badImplementation(resultMessage);

@@ -106,7 +106,14 @@ enum RestartModuleCommandRequestParams {
 
 enum AddCameraCommandRequestParams {
     CameraId = 'AddCameraRequestParams_CameraId',
-    CameraName = 'AddCameraRequestParams_CameraName'
+    CameraName = 'AddCameraRequestParams_CameraName',
+    DetectionType = 'AddCameraRequestParams_DetectionType'
+}
+
+enum AddCameraDetectionType {
+    Motion = 'motion',
+    People = 'people',
+    Car = 'car'
 }
 
 const LvaGatewayInterface = {
@@ -226,8 +233,8 @@ export class ModuleService {
         this.healthState = result === true ? HealthState.Good : HealthState.Critical;
     }
 
-    public async createCamera(cameraId: string, cameraName: string): Promise<IProvisionResult> {
-        return this.createAmsCameraDevice(cameraId, cameraName);
+    public async createCamera(cameraId: string, cameraName: string, detectionType: AddCameraDetectionType): Promise<IProvisionResult> {
+        return this.createAmsCameraDevice(cameraId, cameraName, detectionType);
     }
 
     public async deleteCamera(cameraOperationInfo: ICameraOperationInfo): Promise<IDeviceOperationResult> {
@@ -473,7 +480,7 @@ export class ModuleService {
 
                     switch (edgeInputCameraCommand) {
                         case LvaGatewayCommands.CreateCamera:
-                            await this.createAmsCameraDevice(edgeInputCameraCommandData?.cameraId, edgeInputCameraCommandData?.cameraName);
+                            await this.createAmsCameraDevice(edgeInputCameraCommandData?.cameraId, edgeInputCameraCommandData?.cameraName, edgeInputCameraCommandData?.detectionType);
                             break;
 
                         case LvaGatewayCommands.DeleteCamera:
@@ -509,8 +516,8 @@ export class ModuleService {
         }
     }
 
-    private async createAmsCameraDevice(cameraId: string, cameraName: string): Promise<IProvisionResult> {
-        this.logger.log(['ModuleService', 'info'], `createAmsCameraDevice - cameraId: ${cameraId}, cameraName: ${cameraName}`);
+    private async createAmsCameraDevice(cameraId: string, cameraName: string, detectionType: AddCameraDetectionType): Promise<IProvisionResult> {
+        this.logger.log(['ModuleService', 'info'], `createAmsCameraDevice - cameraId: ${cameraId}, cameraName: ${cameraName}, detectionType: ${detectionType}`);
 
         let deviceProvisionResult: IProvisionResult = {
             dpsProvisionStatus: false,
@@ -543,7 +550,7 @@ export class ModuleService {
                 return deviceProvisionResult;
             }
 
-            deviceProvisionResult = await this.createAndProvisionAmsCameraDevice(cameraId, cameraName);
+            deviceProvisionResult = await this.createAndProvisionAmsCameraDevice(cameraId, cameraName, detectionType);
             if (deviceProvisionResult.dpsProvisionStatus === true && deviceProvisionResult.clientConnectionStatus === true) {
                 this.logger.log(['ModuleService', 'info'], `Succesfully provisioned camera device with id: ${cameraId}`);
 
@@ -562,7 +569,7 @@ export class ModuleService {
         return deviceProvisionResult;
     }
 
-    private async createAndProvisionAmsCameraDevice(cameraId: string, cameraName: string): Promise<IProvisionResult> {
+    private async createAndProvisionAmsCameraDevice(cameraId: string, cameraName: string, detectionType: AddCameraDetectionType): Promise<IProvisionResult> {
         this.logger.log(['ModuleService', 'info'], `Provisioning new device - id: ${cameraId}`);
 
         const deviceProvisionResult: IProvisionResult = {
@@ -575,6 +582,18 @@ export class ModuleService {
         };
 
         try {
+            const {
+                graphInstance,
+                graphTopology
+            } = await this.loadCameraGraph(cameraId, detectionType);
+
+            if (!graphInstance || !graphTopology) {
+                deviceProvisionResult.dpsProvisionStatus = false;
+                deviceProvisionResult.dpsProvisionMessage = `Could not load graph topology for the device`;
+
+                return deviceProvisionResult;
+            }
+
             const deviceKey = this.computeDeviceKey(cameraId, this.moduleSettings[LvaGatewaySettings.MasterDeviceProvisioningKey]);
             const provisioningSecurityClient = new SymmetricKeySecurityClient(cameraId, deviceKey);
             const provisioningClient = ProvisioningDeviceClient.create(
@@ -607,7 +626,7 @@ export class ModuleService {
             deviceProvisionResult.dpsProvisionMessage = `IoT Central successfully provisioned device: ${cameraId}`;
             deviceProvisionResult.dpsHubConnectionString = dpsConnectionString;
 
-            deviceProvisionResult.amsCameraDevice = new AmsCameraDevice(this.server.log, this.invokeMethod, this.graphInstance, this.graphTopology, cameraId, cameraName);
+            deviceProvisionResult.amsCameraDevice = new AmsCameraDevice(this.server.log, this.invokeMethod, graphInstance, graphTopology, cameraId, cameraName);
 
             const { clientConnectionStatus, clientConnectionMessage } = await deviceProvisionResult.amsCameraDevice.connectDeviceClient(deviceProvisionResult.dpsHubConnectionString);
             deviceProvisionResult.clientConnectionStatus = clientConnectionStatus;
@@ -627,29 +646,42 @@ export class ModuleService {
         return crypto.createHmac('SHA256', Buffer.from(masterKey, 'base64')).update(deviceId, 'utf8').digest('base64');
     }
 
-    private loadCameraGraph(graphType: string) {
-        const graphInstancePath = pathResolve(this.server?.settings?.app?.storageRootDirectory, `${graphName}GraphInstance.json`);
-        const graphInstance = fse.readJSONSync(graphInstancePath);
+    private async loadCameraGraph(cameraId: string, detectionType: AddCameraDetectionType): Promise<{ graphInstance: any, graphTopology: any }> {
+        let graphInstance;
+        let graphTopology;
 
-        graphInstance.name = (graphInstance?.name || '').replace('###RtspCameraId', deviceProps.cameraId);
-        graphInstance.properties.topologyName = (graphInstance?.properties?.topologyName || '###RtspCameraId').replace('###RtspCameraId', deviceProps.cameraId);
+        try {
+            const graphInstancePath = pathResolve(this.server?.settings?.app?.storageRootDirectory, `${detectionType}GraphInstance.json`);
+            graphInstance = fse.readJSONSync(graphInstancePath);
 
-        this.logger.log(['ModuleService', 'info'], `### graphFilePath: ${graphInstancePath}`);
-        this.logger.log(['ModuleService', 'info'], `### graphData: ${JSON.stringify(graphInstance, null, 4)}`);
+            graphInstance.name = (graphInstance?.name || '').replace('###RtspCameraId', cameraId);
+            graphInstance.properties.topologyName = (graphInstance?.properties?.topologyName || '###RtspCameraId').replace('###RtspCameraId', cameraId);
 
-        const graphTopologyPath = pathResolve(this.server?.settings?.app?.storageRootDirectory, `${graphName}GraphTopology.json`);
-        const graphTopology = fse.readJSONSync(graphTopologyPath);
+            this.logger.log(['ModuleService', 'info'], `### graphFilePath: ${graphInstancePath}`);
+            this.logger.log(['ModuleService', 'info'], `### graphData: ${JSON.stringify(graphInstance, null, 4)}`);
 
-        graphTopology.name = (graphTopology?.name || '').replace('###RtspCameraId', deviceProps.cameraId);
-        graphTopology.properties.sources[0].name = deviceProps.cameraId;
-        graphTopology.properties.sources[0].endpoint.url = deviceProps.rtspUrl;
-        graphTopology.properties.sources[0].endpoint.credentials.username = deviceProps.rtspAuthUsername;
-        graphTopology.properties.sources[0].endpoint.credentials.password = deviceProps.rtspAuthPassword;
-        graphTopology.properties.processors[0].inputs[1].moduleName = deviceProps.cameraId;
-        graphTopology.properties.sinks[0].filePathPattern = (graphTopology?.properties?.sinks[0]?.filePathPattern || '###RtspCameraId').replace('###RtspCameraId', deviceProps.cameraId);
+            const graphTopologyPath = pathResolve(this.server?.settings?.app?.storageRootDirectory, `${detectionType}GraphTopology.json`);
+            graphTopology = fse.readJSONSync(graphTopologyPath);
 
-        this.logger.log(['ModuleService', 'info'], `### graphFilePath: ${graphTopologyPath}`);
-        this.logger.log(['ModuleService', 'info'], `### graphData: ${JSON.stringify(graphTopology, null, 4)}`);
+            graphTopology.name = (graphTopology?.name || '').replace('###RtspCameraId', cameraId);
+            graphTopology.properties.sources[0].name = cameraId;
+            graphTopology.properties.sources[0].endpoint.url = '';
+            graphTopology.properties.sources[0].endpoint.credentials.username = '';
+            graphTopology.properties.sources[0].endpoint.credentials.password = '';
+            graphTopology.properties.processors[0].inputs[1].moduleName = cameraId;
+            graphTopology.properties.sinks[0].filePathPattern = (graphTopology?.properties?.sinks[0]?.filePathPattern || '###RtspCameraId').replace('###RtspCameraId', cameraId);
+
+            this.logger.log(['ModuleService', 'info'], `### graphFilePath: ${graphTopologyPath}`);
+            this.logger.log(['ModuleService', 'info'], `### graphData: ${JSON.stringify(graphTopology, null, 4)}`);
+        }
+        catch (ex) {
+            this.logger.log(['ModuleService', 'error'], `Error while loading graph topology: ${ex.message}`);
+        }
+
+        return {
+            graphInstance,
+            graphTopology
+        };
     }
 
     private async amsCameraDeviceOperation(deviceOperation: DeviceOperation, cameraOperationInfo: ICameraOperationInfo): Promise<IDeviceOperationResult> {
@@ -883,8 +915,9 @@ export class ModuleService {
 
             const cameraId = paramPayload?.[AddCameraCommandRequestParams.CameraId];
             const cameraName = paramPayload?.[AddCameraCommandRequestParams.CameraName];
+            const detectionType = paramPayload?.[AddCameraCommandRequestParams.DetectionType];
 
-            const provisionResult = await this.createAmsCameraDevice(cameraId, cameraName);
+            const provisionResult = await this.createAmsCameraDevice(cameraId, cameraName, detectionType);
 
             const statusCode = (provisionResult.dpsProvisionStatus === true && provisionResult.clientConnectionStatus === true) ? 201 : 400;
 

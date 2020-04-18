@@ -438,6 +438,46 @@
                                                         },
                                                         "name": "AddCameraRequestParams_CameraName",
                                                         "schema": "string"
+                                                    },
+                                                    {
+                                                        "@type": "SchemaField",
+                                                        "displayName": {
+                                                            "en": "Detection Type"
+                                                        },
+                                                        "name": "AddCameraRequestParams_DetectionType",
+                                                        "schema": {
+                                                            "@type": "Enum",
+                                                            "displayName": {
+                                                                "en": "Enum"
+                                                            },
+                                                            "valueSchema": "string",
+                                                            "enumValues": [
+                                                                {
+                                                                    "@type": "EnumValue",
+                                                                    "displayName": {
+                                                                        "en": "Motion Detection"
+                                                                    },
+                                                                    "enumValue": "motion",
+                                                                    "name": "DetectionTypeEnum_Motion"
+                                                                },
+                                                                {
+                                                                    "@type": "EnumValue",
+                                                                    "displayName": {
+                                                                        "en": "People Detection"
+                                                                    },
+                                                                    "enumValue": "people",
+                                                                    "name": "DetectionTypeEnum_People"
+                                                                },
+                                                                {
+                                                                    "@type": "EnumValue",
+                                                                    "displayName": {
+                                                                        "en": "Car Detection"
+                                                                    },
+                                                                    "enumValue": "car",
+                                                                    "name": "DetectionTypeEnum_Car"
+                                                                }
+                                                            ]
+                                                        }
                                                     }
                                                 ]
                                             }
