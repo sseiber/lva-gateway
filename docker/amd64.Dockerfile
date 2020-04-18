@@ -7,6 +7,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+ENV DATADIR /data/content
+WORKDIR ${DATADIR}
+
+ADD ./setup/motionGraphInstance.json ${DATADIR}/motionGraphInstance.json
+ADD ./setup/motionGraphTopology.json ${DATADIR}/motionGraphTopology.json
+ADD ./setup/peopleGraphInstance.json ${DATADIR}/peopleGraphInstance.json
+ADD ./setup/peopleGraphTopology.json ${DATADIR}/peopleGraphTopology.json
+ADD ./setup/carGraphInstance.json ${DATADIR}/carGraphInstance.json
+ADD ./setup/carGraphTopology.json ${DATADIR}/carGraphTopology.json
+
 ENV WORKINGDIR /app
 WORKDIR ${WORKINGDIR}
 

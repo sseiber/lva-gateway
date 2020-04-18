@@ -1,7 +1,6 @@
 import { service, inject } from 'spryly';
 import { LoggingService } from './logging';
 import { ModuleService } from './module';
-import * as _get from 'lodash.get';
 import { bind } from '../utils';
 
 export const healthCheckInterval = 15;

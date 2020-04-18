@@ -1,7 +1,7 @@
-# Sample module to connect Axis network cameras to Azure IoT Central
-This is an IoT Central gateway module for Axis network cameras. This module will manage and create leaf devices to represent Axis cameras. The camera instances will be associated with the Azure Media Services LVA module to to process videoa streams. The inferences produced from the video streams will be sent as telemetry through the IoT Central devices.
+# Azure IoT Central gateway module for Azure Media Services LVA Edge
+This is an IoT Central gateway module for Azure Media Services LVA edge. This module will manage and create leaf devices to represent network cameras. The camera instances will be associated with the Azure Media Services LVA module to to process videoa streams. The inferences produced from the video streams will be sent as telemetry through the IoT Central devices.
 
-This module and accompanying IoT Central templates will demonstrate how to use Device Capability Models to define functionality supported by the Axis network cameras.
+This module and accompanying IoT Central templates will demonstrate how to use Device Capability Models to define functionality supported by the LVA Edge module.
 
 ## Implementation
 Description TBD.
