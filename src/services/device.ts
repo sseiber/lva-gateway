@@ -7,7 +7,7 @@ import {
     Twin,
     Message as IoTMessage
 } from 'azure-iot-device';
-import { ModuleService } from './module';
+import { ModuleService, IAmsGraph } from './module';
 import { bind, emptyObj } from '../utils';
 
 export type DevicePropertiesHandler = (desiredChangedSettings: any) => Promise<void>;
@@ -48,7 +48,7 @@ const LvaInterface = {
     }
 };
 
-enum IoTCameraDeviceSettings {
+export enum IoTCameraDeviceSettings {
     RtspUrl = 'wpRtspUrl',
     RtspAuthUsername = 'wpRtspAuthUsername',
     RtspAuthPassword = 'wpRtspAuthPassword'
@@ -82,29 +82,28 @@ const IoTCameraDeviceInterface = {
 
 export abstract class AmsCameraDevice {
     protected lvaGatewayModule: ModuleService;
-    protected graphInstance: any;
-    protected graphTopology: any;
+    protected amsGraph: IAmsGraph;
     protected cameraId: string = '';
     protected cameraName: string = '';
     protected deviceClient: IoTDeviceClient;
     protected deviceTwin: Twin;
 
-    private healthState = HealthState.Good;
-    private deviceSettings: IIoTCameraDeviceSettings = {
+    protected healthState = HealthState.Good;
+    protected deviceSettings: IIoTCameraDeviceSettings = {
         [IoTCameraDeviceSettings.RtspUrl]: '',
         [IoTCameraDeviceSettings.RtspAuthUsername]: '',
         [IoTCameraDeviceSettings.RtspAuthPassword]: ''
     };
 
-    constructor(lvaGatewayModule: ModuleService, graphInstance: any, graphTopology: any, cameraId: string, cameraName: string) {
+    constructor(lvaGatewayModule: ModuleService, amsGraph: IAmsGraph, cameraId: string, cameraName: string) {
         this.lvaGatewayModule = lvaGatewayModule;
-        this.graphInstance = graphInstance;
-        this.graphTopology = graphTopology;
+        this.amsGraph = amsGraph;
         this.cameraId = cameraId;
         this.cameraName = cameraName;
     }
 
     public abstract async connectDeviceClient(dpsHubConnectionString: string): Promise<IClientConnectResult>;
+    public abstract setGraphInstance(amsGraph: IAmsGraph): boolean;
     public abstract async processLvaInferences(inferenceData: any): Promise<void>;
 
     @bind
@@ -326,9 +325,11 @@ export abstract class AmsCameraDevice {
                 [LvaInterface.Event.StartLvaGraphCommandReceived]: this.cameraId
             });
 
-            await this.lvaGatewayModule.stopLvaGraph(this.graphInstance, this.graphTopology);
+            await this.lvaGatewayModule.stopLvaGraph(this.amsGraph);
 
-            const startLvaGraphResponse = await this.lvaGatewayModule.startLvaGraph(this.graphInstance, this.graphTopology);
+            this.setGraphInstance(this.amsGraph);
+
+            const startLvaGraphResponse = await this.lvaGatewayModule.startLvaGraph(this.amsGraph);
             this.lvaGatewayModule.log(['AmsCameraDevice', 'info'], `LVA Edge gateway returned with status: ${startLvaGraphResponse.statusCode}`);
 
             if (startLvaGraphResponse?.statusCode === 201) {
@@ -359,7 +360,7 @@ export abstract class AmsCameraDevice {
                 [LvaInterface.Event.StopLvaGraphCommandReceived]: this.cameraId
             });
 
-            const stopLvaGraphResponse = await this.lvaGatewayModule.stopLvaGraph(this.graphInstance, this.graphTopology);
+            const stopLvaGraphResponse = await this.lvaGatewayModule.stopLvaGraph(this.amsGraph);
             this.lvaGatewayModule.log(['AmsCameraDevice', 'info'], `LVA edge gateway returned with status: ${stopLvaGraphResponse.statusCode}`);
 
             if (stopLvaGraphResponse?.statusCode === 201) {

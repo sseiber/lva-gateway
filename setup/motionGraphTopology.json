@@ -22,7 +22,7 @@
             {
                 "@type": "#Microsoft.Media.MediaGraphMotionDetector",
                 "name": "motionDetector",
-                "sensitivity": "medium",
+                "sensitivity": "###Sensitivity",
                 "inputs": [
                     {
                         "moduleName": "RtspSource_###RtspCameraId"
