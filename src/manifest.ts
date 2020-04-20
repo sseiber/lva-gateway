@@ -10,8 +10,9 @@ export function manifest(config?: any): ComposeManifest {
             port: PORT,
             app: {
                 rootDirectory: pathResolve(__dirname, '..'),
-                storageRootDirectory: process.env.DATAMISC_ROOT || '/data/misc/storage',
-                slogan: 'Axis IoT Central Protocol Translation Module'
+                storageRootDirectory: process.env.DATAMISC_ROOT || '/data/storage',
+                contentRootDirectory: process.env.CONTENT_ROOT || '/data/content',
+                slogan: 'LVA Edge Gateway Module'
             }
         },
         services: [

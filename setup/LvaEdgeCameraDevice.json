@@ -1,94 +1,174 @@
 {
-    "@id": "urn:AxisCommunications:AxisCamera:1",
+    "@id": "urn:AzureMediaServices:LvaEdgeCameraDevice:1",
     "@type": "CapabilityModel",
     "implements": [
         {
             "@type": "InterfaceInstance",
-            "name": "DeviceInformation",
+            "displayName": {
+                "en": "Lva Edge Interface"
+            },
+            "name": "LvaEdgeInterface",
             "schema": {
-                "@id": "urn:azureiot:DeviceManagement:DeviceInformation:1",
+                "@id": "urn:AzureMediaServices:LvaEdgeInterface:1",
                 "@type": "Interface",
                 "displayName": {
-                    "en": "Device information"
+                    "en": "Lva Edge Interface"
                 },
                 "contents": [
                     {
-                        "@type": "Property",
-                        "comment": "Company name of the device manufacturer. This could be the same as the name of the original equipment manufacturer (OEM). Ex. Contoso.",
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
                         "displayName": {
-                            "en": "Manufacturer"
+                            "en": "Graph Instance Created"
                         },
-                        "name": "manufacturer",
+                        "name": "evGraphInstanceCreated",
                         "schema": "string"
                     },
                     {
-                        "@type": "Property",
-                        "comment": "Device model name or ID. Ex. Surface Book 2.",
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
                         "displayName": {
-                            "en": "Device model"
+                            "en": "Graph Instance Deleted"
                         },
-                        "name": "model",
+                        "name": "evGraphInstanceDeleted",
                         "schema": "string"
                     },
                     {
-                        "@type": "Property",
-                        "comment": "Version of the software on your device. This could be the version of your firmware. Ex. 1.3.45",
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
                         "displayName": {
-                            "en": "Software version"
+                            "en": "Graph Instance Started"
                         },
-                        "name": "swVersion",
+                        "name": "evGraphInstanceStarted",
                         "schema": "string"
                     },
                     {
-                        "@type": "Property",
-                        "comment": "Name of the operating system on the device. Ex. Windows 10 IoT Core.",
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
                         "displayName": {
-                            "en": "Operating system name"
+                            "en": "Graph Instance Stopped"
                         },
-                        "name": "osName",
+                        "name": "evGraphInstanceStopped",
                         "schema": "string"
                     },
                     {
-                        "@type": "Property",
-                        "comment": "Architecture of the processor on the device. Ex. x64 or ARM.",
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
                         "displayName": {
-                            "en": "Processor architecture"
+                            "en": "Media Recording Started"
                         },
-                        "name": "processorArchitecture",
+                        "name": "evMediaRecordingStarted",
                         "schema": "string"
                     },
                     {
-                        "@type": "Property",
-                        "comment": "Name of the manufacturer of the processor on the device. Ex. Intel.",
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
                         "displayName": {
-                            "en": "Processor manufacturer"
+                            "en": "Start LVA Command"
                         },
-                        "name": "processorManufacturer",
+                        "name": "evStartLvaGraphCommandReceived",
                         "schema": "string"
                     },
                     {
-                        "@type": "Property",
-                        "comment": "Total available storage on the device in kilobytes. Ex. 2048000 kilobytes.",
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
                         "displayName": {
-                            "en": "Total storage"
+                            "en": "Stop LVA Command"
                         },
-                        "name": "totalStorage",
-                        "displayUnit": {
-                            "en": "kilobytes"
-                        },
-                        "schema": "long"
+                        "name": "evStopLvaGraphCommandReceived",
+                        "schema": "string"
                     },
                     {
-                        "@type": "Property",
-                        "comment": "Total available memory on the device in kilobytes. Ex. 256000 kilobytes.",
+                        "@type": "Command",
+                        "commandType": "asynchronous",
+                        "response": {
+                            "@type": "SchemaField",
+                            "displayName": {
+                                "en": "StartLvaResponse"
+                            },
+                            "name": "StartLvaResponse",
+                            "schema": {
+                                "@type": "Object",
+                                "displayName": {
+                                    "en": "Object"
+                                },
+                                "fields": [
+                                    {
+                                        "@type": "SchemaField",
+                                        "displayName": {
+                                            "en": "StatusCode"
+                                        },
+                                        "name": "statusCode",
+                                        "schema": "integer"
+                                    },
+                                    {
+                                        "@type": "SchemaField",
+                                        "displayName": {
+                                            "en": "Message"
+                                        },
+                                        "name": "message",
+                                        "schema": "string"
+                                    }
+                                ]
+                            }
+                        },
                         "displayName": {
-                            "en": "Total memory"
+                            "en": "Start LVA Processing"
                         },
-                        "name": "totalMemory",
-                        "displayUnit": {
-                            "en": "kilobytes"
+                        "name": "cmStartLvaProcessing"
+                    },
+                    {
+                        "@type": "Command",
+                        "commandType": "asynchronous",
+                        "response": {
+                            "@type": "SchemaField",
+                            "displayName": {
+                                "en": "StopLvaResponse"
+                            },
+                            "name": "StopLvaResponse",
+                            "schema": {
+                                "@type": "Object",
+                                "displayName": {
+                                    "en": "Object"
+                                },
+                                "fields": [
+                                    {
+                                        "@type": "SchemaField",
+                                        "displayName": {
+                                            "en": "StatusCode"
+                                        },
+                                        "name": "statusCode",
+                                        "schema": "integer"
+                                    },
+                                    {
+                                        "@type": "SchemaField",
+                                        "displayName": {
+                                            "en": "Message"
+                                        },
+                                        "name": "message",
+                                        "schema": "string"
+                                    }
+                                ]
+                            }
                         },
-                        "schema": "long"
+                        "displayName": {
+                            "en": "Stop LVA Processing"
+                        },
+                        "name": "cmStopLvaProcessing"
                     }
                 ]
             }
@@ -96,39 +176,14 @@
         {
             "@type": "InterfaceInstance",
             "displayName": {
-                "en": "Settings"
+                "en": "IoT Camera Device Interface"
             },
-            "name": "AxisCameraSettings",
+            "name": "IoTCameraDeviceInterface",
             "schema": {
-                "@id": "urn:AxisCommunications:AxisCameraSettings:1",
+                "@id": "urn:AzureMediaServices:IoTCameraDeviceInterface:1",
                 "@type": "Interface",
                 "displayName": {
-                    "en": "Settings"
-                },
-                "contents": [
-                    {
-                        "@type": "Property",
-                        "displayName": {
-                            "en": "Detection Class"
-                        },
-                        "name": "wpDetectionClass",
-                        "writable": true,
-                        "schema": "string"
-                    }
-                ]
-            }
-        },
-        {
-            "@type": "InterfaceInstance",
-            "displayName": {
-                "en": "Camera Information"
-            },
-            "name": "AxisCameraInterface",
-            "schema": {
-                "@id": "urn:AxisCommunications:AxisCameraInterface:1",
-                "@type": "Interface",
-                "displayName": {
-                    "en": "Camera Information"
+                    "en": "IoT Camera Device Interface"
                 },
                 "contents": [
                     {
@@ -174,6 +229,14 @@
                                     },
                                     "name": "className",
                                     "schema": "string"
+                                },
+                                {
+                                    "@type": "SchemaField",
+                                    "displayName": {
+                                        "en": "confidence"
+                                    },
+                                    "name": "confidence",
+                                    "schema": "double"
                                 },
                                 {
                                     "@type": "SchemaField",
@@ -290,55 +353,27 @@
                         }
                     },
                     {
-                        "@type": [
-                            "Telemetry",
-                            "SemanticType/Event"
-                        ],
+                        "@type": "Property",
                         "displayName": {
-                            "en": "Camera Provision"
+                            "en": "Camera Name"
                         },
-                        "name": "evCameraProvision",
-                        "schema": "string"
-                    },
-                    {
-                        "@type": [
-                            "Telemetry",
-                            "SemanticType/Event"
-                        ],
-                        "displayName": {
-                            "en": "Camera Processing Started"
-                        },
-                        "name": "evCameraProcessingStarted",
-                        "schema": "string"
-                    },
-                    {
-                        "@type": [
-                            "Telemetry",
-                            "SemanticType/Event"
-                        ],
-                        "displayName": {
-                            "en": "Camera Processing Stopped"
-                        },
-                        "name": "evCameraProcessingStopped",
-                        "schema": "string"
-                    },
-                    {
-                        "@type": [
-                            "Telemetry",
-                            "SemanticType/Event"
-                        ],
-                        "displayName": {
-                            "en": "Camera Restart"
-                        },
-                        "name": "evCameraRestart",
+                        "name": "rpCameraName",
                         "schema": "string"
                     },
                     {
                         "@type": "Property",
                         "displayName": {
-                            "en": "Camera IP Address"
+                            "en": "Manufacturer"
                         },
-                        "name": "rpCameraIpAddress",
+                        "name": "rpManufacturer",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Model"
+                        },
+                        "name": "rpModel",
                         "schema": "string"
                     },
                     {
@@ -346,31 +381,34 @@
                         "displayName": {
                             "en": "RTSP Url"
                         },
-                        "name": "rpRtspUrl",
+                        "name": "wpRtspUrl",
+                        "writable": true,
                         "schema": "string"
                     },
                     {
-                        "@type": "Command",
-                        "commandType": "asynchronous",
-                        "request": {
-                            "@type": "SchemaField",
-                            "displayName": {
-                                "en": "Timeout"
-                            },
-                            "name": "cmpRestartCameraTimeout",
-                            "schema": "integer"
-                        },
+                        "@type": "Property",
                         "displayName": {
-                            "en": "Restart Camera"
+                            "en": "RTSP Auth Username"
                         },
-                        "name": "cmRestartCamera"
+                        "name": "wpRtspAuthUsername",
+                        "writable": true,
+                        "schema": "string"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "RTSP Auth Password"
+                        },
+                        "name": "wpRtspAuthPassword",
+                        "writable": true,
+                        "schema": "string"
                     }
                 ]
             }
         }
     ],
     "displayName": {
-        "en": "Axis Camera Device"
+        "en": "Lva Edge Camera Device"
     },
     "@context": [
         "http://azureiot.com/v1/contexts/IoTModel.json"
