@@ -6,7 +6,7 @@
         "sources": [
             {
                 "@type": "#Microsoft.Media.MediaGraphRtspSource",
-                "name": "###RtspCameraId",
+                "name": "RtspSource_###RtspCameraId",
                 "endpoint": {
                     "@type": "#Microsoft.Media.MediaGraphClearEndpoint",
                     "url": "###RtspUrl",
@@ -32,7 +32,7 @@
                         "moduleName": "iotMessageSource"
                     },
                     {
-                        "moduleName": "###RtspCameraId"
+                        "moduleName": "RtspSource_###RtspCameraId"
                     }
                 ],
                 "activationEvaluationWindow": "PT1S",

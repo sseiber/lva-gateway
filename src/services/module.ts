@@ -5,6 +5,7 @@ import { ConfigService } from './config';
 import { StorageService } from './storage';
 import { HealthState } from './health';
 import { AmsCameraDevice } from './device';
+import { AmsMotionDetectorDevice } from './motionDetectorDevice';
 import { Mqtt } from 'azure-iot-device-mqtt';
 import { SymmetricKeySecurityClient } from 'azure-iot-security-symmetric-key';
 import { ProvisioningDeviceClient } from 'azure-iot-provisioning-device';
@@ -50,7 +51,7 @@ interface IProvisionResult {
     dpsHubConnectionString: string;
     clientConnectionStatus: boolean;
     clientConnectionMessage: string;
-    amsCameraDevice: AmsCameraDevice;
+    amsInferenceDevice: AmsCameraDevice;
 }
 
 interface IDeviceOperationResult {
@@ -80,7 +81,6 @@ enum LvaGatewayDeviceProperties {
 enum LvaGatewaySettings {
     MasterDeviceProvisioningKey = 'wpMasterDeviceProvisioningKey',
     ScopeId = 'wpScopeId',
-    DeviceTemplateId = 'wpDeviceTemplateId',
     GatewayInstanceId = 'wpGatewayInstanceId',
     GatewayModuleId = 'wpGatewayModuleId',
     LvaEdgeModuleId = 'wpLvaEdgeModuleId'
@@ -89,7 +89,6 @@ enum LvaGatewaySettings {
 interface ILvaGatewaySettings {
     [LvaGatewaySettings.MasterDeviceProvisioningKey]: string;
     [LvaGatewaySettings.ScopeId]: string;
-    [LvaGatewaySettings.DeviceTemplateId]: string;
     [LvaGatewaySettings.GatewayInstanceId]: string;
     [LvaGatewaySettings.GatewayModuleId]: string;
     [LvaGatewaySettings.LvaEdgeModuleId]: string;
@@ -121,6 +120,21 @@ enum AddCameraDetectionType {
     Car = 'car'
 }
 
+const LvaInferenceDeviceMap = {
+    motion: {
+        templateId: 'urn:AzureMediaServices:LvaEdgeMotionDetectorDevice:1',
+        deviceClass: AmsMotionDetectorDevice
+    },
+    people: {
+        templateId: 'urn:AzureMediaServices:LvaEdgeMotionDetectorDevice:1',
+        deviceClass: AmsMotionDetectorDevice
+    },
+    car: {
+        templateId: 'urn:AzureMediaServices:LvaEdgeMotionDetectorDevice:1',
+        deviceClass: AmsMotionDetectorDevice
+    }
+};
+
 const LvaGatewayInterface = {
     Telemetry: {
         SystemHeartbeat: 'tlSystemHeartbeat',
@@ -140,7 +154,6 @@ const LvaGatewayInterface = {
     Setting: {
         MasterDeviceProvisioningKey: LvaGatewaySettings.MasterDeviceProvisioningKey,
         ScopeId: LvaGatewaySettings.ScopeId,
-        DeviceTemplateId: LvaGatewaySettings.DeviceTemplateId,
         GatewayInstanceId: LvaGatewaySettings.GatewayInstanceId,
         GatewayModuleId: LvaGatewaySettings.GatewayModuleId,
         LvaEdgeModuleId: LvaGatewaySettings.LvaEdgeModuleId
@@ -192,7 +205,6 @@ export class ModuleService {
     private moduleSettings: ILvaGatewaySettings = {
         [LvaGatewaySettings.MasterDeviceProvisioningKey]: '',
         [LvaGatewaySettings.ScopeId]: '',
-        [LvaGatewaySettings.DeviceTemplateId]: '',
         [LvaGatewaySettings.GatewayInstanceId]: '',
         [LvaGatewaySettings.GatewayModuleId]: '',
         [LvaGatewaySettings.LvaEdgeModuleId]: ''
@@ -200,12 +212,11 @@ export class ModuleService {
     private moduleSettingsDefaults: ILvaGatewaySettings = {
         [LvaGatewaySettings.MasterDeviceProvisioningKey]: '',
         [LvaGatewaySettings.ScopeId]: '',
-        [LvaGatewaySettings.DeviceTemplateId]: '',
         [LvaGatewaySettings.GatewayInstanceId]: '',
         [LvaGatewaySettings.GatewayModuleId]: '',
         [LvaGatewaySettings.LvaEdgeModuleId]: ''
     };
-    private amsCameraDeviceMap = new Map<string, AmsCameraDevice>();
+    private amsInferenceDeviceMap = new Map<string, AmsCameraDevice>();
     private dpsProvisioningHost: string = defaultDpsProvisioningHost;
     private healthCheckRetries: number = defaultHealthCheckRetries;
 
@@ -243,19 +254,19 @@ export class ModuleService {
     }
 
     public async createCamera(cameraId: string, cameraName: string, detectionType: AddCameraDetectionType): Promise<IProvisionResult> {
-        return this.createAmsCameraDevice(cameraId, cameraName, detectionType);
+        return this.createAmsInferenceDevice(cameraId, cameraName, detectionType);
     }
 
     public async deleteCamera(cameraOperationInfo: ICameraOperationInfo): Promise<IDeviceOperationResult> {
-        return this.amsCameraDeviceOperation('DELETE_CAMERA', cameraOperationInfo);
+        return this.amsInferenceDeviceOperation('DELETE_CAMERA', cameraOperationInfo);
     }
 
     public async sendCameraTelemetry(cameraOperationInfo: ICameraOperationInfo): Promise<IDeviceOperationResult> {
-        return this.amsCameraDeviceOperation('SEND_TELEMETRY', cameraOperationInfo);
+        return this.amsInferenceDeviceOperation('SEND_TELEMETRY', cameraOperationInfo);
     }
 
     public async sendCameraInferences(cameraOperationInfo: ICameraOperationInfo): Promise<IDeviceOperationResult> {
-        return this.amsCameraDeviceOperation('SEND_INFERENCES', cameraOperationInfo);
+        return this.amsInferenceDeviceOperation('SEND_INFERENCES', cameraOperationInfo);
     }
 
     @bind
@@ -286,7 +297,7 @@ export class ModuleService {
 
             this.healthState = healthState;
 
-            for (const device of this.amsCameraDeviceMap) {
+            for (const device of this.amsInferenceDeviceMap) {
                 forget(device[1].getHealth);
             }
         }
@@ -298,7 +309,6 @@ export class ModuleService {
         return this.healthState;
     }
 
-    @bind
     public async sendMeasurement(data: any): Promise<void> {
         if (!data || !this.moduleClient) {
             return;
@@ -548,7 +558,7 @@ export class ModuleService {
 
     @bind
     private async onHandleDownstreamMessages(inputName: string, message: any) {
-        // this.logger.log(['ModuleService', 'info'], `Received downstream message: ${JSON.stringify(message, null, 4)}`);
+        this.logger.log(['ModuleService', 'info'], `Received downstream message: ${JSON.stringify(message, null, 4)}`);
 
         if (!this.moduleClient) {
             return;
@@ -571,19 +581,19 @@ export class ModuleService {
 
                     switch (edgeInputCameraCommand) {
                         case LvaGatewayCommands.CreateCamera:
-                            await this.createAmsCameraDevice(edgeInputCameraCommandData?.cameraId, edgeInputCameraCommandData?.cameraName, edgeInputCameraCommandData?.detectionType);
+                            await this.createAmsInferenceDevice(edgeInputCameraCommandData?.cameraId, edgeInputCameraCommandData?.cameraName, edgeInputCameraCommandData?.detectionType);
                             break;
 
                         case LvaGatewayCommands.DeleteCamera:
-                            await this.amsCameraDeviceOperation('DELETE_CAMERA', edgeInputCameraCommandData);
+                            await this.amsInferenceDeviceOperation('DELETE_CAMERA', edgeInputCameraCommandData);
                             break;
 
                         case LvaGatewayCommands.SendDeviceTelemetry:
-                            await this.amsCameraDeviceOperation('SEND_TELEMETRY', edgeInputCameraCommandData);
+                            await this.amsInferenceDeviceOperation('SEND_TELEMETRY', edgeInputCameraCommandData);
                             break;
 
                         case LvaGatewayCommands.SendDeviceInferences:
-                            await this.amsCameraDeviceOperation('SEND_INFERENCES', edgeInputCameraCommandData);
+                            await this.amsInferenceDeviceOperation('SEND_INFERENCES', edgeInputCameraCommandData);
                             break;
 
                         default:
@@ -607,8 +617,8 @@ export class ModuleService {
         }
     }
 
-    private async createAmsCameraDevice(cameraId: string, cameraName: string, detectionType: AddCameraDetectionType): Promise<IProvisionResult> {
-        this.logger.log(['ModuleService', 'info'], `createAmsCameraDevice - cameraId: ${cameraId}, cameraName: ${cameraName}, detectionType: ${detectionType}`);
+    private async createAmsInferenceDevice(cameraId: string, cameraName: string, detectionType: AddCameraDetectionType): Promise<IProvisionResult> {
+        this.logger.log(['ModuleService', 'info'], `createAmsInferenceDevice - cameraId: ${cameraId}, cameraName: ${cameraName}, detectionType: ${detectionType}`);
 
         let deviceProvisionResult: IProvisionResult = {
             dpsProvisionStatus: false,
@@ -616,7 +626,7 @@ export class ModuleService {
             dpsHubConnectionString: '',
             clientConnectionStatus: false,
             clientConnectionMessage: '',
-            amsCameraDevice: null
+            amsInferenceDevice: null
         };
 
         try {
@@ -631,21 +641,20 @@ export class ModuleService {
 
             if (!this.moduleSettings[LvaGatewaySettings.MasterDeviceProvisioningKey]
                 || !this.moduleSettings[LvaGatewaySettings.ScopeId]
-                || !this.moduleSettings[LvaGatewaySettings.DeviceTemplateId]
                 || !this.moduleSettings[LvaGatewaySettings.GatewayInstanceId]
                 || !this.moduleSettings[LvaGatewaySettings.GatewayModuleId]) {
                 deviceProvisionResult.dpsProvisionStatus = false;
-                deviceProvisionResult.dpsProvisionMessage = `Missing camera management settings (Master provision key, scopeId, deviceTemplateId, gatewayInstanceId, gatewayModuleId)`;
+                deviceProvisionResult.dpsProvisionMessage = `Missing camera management settings (Master provision key, scopeId, gatewayInstanceId, gatewayModuleId)`;
                 this.logger.log(['ModuleService', 'error'], deviceProvisionResult.dpsProvisionMessage);
 
                 return deviceProvisionResult;
             }
 
-            deviceProvisionResult = await this.createAndProvisionAmsCameraDevice(cameraId, cameraName, detectionType);
+            deviceProvisionResult = await this.createAndProvisionAmsInferenceDevice(cameraId, cameraName, detectionType);
             if (deviceProvisionResult.dpsProvisionStatus === true && deviceProvisionResult.clientConnectionStatus === true) {
                 this.logger.log(['ModuleService', 'info'], `Succesfully provisioned camera device with id: ${cameraId}`);
 
-                this.amsCameraDeviceMap.set(cameraId, deviceProvisionResult.amsCameraDevice);
+                this.amsInferenceDeviceMap.set(cameraId, deviceProvisionResult.amsInferenceDevice);
 
                 await this.sendMeasurement({ [LvaGatewayInterface.Event.CreateCamera]: cameraId });
             }
@@ -660,7 +669,7 @@ export class ModuleService {
         return deviceProvisionResult;
     }
 
-    private async createAndProvisionAmsCameraDevice(cameraId: string, cameraName: string, detectionType: AddCameraDetectionType): Promise<IProvisionResult> {
+    private async createAndProvisionAmsInferenceDevice(cameraId: string, cameraName: string, detectionType: AddCameraDetectionType): Promise<IProvisionResult> {
         this.logger.log(['ModuleService', 'info'], `Provisioning new device - id: ${cameraId}`);
 
         const deviceProvisionResult: IProvisionResult = {
@@ -669,7 +678,7 @@ export class ModuleService {
             dpsHubConnectionString: '',
             clientConnectionStatus: false,
             clientConnectionMessage: '',
-            amsCameraDevice: null
+            amsInferenceDevice: null
         };
 
         try {
@@ -694,7 +703,7 @@ export class ModuleService {
                 provisioningSecurityClient);
 
             provisioningClient.setProvisioningPayload({
-                iotcModelId: this.moduleSettings[LvaGatewaySettings.DeviceTemplateId],
+                iotcModelId: LvaInferenceDeviceMap[detectionType].templateId,
                 iotcGateway: {
                     iotcGatewayId: this.moduleSettings[LvaGatewaySettings.GatewayInstanceId],
                     iotcModuleId: this.moduleSettings[LvaGatewaySettings.GatewayModuleId]
@@ -717,9 +726,9 @@ export class ModuleService {
             deviceProvisionResult.dpsProvisionMessage = `IoT Central successfully provisioned device: ${cameraId}`;
             deviceProvisionResult.dpsHubConnectionString = dpsConnectionString;
 
-            deviceProvisionResult.amsCameraDevice = new AmsCameraDevice(this, graphInstance, graphTopology, cameraId, cameraName);
+            deviceProvisionResult.amsInferenceDevice = new LvaInferenceDeviceMap[detectionType].deviceClass(this, graphInstance, graphTopology, cameraId, cameraName);
 
-            const { clientConnectionStatus, clientConnectionMessage } = await deviceProvisionResult.amsCameraDevice.connectDeviceClient(deviceProvisionResult.dpsHubConnectionString);
+            const { clientConnectionStatus, clientConnectionMessage } = await deviceProvisionResult.amsInferenceDevice.connectDeviceClient(deviceProvisionResult.dpsHubConnectionString);
             deviceProvisionResult.clientConnectionStatus = clientConnectionStatus;
             deviceProvisionResult.clientConnectionMessage = clientConnectionMessage;
         }
@@ -741,6 +750,9 @@ export class ModuleService {
         let graphInstance;
         let graphTopology;
 
+#### DONT INSERT THE GRAPH TOPOLOGY INSTANCE DATA HERE - JUST LOAD THE JSON TOPOLOGY
+#### THE CAMERA DEVICE INSTANCE WILL INSERT THE INSTANCE DATA BASED ON THE CAMERA/DETECTION TYPE
+
         try {
             const contentRoot = this.server?.settings?.app?.contentRootDirectory;
 
@@ -757,11 +769,11 @@ export class ModuleService {
             graphTopology = fse.readJSONSync(graphTopologyPath);
 
             graphTopology.name = (graphTopology?.name || '').replace('###RtspCameraId', cameraId);
-            graphTopology.properties.sources[0].name = cameraId;
+            graphTopology.properties.sources[0].name = `RtspSource_${cameraId}`;
             graphTopology.properties.sources[0].endpoint.url = '';
             graphTopology.properties.sources[0].endpoint.credentials.username = '';
             graphTopology.properties.sources[0].endpoint.credentials.password = '';
-            graphTopology.properties.processors[0].inputs[1].moduleName = cameraId;
+            graphTopology.properties.processors[0].inputs[1].moduleName = `RtspSource_${cameraId}`;
             graphTopology.properties.sinks[0].filePathPattern = (graphTopology?.properties?.sinks[0]?.filePathPattern || '###RtspCameraId').replace('###RtspCameraId', cameraId);
 
             this.logger.log(['ModuleService', 'info'], `### graphFilePath: ${graphTopologyPath}`);
@@ -777,7 +789,7 @@ export class ModuleService {
         };
     }
 
-    private async amsCameraDeviceOperation(deviceOperation: DeviceOperation, cameraOperationInfo: ICameraOperationInfo): Promise<IDeviceOperationResult> {
+    private async amsInferenceDeviceOperation(deviceOperation: DeviceOperation, cameraOperationInfo: ICameraOperationInfo): Promise<IDeviceOperationResult> {
         this.logger.log(['ModuleService', 'info'], `Processing LVA Edge gateway operation: ${JSON.stringify(cameraOperationInfo, null, 4)}`);
 
         const operationResult = {
@@ -794,8 +806,8 @@ export class ModuleService {
             return operationResult;
         }
 
-        const amsCameraDevice = this.amsCameraDeviceMap.get(cameraId);
-        if (!amsCameraDevice) {
+        const amsInferenceDevice = this.amsInferenceDeviceMap.get(cameraId);
+        if (!amsInferenceDevice) {
             operationResult.message = `Error: Not device exists with cameraId: ${cameraId}`;
 
             this.logger.log(['ModuleService', 'error'], operationResult.message);
@@ -816,15 +828,15 @@ export class ModuleService {
             case 'DELETE_CAMERA':
                 await this.sendMeasurement({ [LvaGatewayInterface.Event.DeleteCamera]: cameraId });
 
-                await amsCameraDevice.deleteCamera();
+                await amsInferenceDevice.deleteCamera();
                 break;
 
             case 'SEND_TELEMETRY':
-                await amsCameraDevice.sendTelemetry(operationInfo);
+                await amsInferenceDevice.sendTelemetry(operationInfo);
                 break;
 
             case 'SEND_INFERENCES':
-                await amsCameraDevice.processLvaInferences(operationInfo);
+                await amsInferenceDevice.processLvaInferences(operationInfo);
                 break;
 
             default:
@@ -889,7 +901,6 @@ export class ModuleService {
                 switch (desiredSettingsKey) {
                     case LvaGatewayInterface.Setting.MasterDeviceProvisioningKey:
                     case LvaGatewayInterface.Setting.ScopeId:
-                    case LvaGatewayInterface.Setting.DeviceTemplateId:
                     case LvaGatewayInterface.Setting.GatewayInstanceId:
                     case LvaGatewayInterface.Setting.GatewayModuleId:
                     case LvaGatewayInterface.Setting.LvaEdgeModuleId:
@@ -956,7 +967,6 @@ export class ModuleService {
         switch (setting) {
             case LvaGatewayInterface.Setting.MasterDeviceProvisioningKey:
             case LvaGatewayInterface.Setting.ScopeId:
-            case LvaGatewayInterface.Setting.DeviceTemplateId:
             case LvaGatewayInterface.Setting.GatewayInstanceId:
             case LvaGatewayInterface.Setting.GatewayModuleId:
             case LvaGatewayInterface.Setting.LvaEdgeModuleId:
@@ -1010,7 +1020,7 @@ export class ModuleService {
             const cameraName = paramPayload?.[AddCameraCommandRequestParams.CameraName];
             const detectionType = paramPayload?.[AddCameraCommandRequestParams.DetectionType];
 
-            const provisionResult = await this.createAmsCameraDevice(cameraId, cameraName, detectionType);
+            const provisionResult = await this.createAmsInferenceDevice(cameraId, cameraName, detectionType);
 
             const statusCode = (provisionResult.dpsProvisionStatus === true && provisionResult.clientConnectionStatus === true) ? 201 : 400;
 

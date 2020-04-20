@@ -6,7 +6,7 @@
         "sources": [
             {
                 "@type": "#Microsoft.Media.MediaGraphRtspSource",
-                "name": "###RtspCameraId",
+                "name": "RtspSource_###RtspCameraId",
                 "endpoint": {
                     "@type": "#Microsoft.Media.MediaGraphClearEndpoint",
                     "url": "###RtspUrl",
@@ -16,41 +16,30 @@
                         "password": "###RtspAuthPassword"
                     }
                 }
-            },
-            {
-                "@type": "#Microsoft.Media.MediaGraphIoTHubMessageSource",
-                "name": "iotMessageSource",
-                "hubInputName": "lvaTrigger"
             }
         ],
         "processors": [
             {
-                "@type": "#Microsoft.Media.MediaGraphSignalGateProcessor",
-                "name": "signalGateProcessor",
+                "@type": "#Microsoft.Media.MediaGraphMotionDetector",
+                "name": "motionDetector",
+                "sensitivity": "medium",
                 "inputs": [
                     {
-                        "moduleName": "iotMessageSource"
-                    },
-                    {
-                        "moduleName": "###RtspCameraId"
+                        "moduleName": "RtspSource_###RtspCameraId"
                     }
-                ],
-                "activationEvaluationWindow": "PT1S",
-                "activationSignalOffset": "PT0S",
-                "minimumActivationTime": "PT5S",
-                "maximumActivationTime": "PT5S"
+                ]
             }
         ],
         "sinks": [
             {
-                "@type": "#Microsoft.Media.MediaGraphFileSink",
-                "name": "filesink",
+                "@type": "#Microsoft.Media.MediaGraphIoTHubMessageSink",
+                "name": "hubSink",
+                "hubOutputName": "lvaTelemetry",
                 "inputs": [
                     {
-                        "moduleName": "signalGateProcessor"
+                        "moduleName": "motionDetector"
                     }
-                ],
-                "filePathPattern": "/var/media/###RtspCameraId_motion_${System.DateTime}"
+                ]
             }
         ]
     }

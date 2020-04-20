@@ -161,15 +161,6 @@
                                     {
                                         "@type": "Property",
                                         "displayName": {
-                                            "en": "Device Template Id"
-                                        },
-                                        "name": "wpDeviceTemplateId",
-                                        "writable": true,
-                                        "schema": "string"
-                                    },
-                                    {
-                                        "@type": "Property",
-                                        "displayName": {
                                             "en": "Gateway Instance Id"
                                         },
                                         "name": "wpGatewayInstanceId",

@@ -10,21 +10,16 @@ import {
 import { ModuleService } from './module';
 import { bind, emptyObj } from '../utils';
 
+export type DevicePropertiesHandler = (desiredChangedSettings: any) => Promise<void>;
+
+export interface IClientConnectResult {
+    clientConnectionStatus: boolean;
+    clientConnectionMessage: string;
+}
+
 interface ICameraProps {
     rpManufacturer: string;
     rpModel: string;
-}
-
-interface IInference {
-    cameraId: string;
-    className: string;
-    confidence: number;
-    roi: {
-        left: number;
-        top: number;
-        right: number;
-        bottom: number;
-    };
 }
 
 enum IoTCentralClientState {
@@ -67,9 +62,7 @@ interface IIoTCameraDeviceSettings {
 
 const IoTCameraDeviceInterface = {
     Telemetry: {
-        SystemHeartbeat: 'tlSystemHeartbeat',
-        InferenceCount: 'tlInferenceCount',
-        Inference: 'tlInference'
+        SystemHeartbeat: 'tlSystemHeartbeat'
     },
     State: {
         IoTCentralClientState: 'stIoTCentralClientState',
@@ -87,14 +80,14 @@ const IoTCameraDeviceInterface = {
     }
 };
 
-export class AmsCameraDevice {
-    private lvaGatewayModule: ModuleService;
-    private graphInstance: any;
-    private graphTopology: any;
-    private cameraId: string = '';
-    private cameraName: string = '';
-    private deviceClient: IoTDeviceClient;
-    private deviceTwin: Twin;
+export abstract class AmsCameraDevice {
+    protected lvaGatewayModule: ModuleService;
+    protected graphInstance: any;
+    protected graphTopology: any;
+    protected cameraId: string = '';
+    protected cameraName: string = '';
+    protected deviceClient: IoTDeviceClient;
+    protected deviceTwin: Twin;
 
     private healthState = HealthState.Good;
     private deviceSettings: IIoTCameraDeviceSettings = {
@@ -110,6 +103,9 @@ export class AmsCameraDevice {
         this.cameraId = cameraId;
         this.cameraName = cameraName;
     }
+
+    public abstract async connectDeviceClient(dpsHubConnectionString: string): Promise<IClientConnectResult>;
+    public abstract async processLvaInferences(inferenceData: any): Promise<void>;
 
     @bind
     public async getHealth(): Promise<number> {
@@ -132,40 +128,11 @@ export class AmsCameraDevice {
         return this.sendMeasurement(telemetryData);
     }
 
-    public async processLvaInferences(inferences: IInference[]): Promise<void> {
-        if (!Array.isArray(inferences) || !this.deviceClient) {
-            this.lvaGatewayModule.log(['AmsCameraDevice', 'error'], `Missing inferences array or client not connected`);
-            return;
-        }
+    protected async connectDeviceClientInternal(
+        dpsHubConnectionString: string,
+        devicePropertiesHandler: DevicePropertiesHandler): Promise<IClientConnectResult> {
 
-        if (process.env.DEBUG_DEVICE_TELEMETRY === this.cameraId) {
-            this.lvaGatewayModule.log(['AmsCameraDevice', 'info'], `processLvaInferences: ${inferences}`);
-        }
-
-        try {
-            let inferenceCount = 0;
-
-            for (const inference of inferences) {
-                ++inferenceCount;
-
-                await this.sendMeasurement({
-                    [IoTCameraDeviceInterface.Telemetry.Inference]: inference
-                });
-            }
-
-            if (inferenceCount > 0) {
-                await this.sendMeasurement({
-                    [IoTCameraDeviceInterface.Telemetry.InferenceCount]: inferenceCount
-                });
-            }
-        }
-        catch (ex) {
-            this.lvaGatewayModule.log(['AmsCameraDevice', 'error'], `Error processing downstream message: ${ex.message}`);
-        }
-    }
-
-    public async connectDeviceClient(dpsHubConnectionString: string): Promise<any> {
-        const result = {
+        const result: IClientConnectResult = {
             clientConnectionStatus: false,
             clientConnectionMessage: ''
         };
@@ -203,13 +170,12 @@ export class AmsCameraDevice {
             this.lvaGatewayModule.log(['AmsCameraDevice', 'info'], `Device client is connected`);
 
             this.deviceTwin = await this.deviceClient.getTwin();
-            this.deviceTwin.on('properties.desired', this.onHandleDeviceProperties);
+            this.deviceTwin.on('properties.desired', devicePropertiesHandler);
 
             this.deviceClient.on('error', this.onDeviceClientError);
 
             this.deviceClient.onDeviceMethod(LvaInterface.Command.StartLvaProcessing, this.startLvaProcessing);
             this.deviceClient.onDeviceMethod(LvaInterface.Command.StopLvaProcessing, this.stopLvaProcessing);
-            this.deviceClient.on('inputMessage', this.onHandleDownstreamMessages);
 
             const cameraProps = await this.getCameraProps();
 
@@ -236,17 +202,73 @@ export class AmsCameraDevice {
         return result;
     }
 
-    private async getCameraProps(): Promise<ICameraProps> {
-        // TODO:
-        // Introduce some ONVIF tech to get camera props
-        return {
-            rpManufacturer: 'Acme',
-            rpModel: 'Illudium Q-36'
-        };
+    protected async onHandleDeviceProperties(desiredChangedSettings: any) {
+        try {
+            this.lvaGatewayModule.log(['AmsCameraDevice', 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
+
+            const patchedProperties = {};
+
+            for (const setting in desiredChangedSettings) {
+                if (!desiredChangedSettings.hasOwnProperty(setting)) {
+                    continue;
+                }
+
+                if (setting === '$version') {
+                    continue;
+                }
+
+                const value = desiredChangedSettings[`${setting}`]?.value;
+                if (!value) {
+                    this.lvaGatewayModule.log(['AmsCameraDevice', 'error'], `No value field found for desired property '${setting}'`);
+                    continue;
+                }
+
+                switch (setting) {
+                    case IoTCameraDeviceInterface.Setting.RtspUrl:
+                    case IoTCameraDeviceInterface.Setting.RtspAuthUsername:
+                    case IoTCameraDeviceInterface.Setting.RtspAuthPassword:
+                        patchedProperties[setting] = this.deviceSettings[setting] = value || '';
+                        break;
+
+                    default:
+                        this.lvaGatewayModule.log(['AmsCameraDevice', 'warning'], `Received desired property change for unknown setting '${setting}'`);
+                        break;
+                }
+            }
+
+            if (!emptyObj(patchedProperties)) {
+                await this.updateDeviceProperties(patchedProperties);
+            }
+        }
+        catch (ex) {
+            this.lvaGatewayModule.log(['AmsCameraDevice', 'error'], `Exception while handling desired properties: ${ex.message}`);
+        }
     }
 
-    @bind
-    private async sendMeasurement(data: any): Promise<void> {
+    protected async updateDeviceProperties(properties: any): Promise<void> {
+        if (!properties || !this.deviceTwin) {
+            return;
+        }
+
+        try {
+            await new Promise((resolve, reject) => {
+                this.deviceTwin.properties.reported.update(properties, (error) => {
+                    if (error) {
+                        return reject(error);
+                    }
+
+                    return resolve();
+                });
+            });
+
+            this.lvaGatewayModule.log(['AmsCameraDevice', 'info'], `Device live properties updated: ${JSON.stringify(properties, null, 4)}`);
+        }
+        catch (ex) {
+            this.lvaGatewayModule.log(['AmsCameraDevice', 'error'], `Error while updating client properties: ${ex.message}`);
+        }
+    }
+
+    protected async sendMeasurement(data: any): Promise<void> {
         if (!data || !this.deviceClient) {
             return;
         }
@@ -279,134 +301,13 @@ export class AmsCameraDevice {
         }
     }
 
-    private async updateDeviceProperties(properties: any): Promise<void> {
-        if (!properties || !this.deviceTwin) {
-            return;
-        }
-
-        try {
-            await new Promise((resolve, reject) => {
-                this.deviceTwin.properties.reported.update(properties, (error) => {
-                    if (error) {
-                        return reject(error);
-                    }
-
-                    return resolve();
-                });
-            });
-
-            this.lvaGatewayModule.log(['AmsCameraDevice', 'info'], `Device live properties updated: ${JSON.stringify(properties, null, 4)}`);
-        }
-        catch (ex) {
-            this.lvaGatewayModule.log(['AmsCameraDevice', 'error'], `Error while updating client properties: ${ex.message}`);
-        }
-    }
-
-    @bind
-    private async onHandleDeviceProperties(desiredChangedSettings: any) {
-        try {
-            this.lvaGatewayModule.log(['AmsCameraDevice', 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
-
-            const patchedProperties = {};
-
-            for (const setting in desiredChangedSettings) {
-                if (!desiredChangedSettings.hasOwnProperty(setting)) {
-                    continue;
-                }
-
-                if (setting === '$version') {
-                    continue;
-                }
-
-                const value = desiredChangedSettings[`${setting}`]?.value;
-                if (!value) {
-                    this.lvaGatewayModule.log(['AmsCameraDevice', 'error'], `No value field found for desired property '${setting}'`);
-                    continue;
-                }
-
-                let changedSettingResult;
-
-                switch (setting) {
-                    case IoTCameraDeviceInterface.Setting.RtspUrl:
-                    case IoTCameraDeviceInterface.Setting.RtspAuthUsername:
-                    case IoTCameraDeviceInterface.Setting.RtspAuthPassword:
-                        changedSettingResult = await this.deviceSettingChange(setting, value);
-                        break;
-
-                    default:
-                        this.lvaGatewayModule.log(['AmsCameraDevice', 'warning'], `Received desired property change for unknown setting '${setting}'`);
-                        break;
-                }
-
-                if (changedSettingResult?.status === true) {
-                    patchedProperties[setting] = changedSettingResult.value;
-                }
-            }
-
-            if (!emptyObj(patchedProperties)) {
-                await this.updateDeviceProperties(patchedProperties);
-            }
-        }
-        catch (ex) {
-            this.lvaGatewayModule.log(['AmsCameraDevice', 'error'], `Exception while handling desired properties: ${ex.message}`);
-        }
-    }
-
-    private async deviceSettingChange(setting: string, value: any): Promise<any> {
-        // tslint:disable-next-line: max-line-length
-        this.lvaGatewayModule.log(['AmsCameraDevice', 'info'], `Handle device setting change for '${setting}': ${typeof value === 'object' && value !== null ? JSON.stringify(value, null, 4) : value}`);
-
-        const result = {
-            value: undefined,
-            status: true
+    private async getCameraProps(): Promise<ICameraProps> {
+        // TODO:
+        // Introduce some ONVIF tech to get camera props
+        return {
+            rpManufacturer: 'Acme',
+            rpModel: 'Illudium Q-36'
         };
-
-        switch (setting) {
-            case IoTCameraDeviceInterface.Setting.RtspUrl:
-            case IoTCameraDeviceInterface.Setting.RtspAuthUsername:
-            case IoTCameraDeviceInterface.Setting.RtspAuthPassword:
-                result.value = this.deviceSettings[setting] = value || '';
-                break;
-
-            default:
-                this.lvaGatewayModule.log(['AmsCameraDevice', 'info'], `Unknown device setting change request '${setting}'`);
-                result.status = false;
-        }
-
-        return result;
-    }
-
-    @bind
-    private async onHandleDownstreamMessages(inputName: string, message: any) {
-        // this.lvaGatewayModule.log(['AmsCameraDevice', 'info'], `Received downstream message: ${JSON.stringify(message, null, 4)}`);
-
-        if (!this.deviceClient) {
-            return;
-        }
-
-        try {
-            await this.deviceClient.complete(message);
-
-            const messageData = message.getBytes().toString('utf8');
-            if (!messageData) {
-                return;
-            }
-
-            const messageJson = JSON.parse(messageData);
-
-            switch (inputName) {
-                case 'lvadevicetelemetry':
-                    this.lvaGatewayModule.log(['AmsCameraDevice', 'info'], `Received routed message - inputName: ${inputName}, message: ${JSON.stringify(messageJson, null, 4)}`);
-                    break;
-
-                default:
-                    this.lvaGatewayModule.log(['AmsCameraDevice', 'warning'], `Warning: received routed message for unknown input: ${inputName}`);
-                    break;
-            }
-        }
-        catch (ex) {
-            this.lvaGatewayModule.log(['AmsCameraDevice', 'error'], `Error while handling downstream message: ${ex.message}`);
-        }
     }
 
     @bind

@@ -69,7 +69,6 @@
             "properties.desired": {
                 "wpMasterDeviceProvisioningKey": "",
                 "wpScopeId": "",
-                "wpDeviceTemplateId": "",
                 "wpGatewayInstanceId": "",
                 "wpGatewayModuleId": ""
             }
