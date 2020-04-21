@@ -4,8 +4,9 @@ import { LoggingService } from './logging';
 import { ConfigService } from './config';
 import { StorageService } from './storage';
 import { HealthState } from './health';
-import { AmsCameraDevice } from './device';
+import { AmsDeviceTag, AmsDeviceTagValue, AmsCameraDevice } from './device';
 import { AmsMotionDetectorDevice } from './motionDetectorDevice';
+import { AmsObjectDetectorDevice } from './objectDetectorDevice';
 import { Mqtt } from 'azure-iot-device-mqtt';
 import { SymmetricKeySecurityClient } from 'azure-iot-security-symmetric-key';
 import { ProvisioningDeviceClient } from 'azure-iot-provisioning-device';
@@ -30,6 +31,7 @@ import * as fse from 'fs-extra';
 import { resolve as pathResolve } from 'path';
 import * as crypto from 'crypto';
 import * as ipAddress from 'ip';
+import * as Wreck from '@hapi/wreck';
 import * as _random from 'lodash.random';
 import { bind, emptyObj, forget } from '../utils';
 
@@ -85,6 +87,8 @@ enum LvaGatewayDeviceProperties {
 }
 
 enum LvaGatewaySettings {
+    IoTCentralAppHost = 'wpIoTCentralAppHost',
+    IoTCentralAppApiToken = 'wpIoTCentralAppApiToken',
     MasterDeviceProvisioningKey = 'wpMasterDeviceProvisioningKey',
     ScopeId = 'wpScopeId',
     GatewayInstanceId = 'wpGatewayInstanceId',
@@ -93,6 +97,8 @@ enum LvaGatewaySettings {
 }
 
 interface ILvaGatewaySettings {
+    [LvaGatewaySettings.IoTCentralAppHost]: string;
+    [LvaGatewaySettings.IoTCentralAppApiToken]: string;
     [LvaGatewaySettings.MasterDeviceProvisioningKey]: string;
     [LvaGatewaySettings.ScopeId]: string;
     [LvaGatewaySettings.GatewayInstanceId]: string;
@@ -122,8 +128,7 @@ enum AddCameraCommandRequestParams {
 
 enum AddCameraDetectionType {
     Motion = 'motion',
-    People = 'people',
-    Car = 'car'
+    Object = 'object'
 }
 
 const LvaInferenceDeviceMap = {
@@ -132,12 +137,12 @@ const LvaInferenceDeviceMap = {
         deviceClass: AmsMotionDetectorDevice
     },
     people: {
-        templateId: 'urn:AzureMediaServices:LvaEdgeMotionDetectorDevice:1',
-        deviceClass: AmsMotionDetectorDevice
+        templateId: 'urn:AzureMediaServices:LvaEdgeObjectDetectorDevice:1',
+        deviceClass: AmsObjectDetectorDevice
     },
     car: {
-        templateId: 'urn:AzureMediaServices:LvaEdgeMotionDetectorDevice:1',
-        deviceClass: AmsMotionDetectorDevice
+        templateId: 'urn:AzureMediaServices:LvaEdgeObjectDetectorDevice:1',
+        deviceClass: AmsObjectDetectorDevice
     }
 };
 
@@ -158,6 +163,8 @@ const LvaGatewayInterface = {
         ModuleRestart: 'evModuleRestart'
     },
     Setting: {
+        IoTCentralAppHost: LvaGatewaySettings.IoTCentralAppHost,
+        IoTCentralAppApiToken: LvaGatewaySettings.IoTCentralAppApiToken,
         MasterDeviceProvisioningKey: LvaGatewaySettings.MasterDeviceProvisioningKey,
         ScopeId: LvaGatewaySettings.ScopeId,
         GatewayInstanceId: LvaGatewaySettings.GatewayInstanceId,
@@ -209,6 +216,8 @@ export class ModuleService {
     private healthCheckFailStreak: number = 0;
     private moduleIpAddress: string = '127.0.0.1';
     private moduleSettings: ILvaGatewaySettings = {
+        [LvaGatewaySettings.IoTCentralAppHost]: '',
+        [LvaGatewaySettings.IoTCentralAppApiToken]: '',
         [LvaGatewaySettings.MasterDeviceProvisioningKey]: '',
         [LvaGatewaySettings.ScopeId]: '',
         [LvaGatewaySettings.GatewayInstanceId]: '',
@@ -216,6 +225,8 @@ export class ModuleService {
         [LvaGatewaySettings.LvaEdgeModuleId]: ''
     };
     private moduleSettingsDefaults: ILvaGatewaySettings = {
+        [LvaGatewaySettings.IoTCentralAppHost]: '',
+        [LvaGatewaySettings.IoTCentralAppApiToken]: '',
         [LvaGatewaySettings.MasterDeviceProvisioningKey]: '',
         [LvaGatewaySettings.ScopeId]: '',
         [LvaGatewaySettings.GatewayInstanceId]: '',
@@ -580,6 +591,8 @@ export class ModuleService {
                     [LvaGatewayInterface.State.IoTCentralClientState]: IoTCentralClientState.Connected,
                     [LvaGatewayInterface.State.ModuleState]: ModuleState.Active
                 });
+
+                await this.checkForExistingDevices();
             }
             catch (ex) {
                 connectionStatus = `IoT Central connection error: ${ex.message}`;
@@ -590,6 +603,50 @@ export class ModuleService {
         }
 
         return result;
+    }
+
+    private async checkForExistingDevices() {
+        this.logger.log(['ModuleService', 'info'], 'checkForExistingDevices');
+
+        try {
+            const deviceListResponse = await this.iotcApiRequest(
+                `https://${this.moduleSettings[LvaGatewaySettings.IoTCentralAppHost]}/api/preview/devices`,
+                'get',
+                {
+                    headers: {
+                        Authorization: this.moduleSettings[LvaGatewaySettings.IoTCentralAppApiToken]
+                    },
+                    json: true
+                });
+
+            const deviceList = deviceListResponse?.value || [];
+
+            this.logger.log(['ModuleService', 'info'], `Found ${deviceList.length} devices`);
+
+            for (const device of deviceList) {
+                const devicePropertiesResponse = await this.iotcApiRequest(
+                    `https://${this.moduleSettings[LvaGatewaySettings.IoTCentralAppHost]}/api/preview/devices/${device.id}/properties`,
+                    'get',
+                    {
+                        headers: {
+                            Authorization: this.moduleSettings[LvaGatewaySettings.IoTCentralAppApiToken]
+                        },
+                        json: true
+                    });
+
+                if (devicePropertiesResponse.IoTCameraDeviceInterface?.[AmsDeviceTag] === AmsDeviceTagValue) {
+                    const cameraName = devicePropertiesResponse.IoTCameraDeviceInterface?.rpCameraName;
+                    const detectionType = devicePropertiesResponse.LvaEdgeMotionDetectorInterface ? AddCameraDetectionType.Motion : AddCameraDetectionType.Object;
+
+                    this.logger.log(['ModuleService', 'info'], `Trying to re-create device: ${device.id} - detectionType: ${detectionType}`);
+
+                    await this.createAmsInferenceDevice(device.id, cameraName, detectionType);
+                }
+            }
+        }
+        catch (ex) {
+            this.logger.log(['ModuleService', 'error'], `Failed to get device list: ${ex.message}`);
+        }
     }
 
     @bind
@@ -701,12 +758,14 @@ export class ModuleService {
                 return deviceProvisionResult;
             }
 
-            if (!this.moduleSettings[LvaGatewaySettings.MasterDeviceProvisioningKey]
+            if (!this.moduleSettings[LvaGatewaySettings.IoTCentralAppHost]
+                || !this.moduleSettings[LvaGatewaySettings.IoTCentralAppApiToken]
+                || !this.moduleSettings[LvaGatewaySettings.MasterDeviceProvisioningKey]
                 || !this.moduleSettings[LvaGatewaySettings.ScopeId]
                 || !this.moduleSettings[LvaGatewaySettings.GatewayInstanceId]
                 || !this.moduleSettings[LvaGatewaySettings.GatewayModuleId]) {
                 deviceProvisionResult.dpsProvisionStatus = false;
-                deviceProvisionResult.dpsProvisionMessage = `Missing camera management settings (Master provision key, scopeId, gatewayInstanceId, gatewayModuleId)`;
+                deviceProvisionResult.dpsProvisionMessage = `Missing camera management settings (IoTCentralAppHost, LvaGatewayMangementToken, MasterDeviceProvisioningKey, ScopeId, GatewayInstanceId, GatewayModuleId)`;
                 this.logger.log(['ModuleService', 'error'], deviceProvisionResult.dpsProvisionMessage);
 
                 return deviceProvisionResult;
@@ -915,6 +974,8 @@ export class ModuleService {
                 let changedSettingResult;
 
                 switch (desiredSettingsKey) {
+                    case LvaGatewayInterface.Setting.IoTCentralAppHost:
+                    case LvaGatewayInterface.Setting.IoTCentralAppApiToken:
                     case LvaGatewayInterface.Setting.MasterDeviceProvisioningKey:
                     case LvaGatewayInterface.Setting.ScopeId:
                     case LvaGatewayInterface.Setting.GatewayInstanceId:
@@ -981,6 +1042,8 @@ export class ModuleService {
         };
 
         switch (setting) {
+            case LvaGatewayInterface.Setting.IoTCentralAppHost:
+            case LvaGatewayInterface.Setting.IoTCentralAppApiToken:
             case LvaGatewayInterface.Setting.MasterDeviceProvisioningKey:
             case LvaGatewayInterface.Setting.ScopeId:
             case LvaGatewayInterface.Setting.GatewayInstanceId:
@@ -1052,6 +1115,27 @@ export class ModuleService {
                 statusCode: 400,
                 message: ex.message
             });
+        }
+    }
+
+    private async iotcApiRequest(uri, method, options): Promise<any> {
+        try {
+            const { res, payload } = await Wreck[method](uri, options);
+
+            if (res.statusCode < 200 || res.statusCode > 299) {
+                this.logger.log(['ModuleService', 'error'], `Response status code = ${res.statusCode}`);
+
+                throw ({
+                    message: (payload as any)?.message || payload || 'An error occurred',
+                    statusCode: res.statusCode
+                });
+            }
+
+            return payload;
+        }
+        catch (ex) {
+            this.logger.log(['ModuleService', 'error'], `iotcApiRequest: ${ex.message}`);
+            throw ex;
         }
     }
 }
