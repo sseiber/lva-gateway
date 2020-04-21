@@ -12,10 +12,10 @@ WORKDIR ${DATADIR}
 
 ADD ./setup/motionGraphInstance.json ${DATADIR}/motionGraphInstance.json
 ADD ./setup/motionGraphTopology.json ${DATADIR}/motionGraphTopology.json
-ADD ./setup/peopleGraphInstance.json ${DATADIR}/peopleGraphInstance.json
-ADD ./setup/peopleGraphTopology.json ${DATADIR}/peopleGraphTopology.json
-ADD ./setup/carGraphInstance.json ${DATADIR}/carGraphInstance.json
-ADD ./setup/carGraphTopology.json ${DATADIR}/carGraphTopology.json
+ADD ./setup/objectGraphInstance.json ${DATADIR}/objectGraphInstance.json
+ADD ./setup/objectGraphTopology.json ${DATADIR}/objectGraphTopology.json
+ADD ./setup/signalGateGraphInstance.json ${DATADIR}/signalGateGraphInstance.json
+ADD ./setup/signalGateGraphTopology.json ${DATADIR}/signalGateGraphTopology.json
 
 ENV WORKINGDIR /app
 WORKDIR ${WORKINGDIR}

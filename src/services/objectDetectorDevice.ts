@@ -6,39 +6,43 @@ import {
 } from './device';
 import { bind, emptyObj } from '../utils';
 
-interface IMotionInference {
+interface IObjectInference {
     type: string;
-    motion: {
+    entity: {
         box: {
             l: number,
             t: number,
             w: number,
             h: number
+        },
+        tag: {
+            confidence: number;
+            value: string
         }
     };
 }
 
-enum MotionDetectorSettings {
-    Sensitivity = 'wpSensitivity'
+enum ObjectDetectorSettings {
+    DetectionClass = 'wpDetectionClass'
 }
 
-interface IMotionDetectorSettings {
-    [MotionDetectorSettings.Sensitivity]: string;
+interface IObjectDetectorSettings {
+    [ObjectDetectorSettings.DetectionClass]: string;
 }
 
-const MotionDetectorInterface = {
+const ObjectDetectorInterface = {
     Telemetry: {
         InferenceCount: 'tlInferenceCount',
         Inference: 'tlInference'
     },
     Setting: {
-        Sensitivity: MotionDetectorSettings.Sensitivity
+        DetectionClass: ObjectDetectorSettings.DetectionClass
     }
 };
 
-export class AmsMotionDetectorDevice extends AmsCameraDevice {
-    private motionDetectorSettings: IMotionDetectorSettings = {
-        [MotionDetectorSettings.Sensitivity]: ''
+export class AmsObjectDetectorDevice extends AmsCameraDevice {
+    private objectDetectorSettings: IObjectDetectorSettings = {
+        [ObjectDetectorSettings.DetectionClass]: ''
     };
 
     constructor(lvaGatewayModule: ModuleService, amsGraph: IAmsGraph, cameraId: string, cameraName: string) {
@@ -62,65 +66,66 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
         return clientConnectionResult;
     }
 
-    public async processLvaInferences(inferences: IMotionInference[]): Promise<void> {
+    public async processLvaInferences(inferences: IObjectInference[]): Promise<void> {
         if (!Array.isArray(inferences) || !this.deviceClient) {
-            this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'error'], `Missing inferences array or client not connected`);
+            this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'error'], `Missing inferences array or client not connected`);
             return;
         }
 
         if (process.env.DEBUG_DEVICE_TELEMETRY === this.cameraId) {
-            this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'info'], `processLvaInferences: ${inferences}`);
+            this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'info'], `processLvaInferences: ${inferences}`);
         }
 
         try {
             let inferenceCount = 0;
 
             for (const inference of inferences) {
-                ++inferenceCount;
+                if ((inference.entity?.tag?.value || '').toUpperCase() === this.objectDetectorSettings[ObjectDetectorSettings.DetectionClass]) {
+                    ++inferenceCount;
+                }
 
                 await this.sendMeasurement({
-                    [MotionDetectorInterface.Telemetry.Inference]: inference
+                    [ObjectDetectorInterface.Telemetry.Inference]: inference
                 });
             }
 
             if (inferenceCount > 0) {
                 await this.sendMeasurement({
-                    [MotionDetectorInterface.Telemetry.InferenceCount]: inferenceCount
+                    [ObjectDetectorInterface.Telemetry.InferenceCount]: inferenceCount
                 });
             }
         }
         catch (ex) {
-            this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'error'], `Error processing downstream message: ${ex.message}`);
+            this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'error'], `Error processing downstream message: ${ex.message}`);
         }
     }
 
     public setGraphInstance(amsGraph: IAmsGraph): boolean {
-        this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'info'], `Setting graph instance`);
+        this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'info'], `Setting graph instance`);
 
         if (!amsGraph?.instance || !amsGraph?.topology) {
-            this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'error'], `The amsGraph was undefined`);
+            this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'error'], `The amsGraph was undefined`);
             return false;
         }
 
         if (amsGraph?.initialized === true) {
-            this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'warning'], `Graph instance already set for graph: ${amsGraph?.instance?.name || '(name not detected)'}`);
+            this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'warning'], `Graph instance already set for graph: ${amsGraph?.instance?.name || '(name not detected)'}`);
             return true;
         }
 
         amsGraph.instance.name = (amsGraph.instance?.name || '').replace('###RtspCameraId', this.cameraId);
         amsGraph.instance.properties.topologyName = (amsGraph.instance?.properties?.topologyName || '###RtspCameraId').replace('###RtspCameraId', this.cameraId);
 
-        this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'info'], `### amsGraph.instance: ${JSON.stringify(amsGraph.instance, null, 4)}`);
+        this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'info'], `### amsGraph.instance: ${JSON.stringify(amsGraph.instance, null, 4)}`);
 
         amsGraph.topology.name = (amsGraph.topology?.name || '').replace('###RtspCameraId', this.cameraId);
         amsGraph.topology.properties.sources[0].name = `RtspSource_${this.cameraId}`;
         amsGraph.topology.properties.sources[0].endpoint.url = this.deviceSettings[IoTCameraDeviceSettings.RtspUrl];
         amsGraph.topology.properties.sources[0].endpoint.credentials.username = this.deviceSettings[IoTCameraDeviceSettings.RtspAuthUsername];
         amsGraph.topology.properties.sources[0].endpoint.credentials.password = this.deviceSettings[IoTCameraDeviceSettings.RtspAuthPassword];
-        amsGraph.topology.properties.processors[0].sensitivity = this.motionDetectorSettings[MotionDetectorSettings.Sensitivity];
         amsGraph.topology.properties.processors[0].inputs[0].moduleName = `RtspSource_${this.cameraId}`;
 
-        this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'info'], `### amsGraph.topology: ${JSON.stringify(amsGraph.topology, null, 4)}`);
+        this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'info'], `### amsGraph.topology: ${JSON.stringify(amsGraph.topology, null, 4)}`);
 
         return amsGraph.initialized = true;
     }
@@ -130,7 +135,7 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
         await super.onHandleDeviceProperties(desiredChangedSettings);
 
         try {
-            this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
+            this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
 
             const patchedProperties = {};
 
@@ -145,17 +150,17 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
 
                 const value = desiredChangedSettings[`${setting}`]?.value;
                 if (!value) {
-                    this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'error'], `No value field found for desired property '${setting}'`);
+                    this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'error'], `No value field found for desired property '${setting}'`);
                     continue;
                 }
 
                 switch (setting) {
-                    case MotionDetectorInterface.Setting.Sensitivity:
-                        patchedProperties[setting] = this.motionDetectorSettings[setting] = value || '';
+                    case ObjectDetectorInterface.Setting.DetectionClass:
+                        patchedProperties[setting] = this.objectDetectorSettings[setting] = (value || '').toUpperCase();
                         break;
 
                     default:
-                        this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'warning'], `Received desired property change for unknown setting '${setting}'`);
+                        this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'warning'], `Received desired property change for unknown setting '${setting}'`);
                         break;
                 }
             }
@@ -169,12 +174,12 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
                     await this.startLvaProcessingInternal();
                 }
                 catch (ex) {
-                    this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'error'], `Error while trying to auto-start Lva graph: ${ex.message}`);
+                    this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'error'], `Error while trying to auto-start Lva graph: ${ex.message}`);
                 }
             }
         }
         catch (ex) {
-            this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'error'], `Exception while handling desired properties: ${ex.message}`);
+            this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'error'], `Exception while handling desired properties: ${ex.message}`);
         }
     }
 }

@@ -143,6 +143,24 @@
                                     {
                                         "@type": "Property",
                                         "displayName": {
+                                            "en": "IoT Central App Host"
+                                        },
+                                        "name": "wpIoTCentralAppHost",
+                                        "writable": true,
+                                        "schema": "string"
+                                    },
+                                    {
+                                        "@type": "Property",
+                                        "displayName": {
+                                            "en": "Lva Gateway API Management Token"
+                                        },
+                                        "name": "wpIoTCentralAppApiToken",
+                                        "writable": true,
+                                        "schema": "string"
+                                    },
+                                    {
+                                        "@type": "Property",
+                                        "displayName": {
                                             "en": "Master Device Provisioning Key"
                                         },
                                         "name": "wpMasterDeviceProvisioningKey",
@@ -461,18 +479,10 @@
                                                                 {
                                                                     "@type": "EnumValue",
                                                                     "displayName": {
-                                                                        "en": "People Detection"
+                                                                        "en": "Object Detection"
                                                                     },
-                                                                    "enumValue": "people",
-                                                                    "name": "DetectionTypeEnum_People"
-                                                                },
-                                                                {
-                                                                    "@type": "EnumValue",
-                                                                    "displayName": {
-                                                                        "en": "Car Detection"
-                                                                    },
-                                                                    "enumValue": "car",
-                                                                    "name": "DetectionTypeEnum_Car"
+                                                                    "enumValue": "object",
+                                                                    "name": "DetectionTypeEnum_Object"
                                                                 }
                                                             ]
                                                         }

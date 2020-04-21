@@ -1,5 +1,5 @@
 {
-    "@id": "urn:AzureMediaServices:LvaEdgeMotionDetectorDevice:1",
+    "@id": "urn:AzureMediaServices:LvaEdgeObjectDetectorDevice:1",
     "@type": "CapabilityModel",
     "implements": [
         {
@@ -332,14 +332,14 @@
         {
             "@type": "InterfaceInstance",
             "displayName": {
-                "en": "Lva Edge Motion Detector Interface"
+                "en": "Lva Edge Object Detector Interface"
             },
-            "name": "LvaEdgeMotionDetectorInterface",
+            "name": "LvaEdgeObjectDetectorInterface",
             "schema": {
-                "@id": "urn:AzureMediaServices:LvaEdgeMotionDetectorInterface:1",
+                "@id": "urn:AzureMediaServices:LvaEdgeObjectDetectorInterface:1",
                 "@type": "Interface",
                 "displayName": {
-                    "en": "Lva Edge Motion Detector Interface"
+                    "en": "Lva Edge Object Detector Interface"
                 },
                 "contents": [
                     {
@@ -373,9 +373,9 @@
                                 {
                                     "@type": "SchemaField",
                                     "displayName": {
-                                        "en": "motion"
+                                        "en": "entity"
                                     },
-                                    "name": "motion",
+                                    "name": "entity",
                                     "schema": {
                                         "@type": "Object",
                                         "displayName": {
@@ -428,6 +428,37 @@
                                                         }
                                                     ]
                                                 }
+                                            },
+                                            {
+                                                "@type": "SchemaField",
+                                                "displayName": {
+                                                    "en": "tag"
+                                                },
+                                                "name": "tag",
+                                                "schema": {
+                                                    "@type": "Object",
+                                                    "displayName": {
+                                                        "en": "Object"
+                                                    },
+                                                    "fields": [
+                                                        {
+                                                            "@type": "SchemaField",
+                                                            "displayName": {
+                                                                "en": "confidence"
+                                                            },
+                                                            "name": "confidence",
+                                                            "schema": "double"
+                                                        },
+                                                        {
+                                                            "@type": "SchemaField",
+                                                            "displayName": {
+                                                                "en": "value"
+                                                            },
+                                                            "name": "value",
+                                                            "schema": "string"
+                                                        }
+                                                    ]
+                                                }
                                             }
                                         ]
                                     }
@@ -438,50 +469,18 @@
                     {
                         "@type": "Property",
                         "displayName": {
-                            "en": "Sensitivity"
+                            "en": "DetectionClass"
                         },
-                        "name": "wpSensitivity",
+                        "name": "wpDetectionClass",
                         "writable": true,
-                        "schema": {
-                            "@type": "Enum",
-                            "displayName": {
-                                "en": "Enum"
-                            },
-                            "valueSchema": "string",
-                            "enumValues": [
-                                {
-                                    "@type": "EnumValue",
-                                    "displayName": {
-                                        "en": "High"
-                                    },
-                                    "enumValue": "high",
-                                    "name": "SensitivityEnum_High"
-                                },
-                                {
-                                    "@type": "EnumValue",
-                                    "displayName": {
-                                        "en": "Medium"
-                                    },
-                                    "enumValue": "medium",
-                                    "name": "SensitivityEnum_Medium"
-                                },
-                                {
-                                    "@type": "EnumValue",
-                                    "displayName": {
-                                        "en": "Low"
-                                    },
-                                    "enumValue": "low",
-                                    "name": "SensitivityEnum_Low"
-                                }
-                            ]
-                        }
+                        "schema": "string"
                     }
                 ]
             }
         }
     ],
     "displayName": {
-        "en": "Lva Edge Motion Detector Device"
+        "en": "Lva Edge Object Detector Device"
     },
     "@context": [
         "http://azureiot.com/v1/contexts/IoTModel.json"

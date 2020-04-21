@@ -1,0 +1,74 @@
+{
+    "@apiVersion": "1.0",
+    "name": "RtspObjectDetectorGraph-###RtspCameraId",
+    "properties": {
+        "description": "Rtsp object detector graph",
+        "sources": [
+            {
+                "@type": "#Microsoft.Media.MediaGraphRtspSource",
+                "name": "RtspSource_###RtspCameraId",
+                "endpoint": {
+                    "@type": "#Microsoft.Media.MediaGraphClearEndpoint",
+                    "url": "###RtspUrl",
+                    "credentials": {
+                        "@type": "#Microsoft.Media.MediaGraphUsernamePasswordCredentials",
+                        "username": "###RtspAuthName",
+                        "password": "###RtspAuthPassword"
+                    }
+                }
+            }
+        ],
+        "processors": [
+            {
+                "@type": "#Microsoft.Media.MediaGraphFrameRateFilterProcessor",
+                "name": "dropTo1fps",
+                "maximumFps": "1.0",
+                "inputs": [
+                    {
+                        "moduleName": "RtspSource_###RtspCameraId"
+                    }
+                ]
+            },
+            {
+                "@type": "#Microsoft.Media.MediaGraphHttpExtension",
+                "name": "yolo3InferenceSource",
+                "endpoint": {
+                    "@type": "#Microsoft.Media.MediaGraphClearEndpoint",
+                    "url": "http://lvaYolov3/score",
+                    "credentials": {
+                        "@type": "#Microsoft.Media.MediaGraphHttpHeaderCredentials",
+                        "headerName": "Authorization",
+                        "headerValue": "Bearer x"
+                    }
+                },
+                "imageFormat": {
+                    "encoding": {
+                        "@type": "#Microsoft.Media.MediaGraphImageEncoding",
+                        "format": "jpeg"
+                    },
+                    "scaling": {
+                        "width": 1280,
+                        "height": 720
+                    }
+                },
+                "inputs": [
+                    {
+                        "moduleName": "dropTo1fps"
+                    }
+                ]
+            }
+        ],
+        "sinks": [
+            {
+                "@type": "#Microsoft.Media.MediaGraphIoTHubMessageSink",
+                "name": "hubSink",
+                "hubOutputName": "lvaTelemetry",
+                "inputs": [
+                    {
+                        "moduleName": "yolo3InferenceSource"
+                    }
+                ]
+            }
+        ]
+    }
+}

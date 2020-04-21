@@ -7,7 +7,11 @@ import {
     Twin,
     Message as IoTMessage
 } from 'azure-iot-device';
-import { ModuleService, IAmsGraph } from './module';
+import {
+    ICommandResponse,
+    ModuleService,
+    IAmsGraph
+} from './module';
 import { bind, emptyObj } from '../utils';
 
 export type DevicePropertiesHandler = (desiredChangedSettings: any) => Promise<void>;
@@ -51,14 +55,19 @@ const LvaInterface = {
 export enum IoTCameraDeviceSettings {
     RtspUrl = 'wpRtspUrl',
     RtspAuthUsername = 'wpRtspAuthUsername',
-    RtspAuthPassword = 'wpRtspAuthPassword'
+    RtspAuthPassword = 'wpRtspAuthPassword',
+    AutoStart = 'wpAutoStart'
 }
 
 interface IIoTCameraDeviceSettings {
     [IoTCameraDeviceSettings.RtspUrl]: string;
     [IoTCameraDeviceSettings.RtspAuthUsername]: string;
     [IoTCameraDeviceSettings.RtspAuthPassword]: string;
+    [IoTCameraDeviceSettings.AutoStart]: boolean;
 }
+
+export const AmsDeviceTag = 'rpAmsDeviceTag';
+export const AmsDeviceTagValue = 'AmsInferenceDevice.v1';
 
 const IoTCameraDeviceInterface = {
     Telemetry: {
@@ -71,12 +80,14 @@ const IoTCameraDeviceInterface = {
     Property: {
         CameraName: 'rpCameraName',
         Manufacturer: 'rpManufacturer',
-        Model: 'rpModel'
+        Model: 'rpModel',
+        AmsDeviceTag
     },
     Setting: {
         RtspUrl: IoTCameraDeviceSettings.RtspUrl,
         RtspAuthUsername: IoTCameraDeviceSettings.RtspAuthUsername,
-        RtspAuthPassword: IoTCameraDeviceSettings.RtspAuthPassword
+        RtspAuthPassword: IoTCameraDeviceSettings.RtspAuthPassword,
+        AutoStart: IoTCameraDeviceSettings.AutoStart
     }
 };
 
@@ -92,7 +103,8 @@ export abstract class AmsCameraDevice {
     protected deviceSettings: IIoTCameraDeviceSettings = {
         [IoTCameraDeviceSettings.RtspUrl]: '',
         [IoTCameraDeviceSettings.RtspAuthUsername]: '',
-        [IoTCameraDeviceSettings.RtspAuthPassword]: ''
+        [IoTCameraDeviceSettings.RtspAuthPassword]: '',
+        [IoTCameraDeviceSettings.AutoStart]: false
     };
 
     constructor(lvaGatewayModule: ModuleService, amsGraph: IAmsGraph, cameraId: string, cameraName: string) {
@@ -181,7 +193,8 @@ export abstract class AmsCameraDevice {
             await this.updateDeviceProperties({
                 [IoTCameraDeviceInterface.Property.CameraName]: this.cameraName,
                 [IoTCameraDeviceInterface.Property.Manufacturer]: cameraProps.rpManufacturer,
-                [IoTCameraDeviceInterface.Property.Model]: cameraProps.rpModel
+                [IoTCameraDeviceInterface.Property.Model]: cameraProps.rpModel,
+                [IoTCameraDeviceInterface.Property.AmsDeviceTag]: AmsDeviceTagValue
             });
 
             await this.sendMeasurement({
@@ -226,8 +239,11 @@ export abstract class AmsCameraDevice {
                     case IoTCameraDeviceInterface.Setting.RtspUrl:
                     case IoTCameraDeviceInterface.Setting.RtspAuthUsername:
                     case IoTCameraDeviceInterface.Setting.RtspAuthPassword:
-                        patchedProperties[setting] = this.deviceSettings[setting] = value || '';
+                        patchedProperties[setting] = (this.deviceSettings[setting] as any) = value || '';
                         break;
+
+                    case IoTCameraDeviceInterface.Setting.AutoStart:
+                        patchedProperties[setting] = (this.deviceSettings[setting] as any) = value || false;
 
                     default:
                         this.lvaGatewayModule.log(['AmsCameraDevice', 'warning'], `Received desired property change for unknown setting '${setting}'`);
@@ -300,6 +316,27 @@ export abstract class AmsCameraDevice {
         }
     }
 
+    protected async startLvaProcessingInternal(): Promise<ICommandResponse> {
+        await this.sendMeasurement({
+            [LvaInterface.Event.StartLvaGraphCommandReceived]: this.cameraId
+        });
+
+        await this.lvaGatewayModule.stopLvaGraph(this.amsGraph);
+
+        this.setGraphInstance(this.amsGraph);
+
+        const startLvaGraphResponse = await this.lvaGatewayModule.startLvaGraph(this.amsGraph);
+        this.lvaGatewayModule.log(['AmsCameraDevice', 'info'], `LVA Edge gateway returned with status: ${startLvaGraphResponse.statusCode}`);
+
+        if (startLvaGraphResponse?.statusCode === 201) {
+            await this.sendMeasurement({
+                [IoTCameraDeviceInterface.State.CameraState]: CameraState.Active
+            });
+        }
+
+        return startLvaGraphResponse;
+    }
+
     private async getCameraProps(): Promise<ICameraProps> {
         // TODO:
         // Introduce some ONVIF tech to get camera props
@@ -321,22 +358,7 @@ export abstract class AmsCameraDevice {
         this.lvaGatewayModule.log(['AmsCameraDevice', 'info'], `${LvaInterface.Command.StartLvaProcessing} command received`);
 
         try {
-            await this.sendMeasurement({
-                [LvaInterface.Event.StartLvaGraphCommandReceived]: this.cameraId
-            });
-
-            await this.lvaGatewayModule.stopLvaGraph(this.amsGraph);
-
-            this.setGraphInstance(this.amsGraph);
-
-            const startLvaGraphResponse = await this.lvaGatewayModule.startLvaGraph(this.amsGraph);
-            this.lvaGatewayModule.log(['AmsCameraDevice', 'info'], `LVA Edge gateway returned with status: ${startLvaGraphResponse.statusCode}`);
-
-            if (startLvaGraphResponse?.statusCode === 201) {
-                await this.sendMeasurement({
-                    [IoTCameraDeviceInterface.State.CameraState]: CameraState.Active
-                });
-            }
+            const startLvaGraphResponse = await this.startLvaProcessingInternal();
 
             await commandResponse.send(startLvaGraphResponse.statusCode, startLvaGraphResponse);
         }
