@@ -28,10 +28,7 @@
                 "PORT": "9070",
                 "DATAMISC_ROOT": "${workspaceFolder}/storage",
                 "CONTENT_ROOT": "${workspaceFolder}/setup",
-                "LOCAL_DEBUG": "0",
-                "DEBUG_MODULE_TELEMETRY": "1",
-                "DEBUG_ROUTING_TELEMETRY": "0",
-                "DEBUG_DEVICE_TELEMETRY": ""
+                "LOCAL_DEBUG": "0"
             }
         },
         {

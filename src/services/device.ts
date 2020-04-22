@@ -12,7 +12,7 @@ import {
     ModuleService,
     IAmsGraph
 } from './module';
-import { bind, emptyObj } from '../utils';
+import { bind, defer, emptyObj } from '../utils';
 
 export type DevicePropertiesHandler = (desiredChangedSettings: any) => Promise<void>;
 
@@ -56,7 +56,8 @@ export enum IoTCameraDeviceSettings {
     RtspUrl = 'wpRtspUrl',
     RtspAuthUsername = 'wpRtspAuthUsername',
     RtspAuthPassword = 'wpRtspAuthPassword',
-    AutoStart = 'wpAutoStart'
+    AutoStart = 'wpAutoStart',
+    DebugTelemetry = 'wpDebugTelemetry'
 }
 
 interface IIoTCameraDeviceSettings {
@@ -64,6 +65,7 @@ interface IIoTCameraDeviceSettings {
     [IoTCameraDeviceSettings.RtspAuthUsername]: string;
     [IoTCameraDeviceSettings.RtspAuthPassword]: string;
     [IoTCameraDeviceSettings.AutoStart]: boolean;
+    [IoTCameraDeviceSettings.DebugTelemetry]: boolean;
 }
 
 export const AmsDeviceTag = 'rpAmsDeviceTag';
@@ -87,7 +89,8 @@ const IoTCameraDeviceInterface = {
         RtspUrl: IoTCameraDeviceSettings.RtspUrl,
         RtspAuthUsername: IoTCameraDeviceSettings.RtspAuthUsername,
         RtspAuthPassword: IoTCameraDeviceSettings.RtspAuthPassword,
-        AutoStart: IoTCameraDeviceSettings.AutoStart
+        AutoStart: IoTCameraDeviceSettings.AutoStart,
+        DebugTelemetry: IoTCameraDeviceSettings.DebugTelemetry
     }
 };
 
@@ -99,12 +102,14 @@ export abstract class AmsCameraDevice {
     protected deviceClient: IoTDeviceClient;
     protected deviceTwin: Twin;
 
+    protected deferredStart = defer();
     protected healthState = HealthState.Good;
     protected deviceSettings: IIoTCameraDeviceSettings = {
         [IoTCameraDeviceSettings.RtspUrl]: '',
         [IoTCameraDeviceSettings.RtspAuthUsername]: '',
         [IoTCameraDeviceSettings.RtspAuthPassword]: '',
-        [IoTCameraDeviceSettings.AutoStart]: false
+        [IoTCameraDeviceSettings.AutoStart]: false,
+        [IoTCameraDeviceSettings.DebugTelemetry]: false
     };
 
     constructor(lvaGatewayModule: ModuleService, amsGraph: IAmsGraph, cameraId: string, cameraName: string) {
@@ -230,10 +235,6 @@ export abstract class AmsCameraDevice {
                 }
 
                 const value = desiredChangedSettings[`${setting}`]?.value;
-                if (!value) {
-                    this.lvaGatewayModule.log(['AmsCameraDevice', 'error'], `No value field found for desired property '${setting}'`);
-                    continue;
-                }
 
                 switch (setting) {
                     case IoTCameraDeviceInterface.Setting.RtspUrl:
@@ -243,10 +244,10 @@ export abstract class AmsCameraDevice {
                         break;
 
                     case IoTCameraDeviceInterface.Setting.AutoStart:
+                    case IoTCameraDeviceInterface.Setting.DebugTelemetry:
                         patchedProperties[setting] = (this.deviceSettings[setting] as any) = value || false;
 
                     default:
-                        this.lvaGatewayModule.log(['AmsCameraDevice', 'warning'], `Received desired property change for unknown setting '${setting}'`);
                         break;
                 }
             }
@@ -293,7 +294,7 @@ export abstract class AmsCameraDevice {
 
             await this.deviceClient.sendEvent(iotcMessage);
 
-            if (process.env.DEBUG_DEVICE_TELEMETRY === this.cameraId) {
+            if (this.deviceSettings[IoTCameraDeviceSettings.DebugTelemetry] === true) {
                 this.lvaGatewayModule.log(['AmsCameraDevice', 'info'], `sendEvent: ${JSON.stringify(data, null, 4)}`);
             }
         }

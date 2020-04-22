@@ -93,7 +93,9 @@ enum LvaGatewaySettings {
     ScopeId = 'wpScopeId',
     GatewayInstanceId = 'wpGatewayInstanceId',
     GatewayModuleId = 'wpGatewayModuleId',
-    LvaEdgeModuleId = 'wpLvaEdgeModuleId'
+    LvaEdgeModuleId = 'wpLvaEdgeModuleId',
+    DebugTelemetry = 'wpDebugTelemetry',
+    DebugRoutedMessage = 'wpDebugRoutedMessage'
 }
 
 interface ILvaGatewaySettings {
@@ -104,6 +106,8 @@ interface ILvaGatewaySettings {
     [LvaGatewaySettings.GatewayInstanceId]: string;
     [LvaGatewaySettings.GatewayModuleId]: string;
     [LvaGatewaySettings.LvaEdgeModuleId]: string;
+    [LvaGatewaySettings.DebugTelemetry]: boolean;
+    [LvaGatewaySettings.DebugRoutedMessage]: boolean;
 }
 
 enum IoTCentralClientState {
@@ -136,11 +140,7 @@ const LvaInferenceDeviceMap = {
         templateId: 'urn:AzureMediaServices:LvaEdgeMotionDetectorDevice:1',
         deviceClass: AmsMotionDetectorDevice
     },
-    people: {
-        templateId: 'urn:AzureMediaServices:LvaEdgeObjectDetectorDevice:1',
-        deviceClass: AmsObjectDetectorDevice
-    },
-    car: {
+    object: {
         templateId: 'urn:AzureMediaServices:LvaEdgeObjectDetectorDevice:1',
         deviceClass: AmsObjectDetectorDevice
     }
@@ -149,7 +149,8 @@ const LvaInferenceDeviceMap = {
 const LvaGatewayInterface = {
     Telemetry: {
         SystemHeartbeat: 'tlSystemHeartbeat',
-        FreeMemory: 'tlFreeMemory'
+        FreeMemory: 'tlFreeMemory',
+        ConnectedCameras: 'tlConnectedCameras'
     },
     State: {
         IoTCentralClientState: 'stIoTCentralClientState',
@@ -169,7 +170,9 @@ const LvaGatewayInterface = {
         ScopeId: LvaGatewaySettings.ScopeId,
         GatewayInstanceId: LvaGatewaySettings.GatewayInstanceId,
         GatewayModuleId: LvaGatewaySettings.GatewayModuleId,
-        LvaEdgeModuleId: LvaGatewaySettings.LvaEdgeModuleId
+        LvaEdgeModuleId: LvaGatewaySettings.LvaEdgeModuleId,
+        DebugTelemetry: LvaGatewaySettings.DebugTelemetry,
+        DebugRoutedMessage: LvaGatewaySettings.DebugRoutedMessage
     },
     Property: {
         ModuleIpAddress: 'rpModuleIpAddress'
@@ -222,7 +225,9 @@ export class ModuleService {
         [LvaGatewaySettings.ScopeId]: '',
         [LvaGatewaySettings.GatewayInstanceId]: '',
         [LvaGatewaySettings.GatewayModuleId]: '',
-        [LvaGatewaySettings.LvaEdgeModuleId]: ''
+        [LvaGatewaySettings.LvaEdgeModuleId]: '',
+        [LvaGatewaySettings.DebugTelemetry]: false,
+        [LvaGatewaySettings.DebugRoutedMessage]: false
     };
     private moduleSettingsDefaults: ILvaGatewaySettings = {
         [LvaGatewaySettings.IoTCentralAppHost]: '',
@@ -231,7 +236,9 @@ export class ModuleService {
         [LvaGatewaySettings.ScopeId]: '',
         [LvaGatewaySettings.GatewayInstanceId]: '',
         [LvaGatewaySettings.GatewayModuleId]: '',
-        [LvaGatewaySettings.LvaEdgeModuleId]: ''
+        [LvaGatewaySettings.LvaEdgeModuleId]: '',
+        [LvaGatewaySettings.DebugTelemetry]: false,
+        [LvaGatewaySettings.DebugRoutedMessage]: false
     };
     private amsInferenceDeviceMap = new Map<string, AmsCameraDevice>();
     private dpsProvisioningHost: string = defaultDpsProvisioningHost;
@@ -294,7 +301,10 @@ export class ModuleService {
             const systemProperties = await this.getSystemProperties();
             const freeMemory = systemProperties?.freeMemory || 0;
 
-            await this.sendMeasurement({ [LvaGatewayInterface.Telemetry.FreeMemory]: freeMemory });
+            await this.sendMeasurement({
+                [LvaGatewayInterface.Telemetry.FreeMemory]: freeMemory,
+                [LvaGatewayInterface.Telemetry.ConnectedCameras]: this.amsInferenceDeviceMap.size
+            });
 
             // TODO:
             // Find the right threshold for this metric
@@ -336,7 +346,7 @@ export class ModuleService {
 
             await this.moduleClient.sendOutputEvent('iotc', iotcMessage);
 
-            if (process.env.DEBUG_MODULE_TELEMETRY === '1') {
+            if (this.moduleSettings[LvaGatewaySettings.DebugTelemetry] === true) {
                 this.logger.log(['ModuleService', 'info'], `sendEvent: ${JSON.stringify(data, null, 4)}`);
             }
         }
@@ -651,8 +661,6 @@ export class ModuleService {
 
     @bind
     private async onHandleDownstreamMessages(inputName: string, message: Message) {
-        // this.logger.log(['ModuleService', 'info'], `Received downstream message: ${JSON.stringify(message, null, 4)}`);
-
         if (!this.moduleClient || !message) {
             return;
         }
@@ -666,7 +674,14 @@ export class ModuleService {
             }
 
             const messageJson = JSON.parse(messageData);
-            this.logger.log(['ModuleService', 'info'], `Received downstream message: ${JSON.stringify(messageJson, null, 4)}`);
+
+            if (this.moduleSettings[LvaGatewaySettings.DebugRoutedMessage] === true) {
+                if (message.properties?.propertyList) {
+                    this.logger.log(['ModuleService', 'info'], `Routed message properties: ${JSON.stringify(message.properties?.propertyList, null, 4)}`);
+                }
+
+                this.logger.log(['ModuleService', 'info'], `Routed message data: ${JSON.stringify(messageJson, null, 4)}`);
+            }
 
             switch (inputName) {
                 case LvaGatewayEdgeInputs.CameraCommand: {
@@ -981,6 +996,8 @@ export class ModuleService {
                     case LvaGatewayInterface.Setting.GatewayInstanceId:
                     case LvaGatewayInterface.Setting.GatewayModuleId:
                     case LvaGatewayInterface.Setting.LvaEdgeModuleId:
+                    case LvaGatewayInterface.Setting.DebugTelemetry:
+                    case LvaGatewayInterface.Setting.DebugRoutedMessage:
                         changedSettingResult = await this.moduleSettingChange(moduleSettingsForPatching, desiredSettingsKey, desiredChangedSettings?.[`${desiredSettingsKey}`]);
                         break;
 
@@ -1050,6 +1067,12 @@ export class ModuleService {
             case LvaGatewayInterface.Setting.GatewayModuleId:
             case LvaGatewayInterface.Setting.LvaEdgeModuleId:
                 result.value = moduleSettingsForPatching[setting].value = value || '';
+                moduleSettingsForPatching[setting].handled = true;
+                break;
+
+            case LvaGatewayInterface.Setting.DebugTelemetry:
+            case LvaGatewayInterface.Setting.DebugRoutedMessage:
+                result.value = moduleSettingsForPatching[setting].value = value || false;
                 moduleSettingsForPatching[setting].handled = true;
                 break;
 

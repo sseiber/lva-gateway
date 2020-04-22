@@ -325,6 +325,15 @@
                         "name": "wpAutoStart",
                         "writable": true,
                         "schema": "boolean"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Debug Telemetry"
+                        },
+                        "name": "wpDebugTelemetry",
+                        "writable": true,
+                        "schema": "boolean"
                     }
                 ]
             }

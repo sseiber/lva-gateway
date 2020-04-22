@@ -202,6 +202,24 @@
                                         "name": "wpLvaEdgeModuleId",
                                         "writable": true,
                                         "schema": "string"
+                                    },
+                                    {
+                                        "@type": "Property",
+                                        "displayName": {
+                                            "en": "Debug Telemetry"
+                                        },
+                                        "name": "wpDebugTelemetry",
+                                        "writable": true,
+                                        "schema": "boolean"
+                                    },
+                                    {
+                                        "@type": "Property",
+                                        "displayName": {
+                                            "en": "Debug Routed Message"
+                                        },
+                                        "name": "wpDebugRoutedMessage",
+                                        "writable": true,
+                                        "schema": "boolean"
                                     }
                                 ]
                             }
@@ -233,6 +251,14 @@
                                             "en": "Free Memory"
                                         },
                                         "name": "tlFreeMemory",
+                                        "schema": "long"
+                                    },
+                                    {
+                                        "@type": "Telemetry",
+                                        "displayName": {
+                                            "en": "Connected Cameras"
+                                        },
+                                        "name": "tlConnectedCameras",
                                         "schema": "long"
                                     },
                                     {
@@ -368,7 +394,7 @@
                                         "request": {
                                             "@type": "SchemaField",
                                             "displayName": {
-                                                "en": "RestartModuleRequest"
+                                                "en": "Restart Module Request"
                                             },
                                             "name": "RestartModuleRequest",
                                             "schema": {
@@ -430,7 +456,7 @@
                                         "request": {
                                             "@type": "SchemaField",
                                             "displayName": {
-                                                "en": "AddCameraRequest"
+                                                "en": "Add Camera Request"
                                             },
                                             "name": "AddCameraRequest",
                                             "schema": {

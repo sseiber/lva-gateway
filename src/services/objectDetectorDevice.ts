@@ -57,6 +57,17 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
 
         try {
             clientConnectionResult = await this.connectDeviceClientInternal(dpsHubConnectionString, this.onHandleDeviceProperties);
+
+            await this.deferredStart.promise;
+
+            if (this.deviceSettings[IoTCameraDeviceSettings.AutoStart] === true) {
+                try {
+                    await this.startLvaProcessingInternal();
+                }
+                catch (ex) {
+                    this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'error'], `Error while trying to auto-start Lva graph: ${ex.message}`);
+                }
+            }
         }
         catch (ex) {
             clientConnectionResult.clientConnectionStatus = false;
@@ -70,10 +81,6 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
         if (!Array.isArray(inferences) || !this.deviceClient) {
             this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'error'], `Missing inferences array or client not connected`);
             return;
-        }
-
-        if (process.env.DEBUG_DEVICE_TELEMETRY === this.cameraId) {
-            this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'info'], `processLvaInferences: ${inferences}`);
         }
 
         try {
@@ -149,10 +156,6 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
                 }
 
                 const value = desiredChangedSettings[`${setting}`]?.value;
-                if (!value) {
-                    this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'error'], `No value field found for desired property '${setting}'`);
-                    continue;
-                }
 
                 switch (setting) {
                     case ObjectDetectorInterface.Setting.DetectionClass:
@@ -160,7 +163,6 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
                         break;
 
                     default:
-                        this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'warning'], `Received desired property change for unknown setting '${setting}'`);
                         break;
                 }
             }
@@ -168,18 +170,11 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
             if (!emptyObj(patchedProperties)) {
                 await this.updateDeviceProperties(patchedProperties);
             }
-
-            if (this.deviceSettings[IoTCameraDeviceSettings.AutoStart] === true) {
-                try {
-                    await this.startLvaProcessingInternal();
-                }
-                catch (ex) {
-                    this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'error'], `Error while trying to auto-start Lva graph: ${ex.message}`);
-                }
-            }
         }
         catch (ex) {
             this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'error'], `Exception while handling desired properties: ${ex.message}`);
         }
+
+        this.deferredStart.resolve();
     }
 }
