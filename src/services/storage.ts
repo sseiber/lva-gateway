@@ -4,6 +4,7 @@ import { Server } from '@hapi/hapi';
 import { LoggingService } from './logging';
 import * as fse from 'fs-extra';
 import { resolve as pathResolve } from 'path';
+import * as _get from 'lodash.get';
 import * as _set from 'lodash.set';
 
 @service('storage')
@@ -45,7 +46,7 @@ export class StorageService {
             return obj;
         }
 
-        return obj?.[property];
+        return _get(obj, property);
     }
 
     public async set(scope: string, property: any, value?: any) {

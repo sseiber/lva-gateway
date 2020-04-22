@@ -30,10 +30,9 @@ import {
 import * as fse from 'fs-extra';
 import { resolve as pathResolve } from 'path';
 import * as crypto from 'crypto';
-import * as ipAddress from 'ip';
 import * as Wreck from '@hapi/wreck';
 import * as _random from 'lodash.random';
-import { bind, emptyObj, forget } from '../utils';
+import { bind, defer, emptyObj, forget } from '../utils';
 
 export interface IAmsGraph {
     initialized: boolean;
@@ -174,9 +173,6 @@ const LvaGatewayInterface = {
         DebugTelemetry: LvaGatewaySettings.DebugTelemetry,
         DebugRoutedMessage: LvaGatewaySettings.DebugRoutedMessage
     },
-    Property: {
-        ModuleIpAddress: 'rpModuleIpAddress'
-    },
     Command: {
         RestartModule: 'cmRestartModule',
         AddCamera: 'cmAddCamera'
@@ -185,6 +181,8 @@ const LvaGatewayInterface = {
 
 const LvaGatewayEdgeInputs = {
     CameraCommand: 'cameracommand',
+    LvaDiagnostics: 'lvaDiagnostics',
+    LvaOperational: 'lvaOperational',
     LvaTelemetry: 'lvaTelemetry'
 };
 
@@ -215,9 +213,9 @@ export class ModuleService {
     private iotcModuleId: string = '';
     private moduleClient: ModuleClient = null;
     private moduleTwin: Twin = null;
+    private deferredStart = defer();
     private healthState = HealthState.Good;
     private healthCheckFailStreak: number = 0;
-    private moduleIpAddress: string = '127.0.0.1';
     private moduleSettings: ILvaGatewaySettings = {
         [LvaGatewaySettings.IoTCentralAppHost]: '',
         [LvaGatewaySettings.IoTCentralAppApiToken]: '',
@@ -251,8 +249,6 @@ export class ModuleService {
 
         this.iotcModuleId = this.config.get('IOTEDGE_MODULEID') || '';
 
-        this.moduleIpAddress = ipAddress.address() || '127.0.0.1';
-
         this.dpsProvisioningHost = this.config.get('dpsProvisioningHost') || defaultDpsProvisioningHost;
         this.healthCheckRetries = this.config.get('healthCheckRetries') || defaultHealthCheckRetries;
     }
@@ -263,6 +259,8 @@ export class ModuleService {
 
         try {
             result = await this.connectModuleClient();
+
+            await this.deferredStart.promise;
         }
         catch (ex) {
             result = false;
@@ -379,13 +377,13 @@ export class ModuleService {
             graphInstance = fse.readJSONSync(graphInstancePath);
 
             this.logger.log(['ModuleService', 'info'], `### graphFilePath: ${graphInstancePath}`);
-            this.logger.log(['ModuleService', 'info'], `### graphData: ${JSON.stringify(graphInstance, null, 4)}`);
+            // this.logger.log(['ModuleService', 'info'], `### graphData: ${JSON.stringify(graphInstance, null, 4)}`);
 
             const graphTopologyPath = pathResolve(contentRoot, `${detectionType}GraphTopology.json`);
             graphTopology = fse.readJSONSync(graphTopologyPath);
 
             this.logger.log(['ModuleService', 'info'], `### graphFilePath: ${graphTopologyPath}`);
-            this.logger.log(['ModuleService', 'info'], `### graphData: ${JSON.stringify(graphTopology, null, 4)}`);
+            // this.logger.log(['ModuleService', 'info'], `### graphData: ${JSON.stringify(graphTopology, null, 4)}`);
         }
         catch (ex) {
             this.logger.log(['ModuleService', 'error'], `Error while loading graph topology: ${ex.message}`);
@@ -491,7 +489,8 @@ export class ModuleService {
         try {
             await this.sendMeasurement({
                 [LvaGatewayInterface.Event.ModuleRestart]: reason,
-                [LvaGatewayInterface.State.ModuleState]: ModuleState.Inactive
+                [LvaGatewayInterface.State.ModuleState]: ModuleState.Inactive,
+                [LvaGatewayInterface.Event.ModuleStopped]: 'Module restart'
             });
 
             if (timeout > 0) {
@@ -591,15 +590,15 @@ export class ModuleService {
                     [LvaGatewayDeviceProperties.OsName]: osPlatform() || '',
                     [LvaGatewayDeviceProperties.SwVersion]: osRelease() || '',
                     [LvaGatewayDeviceProperties.ProcessorArchitecture]: osArch() || '',
-                    [LvaGatewayDeviceProperties.TotalMemory]: systemProperties.totalMemory,
-                    [LvaGatewayInterface.Property.ModuleIpAddress]: this.moduleIpAddress
+                    [LvaGatewayDeviceProperties.TotalMemory]: systemProperties.totalMemory
                 };
 
                 await this.updateModuleProperties(deviceProperties);
 
                 await this.sendMeasurement({
                     [LvaGatewayInterface.State.IoTCentralClientState]: IoTCentralClientState.Connected,
-                    [LvaGatewayInterface.State.ModuleState]: ModuleState.Active
+                    [LvaGatewayInterface.State.ModuleState]: ModuleState.Active,
+                    [LvaGatewayInterface.Event.ModuleStarted]: 'Module initialization'
                 });
 
                 await this.checkForExistingDevices();
@@ -712,6 +711,14 @@ export class ModuleService {
 
                     break;
                 }
+
+                case LvaGatewayEdgeInputs.LvaDiagnostics:
+                    this.logger.log(['ModuleService', 'info'], `Routed message marker ########## LvaDiagnostics`);
+                    break;
+
+                case LvaGatewayEdgeInputs.LvaOperational:
+                    this.logger.log(['ModuleService', 'info'], `Routed message marker ########## LvaOperational`);
+                    break;
 
                 case LvaGatewayEdgeInputs.LvaTelemetry: {
                     const graphSource = this.getGraphSource(message);
@@ -1031,6 +1038,8 @@ export class ModuleService {
         if (!emptyObj(patchedProperties)) {
             await this.updateModuleProperties(patchedProperties);
         }
+
+        this.deferredStart.resolve();
     }
 
     private getModuleSettingsForPatching() {

@@ -381,14 +381,6 @@
                                         "schema": "string"
                                     },
                                     {
-                                        "@type": "Property",
-                                        "displayName": {
-                                            "en": "Module IP Address"
-                                        },
-                                        "name": "rpModuleIpAddress",
-                                        "schema": "string"
-                                    },
-                                    {
                                         "@type": "Command",
                                         "commandType": "asynchronous",
                                         "request": {

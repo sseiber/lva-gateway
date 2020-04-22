@@ -62,7 +62,7 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
 
             if (this.deviceSettings[IoTCameraDeviceSettings.AutoStart] === true) {
                 try {
-                    await this.startLvaProcessingInternal();
+                    await this.startLvaProcessingInternal(true);
                 }
                 catch (ex) {
                     this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'error'], `Error while trying to auto-start Lva graph: ${ex.message}`);
@@ -123,16 +123,12 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
         amsGraph.instance.name = (amsGraph.instance?.name || '').replace('###RtspCameraId', this.cameraId);
         amsGraph.instance.properties.topologyName = (amsGraph.instance?.properties?.topologyName || '###RtspCameraId').replace('###RtspCameraId', this.cameraId);
 
-        this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'info'], `### amsGraph.instance: ${JSON.stringify(amsGraph.instance, null, 4)}`);
-
         amsGraph.topology.name = (amsGraph.topology?.name || '').replace('###RtspCameraId', this.cameraId);
         amsGraph.topology.properties.sources[0].name = `RtspSource_${this.cameraId}`;
         amsGraph.topology.properties.sources[0].endpoint.url = this.deviceSettings[IoTCameraDeviceSettings.RtspUrl];
         amsGraph.topology.properties.sources[0].endpoint.credentials.username = this.deviceSettings[IoTCameraDeviceSettings.RtspAuthUsername];
         amsGraph.topology.properties.sources[0].endpoint.credentials.password = this.deviceSettings[IoTCameraDeviceSettings.RtspAuthPassword];
         amsGraph.topology.properties.processors[0].inputs[0].moduleName = `RtspSource_${this.cameraId}`;
-
-        this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'info'], `### amsGraph.topology: ${JSON.stringify(amsGraph.topology, null, 4)}`);
 
         return amsGraph.initialized = true;
     }
