@@ -53,6 +53,17 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
 
         try {
             clientConnectionResult = await this.connectDeviceClientInternal(dpsHubConnectionString, this.onHandleDeviceProperties);
+
+            await this.deferredStart.promise;
+
+            if (this.deviceSettings[IoTCameraDeviceSettings.AutoStart] === true) {
+                try {
+                    await this.startLvaProcessingInternal();
+                }
+                catch (ex) {
+                    this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'error'], `Error while trying to auto-start Lva graph: ${ex.message}`);
+                }
+            }
         }
         catch (ex) {
             clientConnectionResult.clientConnectionStatus = false;
@@ -66,10 +77,6 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
         if (!Array.isArray(inferences) || !this.deviceClient) {
             this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'error'], `Missing inferences array or client not connected`);
             return;
-        }
-
-        if (process.env.DEBUG_DEVICE_TELEMETRY === this.cameraId) {
-            this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'info'], `processLvaInferences: ${inferences}`);
         }
 
         try {
@@ -133,6 +140,7 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
             this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
 
             const patchedProperties = {};
+            const previousAutoStart = this.deviceSettings[IoTCameraDeviceSettings.AutoStart];
 
             for (const setting in desiredChangedSettings) {
                 if (!desiredChangedSettings.hasOwnProperty(setting)) {
@@ -144,10 +152,6 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
                 }
 
                 const value = desiredChangedSettings[`${setting}`]?.value;
-                if (!value) {
-                    this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'error'], `No value field found for desired property '${setting}'`);
-                    continue;
-                }
 
                 switch (setting) {
                     case MotionDetectorInterface.Setting.Sensitivity:
@@ -155,7 +159,6 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
                         break;
 
                     default:
-                        this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'warning'], `Received desired property change for unknown setting '${setting}'`);
                         break;
                 }
             }
@@ -164,7 +167,7 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
                 await this.updateDeviceProperties(patchedProperties);
             }
 
-            if (this.deviceSettings[IoTCameraDeviceSettings.AutoStart] === true) {
+            if (previousAutoStart === false && this.deviceSettings[IoTCameraDeviceSettings.AutoStart] === true) {
                 try {
                     await this.startLvaProcessingInternal();
                 }
@@ -176,5 +179,7 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
         catch (ex) {
             this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'error'], `Exception while handling desired properties: ${ex.message}`);
         }
+
+        this.deferredStart.resolve();
     }
 }

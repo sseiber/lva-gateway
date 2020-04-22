@@ -17,9 +17,11 @@ Description TBD.
 This project includes scripts for building the Docker image and for initial project setup.
 
 ### To do
+* Leaf devices aren't listed in "downstream devices" on gateway
+* How do you group settings (inferred twin props) for an Edge DCM?
 * Manage the "delete camera" flow
   - polling on the heath check to determine if still connected to the Hub
   - gateway module should receive the error that device is disconnected so gateway can manage the delete and re-provision of the device
-  - device needs to return to what it was doing (rtsp feed, ai model, etc.)
 * Gateway module needs to keep track of devices in case it reboots and needs to re-provision each
-  - need to store/persist device name, rtsp feed/creds, ai model etc.
+  - [done] device needs to return to what it was doing (rtsp feed, ai model, etc.)
+  - [done] need to store/persist device name, rtsp feed/creds, ai model etc.
