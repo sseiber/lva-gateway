@@ -9,10 +9,10 @@
                         "minDockerVersion": "v1.25",
                         "loggingOptions": "",
                         "registryCredentials": {
-                            "<YOUR_CONTAINER_REGISTRY_NAME>": {
-                                "address": "<YOUR_CONTAINER_REGISTRY_SERVER>",
-                                "password": "<YOUR_CONTAINER_REGISTRY_CREDENTIAL>",
-                                "username": "YOUR_CONTAINER_REGISTRY_NAME"
+                            "<MODULE_CONTAINER_REGISTRY_NAME>": {
+                                "username": "",
+                                "password": "",
+                                "address": "MODULE_CONTAINER_REGISTRY_ADDRESS"
                             }
                         }
                     }
@@ -22,7 +22,7 @@
                         "type": "docker",
                         "settings": {
                             "image": "mcr.microsoft.com/azureiotedge-agent:1.0",
-                            "createOptions": ""
+                            "createOptions": "{\"HostConfig\":{\"CpuShares\": \"512\"}}"
                         }
                     },
                     "edgeHub": {
@@ -36,15 +36,35 @@
                     }
                 },
                 "modules": {
-                    "lvaGateway": {
+                    "LvaEdgeGatewayModule": {
                         "settings": {
-                            "image": "<YOUR_MODULE_NAME>",
-                            "createOptions": "{\"HostConfig\":{\"PortBindings\":{\"9070/tcp\":[{\"HostPort\":\"9070\"}]},\"Binds\":[\"/data/misc:/data/misc\"]}}"
+                            "image": "",
+                            "createOptions": "{\"HostConfig\":{\"PortBindings\":{\"9070/tcp\":[{\"HostPort\":\"9070\"}]},\"Binds\":[\"/data/storage:/data/storage\",\"/data/media:/data/media/\"]}}"
+                        },
+                        "type": "docker",
+                        "status": "running",
+                        "restartPolicy": "always",
+                        "version": "1.0"
+                    },
+                    "lvaYolov3": {
+                        "settings": {
+                            "image": "",
+                            "createOptions": "{}"
+                        },
+                        "type": "docker",
+                        "status": "running",
+                        "restartPolicy": "always",
+                        "version": "1.0"
+                    },
+                    "lvaEdge": {
+                        "settings": {
+                            "image": "",
+                            "createOptions": "{\"HostConfig\":{\"Binds\":[\"/data/media:/var/media/\"]}}"
                         },
                         "type": "docker",
                         "env": {
-                            "DEBUG_MODULE_TELEMETRY": {
-                                "value": "1"
+                            "EnableDiagnosticLogging": {
+                                "value": "True"
                             }
                         },
                         "status": "running",
@@ -58,19 +78,42 @@
             "properties.desired": {
                 "schemaVersion": "1.0",
                 "routes": {
-                    "filterToIoTHub": "FROM /messages/* INTO $upstream"
+                    "LvaSignalGateTrigger": "FROM /messages/modules/LvaEdgeGatewayModule/outputs/lvaTrigger INTO BrokeredEndpoint(\"/modules/lvaEdge/inputs/lvaTrigger\")",
+                    "LvaDiagnosticsForwarder": "FROM /messages/modules/lvaEdge/outputs/AmsDiagnostics INTO BrokeredEndpoint(\"/modules/LvaEdgeGatewayModule/inputs/lvaDiagnostics\")",
+                    "LvaOperationsForwarder": "FROM /messages/modules/lvaEdge/outputs/AmsOperational INTO BrokeredEndpoint(\"/modules/LvaEdgeGatewayModule/inputs/lvaOperational\")",
+                    "LvaTelemetryForwarder": "FROM /messages/modules/lvaEdge/outputs/lvaTelemetry INTO BrokeredEndpoint(\"/modules/LvaEdgeGatewayModule/inputs/lvaTelemetry\")",
+                    "LvaEdgeGatewayModuleOutput": "FROM /messages/modules/LvaEdgeGatewayModule/outputs/iotc INTO $upstream"
                 },
                 "storeAndForwardConfiguration": {
                     "timeToLiveSecs": 7200
                 }
             }
         },
-        "lvaGateway": {
+        "LvaEdgeGatewayModule": {
             "properties.desired": {
+                "wpIoTCentralAppHost": "<YOUR_APP>.azureiotcentral.com",
+                "wpIoTCentralAppApiToken": "",
                 "wpMasterDeviceProvisioningKey": "",
                 "wpScopeId": "",
                 "wpGatewayInstanceId": "",
-                "wpGatewayModuleId": ""
+                "wpGatewayModuleId": "",
+                "wpLvaEdgeModuleId": "",
+                "wpDebugTelemetry": false,
+                "wpDebugRoutedMessage": false
+            }
+        },
+        "lvaEdge": {
+            "properties.desired": {
+                "applicationDataDirectory": "/var/lib/azuremediaservices",
+                "azureMediaServicesArmId": "",
+                "aadTenantId": "",
+                "aadServicePrincipalAppId": "",
+                "aadServicePrincipalSecret": "",
+                "aadEndpoint": "https://login.microsoftonline.com",
+                "aadResourceId": "https://management.core.windows.net/",
+                "armEndpoint": "https://management.azure.com/",
+                "diagnosticsEventsOutputName": "AmsDiagnostics",
+                "operationalMetricsOutputName": "AmsOperational"
             }
         }
     }

@@ -317,9 +317,9 @@ export abstract class AmsCameraDevice {
         }
     }
 
-    protected async startLvaProcessingInternal(): Promise<ICommandResponse> {
+    protected async startLvaProcessingInternal(autoStart: boolean): Promise<ICommandResponse> {
         await this.sendMeasurement({
-            [LvaInterface.Event.StartLvaGraphCommandReceived]: this.cameraId
+            [LvaInterface.Event.StartLvaGraphCommandReceived]: autoStart ? 'AutoStart' : 'Command'
         });
 
         await this.lvaGatewayModule.stopLvaGraph(this.amsGraph);
@@ -359,7 +359,7 @@ export abstract class AmsCameraDevice {
         this.lvaGatewayModule.log(['AmsCameraDevice', 'info'], `${LvaInterface.Command.StartLvaProcessing} command received`);
 
         try {
-            const startLvaGraphResponse = await this.startLvaProcessingInternal();
+            const startLvaGraphResponse = await this.startLvaProcessingInternal(false);
 
             await commandResponse.send(startLvaGraphResponse.statusCode, startLvaGraphResponse);
         }
