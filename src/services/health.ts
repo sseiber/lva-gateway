@@ -1,5 +1,5 @@
 import { service, inject } from 'spryly';
-import { LoggingService } from './logging';
+import { Server } from '@hapi/hapi';
 import { ModuleService } from './module';
 import { bind } from '../utils';
 
@@ -16,8 +16,8 @@ export const HealthState = {
 
 @service('health')
 export class HealthService {
-    @inject('logger')
-    private logger: LoggingService;
+    @inject('$server')
+    private server: Server;
 
     @inject('module')
     private module: ModuleService;
@@ -26,12 +26,12 @@ export class HealthService {
     // private failingStreak = 1;
 
     public async init() {
-        this.logger.log(['HealthService', 'info'], 'initialize');
+        this.server.log(['HealthService', 'info'], 'initialize');
     }
 
     @bind
     public async checkHealthState(): Promise<number> {
-        this.logger.log(['HealthService', 'info'], 'Health check interval');
+        this.server.log(['HealthService', 'info'], 'Health check interval');
 
         const moduleHealth = await this.module.getHealth();
 

@@ -13,7 +13,7 @@ export class ModuleRoutes extends RoutePlugin {
 
     @route({
         method: 'POST',
-        path: '/api/v1/module/camera',
+        path: '/api/v1/module/camera/{cameraId}',
         options: {
             tags: ['module'],
             description: 'Create a camera device'
@@ -21,9 +21,9 @@ export class ModuleRoutes extends RoutePlugin {
     })
     public async postCreateCamera(request: Request, h: ResponseToolkit) {
         try {
-            const cameraId = request?.payload?.cameraId || '';
-            const cameraName = request?.payload?.cameraName || 'Unkonwn';
-            const detectionType = request?.payload?.detectionType || 'cat';
+            const cameraId = request?.params?.cameraId || '';
+            const cameraName = (request?.payload as any)?.cameraName || 'Unkonwn';
+            const detectionType = (request?.payload as any)?.detectionType || 'cat';
 
             if (!cameraId || !cameraName || !detectionType) {
                 throw boom_badRequest('Missing parameters (cameraId, cameraName, detectionType)');
@@ -84,7 +84,7 @@ export class ModuleRoutes extends RoutePlugin {
     public async postSendCameraTelemetry(request: Request, h: ResponseToolkit) {
         try {
             const cameraId = request?.params?.cameraId;
-            const telemetry = request?.payload?.telemetry;
+            const telemetry = (request?.payload as any)?.telemetry;
 
             if (!cameraId || !telemetry) {
                 throw boom_badRequest('Missing cameraId or telemetry');
@@ -117,7 +117,7 @@ export class ModuleRoutes extends RoutePlugin {
     public async postSendCameraInferenceTelemetry(request: Request, h: ResponseToolkit) {
         try {
             const cameraId = request?.params?.cameraId;
-            const inferences = request?.payload?.inferences;
+            const inferences = (request?.payload as any)?.inferences;
 
             if (!cameraId || emptyObj(inferences)) {
                 throw boom_badRequest('Missing cameraId or telemetry');

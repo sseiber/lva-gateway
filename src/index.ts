@@ -10,12 +10,7 @@ import { forget } from './utils';
 
 const composeOptions: ComposeOptions = {
     relativeTo: __dirname,
-    logger: (t, m) => {
-        const tags = ((t && Array.isArray(t)) ? `[opt,${t.join(',')}]` : '[opt]');
-
-        // tslint:disable-next-line:no-console
-        console.log(`[${new Date().toTimeString()}] ${tags} ${m}`);
-    }
+    logCompose: true
 };
 
 // process.on('unhandledRejection', (e: any) => {
