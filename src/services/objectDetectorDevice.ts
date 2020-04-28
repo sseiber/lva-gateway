@@ -58,7 +58,9 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
         try {
             clientConnectionResult = await this.connectDeviceClientInternal(dpsHubConnectionString, this.onHandleDeviceProperties);
 
-            await this.deferredStart.promise;
+            if (clientConnectionResult.clientConnectionStatus === true) {
+                await this.deferredStart.promise;
+            }
 
             if (this.deviceSettings[IoTCameraDeviceSettings.AutoStart] === true) {
                 try {
