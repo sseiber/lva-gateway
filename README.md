@@ -17,8 +17,6 @@ Description TBD.
 This project includes scripts for building the Docker image and for initial project setup.
 
 ### To do
-* Leaf devices aren't listed in "downstream devices" on gateway
-* How do you group settings (inferred twin props) for an Edge DCM?
 * Manage the "delete camera" flow
   - polling on the heath check to determine if still connected to the Hub
   - diagnose the Hub responses to get to the specific errors

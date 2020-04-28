@@ -478,7 +478,7 @@
                     {
                         "@type": "Property",
                         "displayName": {
-                            "en": "DetectionClass"
+                            "en": "Detection Class"
                         },
                         "name": "wpDetectionClass",
                         "writable": true,
