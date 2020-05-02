@@ -1,8 +1,26 @@
 {
     "@apiVersion": "1.0",
-    "name": "RtspMotionDetector-###RtspCameraId",
+    "name": "LvaIotcMotionDetectionWithCvr_###RtspCameraId",
     "properties": {
-        "description": "Motion detector processor instance",
-        "topologyName": "RtspMotionDetectorGraph-###RtspCameraId"
+        "description": "Motion detection graph with cloud recording",
+        "topologyName": "LvaIotcMotionDetectionWithCvr",
+        "parameters": [
+            {
+                "name": "rtspUrl",
+                "value": ""
+            },
+            {
+                "name": "rtspAuthUsername",
+                "value": ""
+            },
+            {
+                "name": "rtspAuthPassword",
+                "value": ""
+            },
+            {
+                "name": "wpSensitivity",
+                "value": ""
+            }
+        ]
     }
 }

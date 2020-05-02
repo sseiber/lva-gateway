@@ -1,4 +1,7 @@
-import { ModuleService, IAmsGraph } from './module';
+import {
+    ICameraDeviceProvisionInfo,
+    ModuleService,
+    AmsGraph } from './module';
 import {
     IClientConnectResult,
     IoTCameraDeviceSettings,
@@ -31,6 +34,13 @@ const MotionDetectorInterface = {
         InferenceCount: 'tlInferenceCount',
         Inference: 'tlInference'
     },
+    Event: {
+        InferenceEventVideoUrl: 'evInferenceEventVideoUrl'
+    },
+    Property: {
+        InferenceVideoUrl: 'rpInferenceVideoUrl',
+        InferenceImageUrl: 'rpInferenceImageUrl'
+    },
     Setting: {
         Sensitivity: MotionDetectorSettings.Sensitivity
     }
@@ -41,8 +51,8 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
         [MotionDetectorSettings.Sensitivity]: ''
     };
 
-    constructor(lvaGatewayModule: ModuleService, amsGraph: IAmsGraph, cameraId: string, cameraName: string) {
-        super(lvaGatewayModule, amsGraph, cameraId, cameraName);
+    constructor(lvaGatewayModule: ModuleService, amsGraph: AmsGraph, cameraInfo: ICameraDeviceProvisionInfo) {
+        super(lvaGatewayModule, amsGraph, cameraInfo);
     }
 
     public async connectDeviceClient(dpsHubConnectionString: string): Promise<IClientConnectResult> {
@@ -63,7 +73,7 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
                     await this.startLvaProcessingInternal(true);
                 }
                 catch (ex) {
-                    this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'error'], `Error while trying to auto-start Lva graph: ${ex.message}`);
+                    this.lvaGatewayModule.logger(['AmsMotionDetectorDevice', 'error'], `Error while trying to auto-start Lva graph: ${ex.message}`);
                 }
             }
         }
@@ -77,7 +87,7 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
 
     public async processLvaInferences(inferences: IMotionInference[]): Promise<void> {
         if (!Array.isArray(inferences) || !this.deviceClient) {
-            this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'error'], `Missing inferences array or client not connected`);
+            this.lvaGatewayModule.logger(['AmsMotionDetectorDevice', 'error'], `Missing inferences array or client not connected`);
             return;
         }
 
@@ -99,35 +109,8 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
             }
         }
         catch (ex) {
-            this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'error'], `Error processing downstream message: ${ex.message}`);
+            this.lvaGatewayModule.logger(['AmsMotionDetectorDevice', 'error'], `Error processing downstream message: ${ex.message}`);
         }
-    }
-
-    public setGraphInstance(amsGraph: IAmsGraph): boolean {
-        this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'info'], `Setting graph instance`);
-
-        if (!amsGraph?.instance || !amsGraph?.topology) {
-            this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'error'], `The amsGraph was undefined`);
-            return false;
-        }
-
-        if (amsGraph?.initialized === true) {
-            this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'warning'], `Graph instance already set for graph: ${amsGraph?.instance?.name || '(name not detected)'}`);
-            return true;
-        }
-
-        amsGraph.instance.name = (amsGraph.instance?.name || '').replace('###RtspCameraId', this.cameraId);
-        amsGraph.instance.properties.topologyName = (amsGraph.instance?.properties?.topologyName || '###RtspCameraId').replace('###RtspCameraId', this.cameraId);
-
-        amsGraph.topology.name = (amsGraph.topology?.name || '').replace('###RtspCameraId', this.cameraId);
-        amsGraph.topology.properties.sources[0].name = `RtspSource_${this.cameraId}`;
-        amsGraph.topology.properties.sources[0].endpoint.url = this.deviceSettings[IoTCameraDeviceSettings.RtspUrl];
-        amsGraph.topology.properties.sources[0].endpoint.credentials.username = this.deviceSettings[IoTCameraDeviceSettings.RtspAuthUsername];
-        amsGraph.topology.properties.sources[0].endpoint.credentials.password = this.deviceSettings[IoTCameraDeviceSettings.RtspAuthPassword];
-        amsGraph.topology.properties.processors[0].sensitivity = this.motionDetectorSettings[MotionDetectorSettings.Sensitivity];
-        amsGraph.topology.properties.processors[0].inputs[0].moduleName = `RtspSource_${this.cameraId}`;
-
-        return amsGraph.initialized = true;
     }
 
     @bind
@@ -135,7 +118,7 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
         await super.onHandleDeviceProperties(desiredChangedSettings);
 
         try {
-            this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
+            this.lvaGatewayModule.logger(['AmsMotionDetectorDevice', 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
 
             const patchedProperties = {};
 
@@ -153,6 +136,8 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
                 switch (setting) {
                     case MotionDetectorInterface.Setting.Sensitivity:
                         patchedProperties[setting] = this.motionDetectorSettings[setting] = value || '';
+
+                        this.amsGraph.setParam(setting, value);
                         break;
 
                     default:
@@ -165,7 +150,7 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
             }
         }
         catch (ex) {
-            this.lvaGatewayModule.log(['AmsMotionDetectorDevice', 'error'], `Exception while handling desired properties: ${ex.message}`);
+            this.lvaGatewayModule.logger(['AmsMotionDetectorDevice', 'error'], `Exception while handling desired properties: ${ex.message}`);
         }
 
         this.deferredStart.resolve();

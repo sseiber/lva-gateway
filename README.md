@@ -17,6 +17,7 @@ Description TBD.
 This project includes scripts for building the Docker image and for initial project setup.
 
 ### To do
+* Object detector device should take a "list" of detector labels
 * Manage the "delete camera" flow
   - polling on the heath check to determine if still connected to the Hub
   - diagnose the Hub responses to get to the specific errors
@@ -24,3 +25,4 @@ This project includes scripts for building the Docker image and for initial proj
 * Gateway module needs to keep track of devices in case it reboots and needs to re-provision each
   - [done] device needs to return to what it was doing (rtsp feed, ai model, etc.)
   - [done] need to store/persist device name, rtsp feed/creds, ai model etc.
+* Reconcile all try/catch stacks

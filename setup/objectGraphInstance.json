@@ -1,8 +1,22 @@
 {
     "@apiVersion": "1.0",
-    "name": "RtspObjectDetector-###RtspCameraId",
+    "name": "LvaIotcObjectDetection_###RtspCameraId",
     "properties": {
-        "description": "Object detector processor instance",
-        "topologyName": "RtspObjectDetectorGraph-###RtspCameraId"
+        "description": "Object detection graph using Yolo3 through HTTP Extension",
+        "topologyName": "LvaIotcObjectDetection",
+        "parameters": [
+            {
+                "name": "rtspUrl",
+                "value": ""
+            },
+            {
+                "name": "rtspAuthUsername",
+                "value": ""
+            },
+            {
+                "name": "rtspAuthPassword",
+                "value": ""
+            }
+        ]
     }
 }

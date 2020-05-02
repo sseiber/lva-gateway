@@ -1,19 +1,50 @@
 {
     "@apiVersion": "1.0",
-    "name": "RtspMotionDetectorGraph-###RtspCameraId",
+    "name": "LvaIotcMotionDetectionWithCvr",
     "properties": {
-        "description": "Rtsp motion detector graph",
+        "description": "Motion detection graph with cloud recording",
+        "parameters": [
+            {
+                "name": "rtspUrl",
+                "type": "String",
+                "description": "rtsp Url"
+            },
+            {
+                "name": "rtspAuthUsername",
+                "type": "String",
+                "description": "rtsp source user name.",
+                "default": "username"
+            },
+            {
+                "name": "rtspAuthPassword",
+                "type": "String",
+                "description": "rtsp source password.",
+                "default": "password"
+            },
+            {
+                "name": "wpSensitivity",
+                "type": "String",
+                "description": "motion detection sensitivity",
+                "default": "medium"
+            },
+            {
+                "name": "hubSinkOutputName",
+                "type": "String",
+                "description": "hub sink output name",
+                "default": "lvaTelemetry"
+            }
+        ],
         "sources": [
             {
                 "@type": "#Microsoft.Media.MediaGraphRtspSource",
-                "name": "RtspSource_###RtspCameraId",
+                "name": "rtspSource",
                 "endpoint": {
                     "@type": "#Microsoft.Media.MediaGraphClearEndpoint",
-                    "url": "###RtspUrl",
+                    "url": "${rtspUrl}",
                     "credentials": {
                         "@type": "#Microsoft.Media.MediaGraphUsernamePasswordCredentials",
-                        "username": "###RtspAuthName",
-                        "password": "###RtspAuthPassword"
+                        "username": "${rtspAuthUsername}",
+                        "password": "${rtspAuthPassword}"
                     }
                 }
             }
@@ -21,11 +52,11 @@
         "processors": [
             {
                 "@type": "#Microsoft.Media.MediaGraphMotionDetector",
-                "name": "motionDetector",
-                "sensitivity": "###Sensitivity",
+                "name": "md",
+                "sensitivity": "${wpSensitivity}",
                 "inputs": [
                     {
-                        "moduleName": "RtspSource_###RtspCameraId"
+                        "moduleName": "rtspSource"
                     }
                 ]
             }
@@ -34,10 +65,20 @@
             {
                 "@type": "#Microsoft.Media.MediaGraphIoTHubMessageSink",
                 "name": "hubSink",
-                "hubOutputName": "lvaTelemetry",
+                "hubOutputName": "${hubSinkOutputName}",
                 "inputs": [
                     {
-                        "moduleName": "motionDetector"
+                        "moduleName": "md"
+                    }
+                ]
+            },
+            {
+                "@type": "#Microsoft.Media.MediaGraphAssetSink",
+                "name": "assetSink",
+                "assetNamePattern": "Md_Asset_${System.DateTime}",
+                "inputs": [
+                    {
+                        "moduleName": "rtspSource"
                     }
                 ]
             }
