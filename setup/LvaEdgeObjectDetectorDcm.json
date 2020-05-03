@@ -305,10 +305,34 @@
                     {
                         "@type": "Telemetry",
                         "displayName": {
-                            "en": "Inference Count"
+                            "en": "Primary Detection Count"
                         },
-                        "name": "tlInferenceCount",
+                        "name": "tlPrimaryDetectionCount",
                         "schema": "integer"
+                    },
+                    {
+                        "@type": "Telemetry",
+                        "displayName": {
+                            "en": "Secondary Detection Count"
+                        },
+                        "name": "tlSeconaryDetectionCount",
+                        "schema": "integer"
+                    },
+                    {
+                        "@type": "Telemetry",
+                        "displayName": {
+                            "en": "Primary Confidence"
+                        },
+                        "name": "tlPrimaryConfidence",
+                        "schema": "double"
+                    },
+                    {
+                        "@type": "Telemetry",
+                        "displayName": {
+                            "en": "Secondary Confidence"
+                        },
+                        "name": "tlSecondaryConfidence",
+                        "schema": "double"
                     },
                     {
                         "@type": "Telemetry",
@@ -456,11 +480,38 @@
                     {
                         "@type": "Property",
                         "displayName": {
-                            "en": "Detection Classes"
+                            "en": "Primary Detection Class"
                         },
-                        "name": "wpDetectionClasses",
+                        "name": "wpPrimaryDetectionClass",
                         "writable": true,
                         "schema": "string"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Primary Confidence Threshold"
+                        },
+                        "name": "wpPrimaryConfidenceThreshold",
+                        "writable": true,
+                        "schema": "double"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Secondary Detection Class"
+                        },
+                        "name": "wpSecondaryDetectionClass",
+                        "writable": true,
+                        "schema": "string"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Secondary Confidence Threshold"
+                        },
+                        "name": "wpSecondaryConfidenceThreshold",
+                        "writable": true,
+                        "schema": "double"
                     }
                 ]
             }

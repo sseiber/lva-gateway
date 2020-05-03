@@ -63,6 +63,27 @@ export class AmsGraph {
         }
     }
 
+    public static getCameraIdFromLvaMessage(message: IoTMessage): string {
+        const subject = AmsGraph.getLvaMessageProperty(message, 'subject');
+        if (subject) {
+            const graphPathElements = subject.split('/');
+            if (graphPathElements.length >= 3 && graphPathElements[1] === 'graphInstances') {
+                const graphInstanceName = graphPathElements[2] || '';
+                if (graphInstanceName) {
+                    return graphInstanceName.substring(graphInstanceName.indexOf('_') + 1) || '';
+                }
+            }
+        }
+
+        return '';
+    }
+
+    public static getLvaMessageProperty(message: IoTMessage, propertyName: string): string {
+        const messageProperty = (message.properties?.propertyList || []).find(property => property.key === propertyName);
+
+        return messageProperty?.value || '';
+    }
+
     private lvaGatewayModule: ModuleService;
     private rtspUrl: string;
     private rtspAuthUsername: string;
@@ -216,7 +237,7 @@ export class AmsGraph {
     }
 }
 
-type DeviceOperation = 'DELETE_CAMERA' | 'SEND_TELEMETRY' | 'SEND_INFERENCES';
+type DeviceOperation = 'DELETE_CAMERA' | 'SEND_EVENT' | 'SEND_INFERENCES';
 
 export interface ICameraDeviceProvisionInfo {
     cameraId: string;
@@ -489,7 +510,7 @@ export class ModuleService {
     }
 
     public async sendCameraTelemetry(cameraOperationInfo: ICameraOperationInfo): Promise<IDeviceOperationResult> {
-        return this.amsInferenceDeviceOperation('SEND_TELEMETRY', cameraOperationInfo);
+        return this.amsInferenceDeviceOperation('SEND_EVENT', cameraOperationInfo);
     }
 
     public async sendCameraInferences(cameraOperationInfo: ICameraOperationInfo): Promise<IDeviceOperationResult> {
@@ -803,7 +824,7 @@ export class ModuleService {
                             break;
 
                         case LvaGatewayCommands.SendDeviceTelemetry:
-                            await this.amsInferenceDeviceOperation('SEND_TELEMETRY', edgeInputCameraCommandData);
+                            await this.amsInferenceDeviceOperation('SEND_EVENT', edgeInputCameraCommandData);
                             break;
 
                         case LvaGatewayCommands.SendDeviceInferences:
@@ -819,20 +840,23 @@ export class ModuleService {
                 }
 
                 case LvaGatewayEdgeInputs.LvaDiagnostics:
-                    this.server.log(['ModuleService', 'info'], `Routed message marker ########## LvaDiagnostics`);
-                    break;
-
                 case LvaGatewayEdgeInputs.LvaOperational:
-                    this.server.log(['ModuleService', 'info'], `Routed message marker ########## LvaOperational`);
-                    break;
-
                 case LvaGatewayEdgeInputs.LvaTelemetry: {
-                    const graphSource = this.getGraphSource(message);
-                    if (graphSource) {
-                        const cameraId = graphSource.substring(graphSource.indexOf('_') + 1);
-                        const amsInferenceDevice = this.amsInferenceDeviceMap.get(cameraId);
-                        if (!amsInferenceDevice) {
-                            this.server.log(['ModuleService', 'error'], `Can't route telemetry to cameraId: ${cameraId}`);
+                    const cameraId = AmsGraph.getCameraIdFromLvaMessage(message);
+                    if (!cameraId) {
+                        this.server.log(['ModuleService', 'error'], `Received LvaDiagnostics telemetry but no cameraId found in subject`);
+                        this.server.log(['ModuleService', 'error'], `LvaDiagnostics eventType: ${AmsGraph.getLvaMessageProperty(message, 'eventType')}`);
+                        this.server.log(['ModuleService', 'error'], `LvaDiagnostics subject: ${AmsGraph.getLvaMessageProperty(message, 'subject')}`);
+                        break;
+                    }
+
+                    const amsInferenceDevice = this.amsInferenceDeviceMap.get(cameraId);
+                    if (!amsInferenceDevice) {
+                        this.server.log(['ModuleService', 'error'], `Can't route telemetry to cameraId: ${cameraId}`);
+                    }
+                    else {
+                        if (inputName === LvaGatewayEdgeInputs.LvaDiagnostics || inputName === LvaGatewayEdgeInputs.LvaOperational) {
+                            await amsInferenceDevice.sendLvaEvent(AmsGraph.getLvaMessageProperty(message, 'eventType'));
                         }
                         else {
                             await amsInferenceDevice.processLvaInferences(messageJson.inferences);
@@ -850,18 +874,6 @@ export class ModuleService {
         catch (ex) {
             this.server.log(['ModuleService', 'error'], `Error while handling downstream message: ${ex.message}`);
         }
-    }
-
-    private getGraphSource(message: IoTMessage): string {
-        const subjectProperty = (message.properties?.propertyList || []).find(property => property.key === 'subject');
-        if (subjectProperty) {
-            const graphPathElements = (subjectProperty.value || '').split('/');
-            if (graphPathElements.length >= 3 && graphPathElements[1] === 'graphInstances') {
-                return graphPathElements[2];
-            }
-        }
-
-        return '';
     }
 
     private async createAmsInferenceDevice(cameraInfo: ICameraDeviceProvisionInfo): Promise<IProvisionResult> {
@@ -985,6 +997,8 @@ export class ModuleService {
     private async deprovisionAmsInferenceDevice(cameraId: string): Promise<boolean> {
         this.server.log(['ModuleService', 'info'], `Deprovisioning device - id: ${cameraId}`);
 
+        let result = false;
+
         try {
             const amsInferenceDevice = this.amsInferenceDeviceMap.get(cameraId);
             if (amsInferenceDevice) {
@@ -1003,20 +1017,22 @@ export class ModuleService {
                         },
                         json: true
                     });
+
+                await this.sendMeasurement({ [LvaGatewayInterface.Event.DeleteCamera]: cameraId });
+
+                this.server.log(['ModuleService', 'info'], `Succesfully de-provisioned camera device with id: ${cameraId}`);
+
+                result = true;
             }
             catch (ex) {
                 this.server.log(['ModuleService', 'error'], `Requeset to delete the IoT Central device failed: ${ex.message}`);
             }
-
-            await this.sendMeasurement({ [LvaGatewayInterface.Event.DeleteCamera]: cameraId });
-
-            this.server.log(['ModuleService', 'info'], `Succesfully de-provisioned camera device with id: ${cameraId}`);
         }
         catch (ex) {
             this.server.log(['ModuleService', 'error'], `Failed de-provision device: ${ex.message}`);
         }
 
-        return true;
+        return result;
     }
 
     private computeDeviceKey(deviceId: string, masterKey: string) {
@@ -1063,8 +1079,8 @@ export class ModuleService {
                 await this.deprovisionAmsInferenceDevice(cameraId);
                 break;
 
-            case 'SEND_TELEMETRY':
-                await amsInferenceDevice.sendTelemetry(operationInfo);
+            case 'SEND_EVENT':
+                await amsInferenceDevice.sendLvaEvent(operationInfo);
                 break;
 
             case 'SEND_INFERENCES':

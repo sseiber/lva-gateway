@@ -1,12 +1,9 @@
 import {
     ICameraDeviceProvisionInfo,
     ModuleService,
-    AmsGraph } from './module';
-import {
-    IClientConnectResult,
-    IoTCameraDeviceSettings,
-    AmsCameraDevice
-} from './device';
+    AmsGraph
+} from './module';
+import { AmsCameraDevice } from './device';
 import { bind, emptyObj } from '../utils';
 
 interface IMotionInference {
@@ -55,34 +52,15 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
         super(lvaGatewayModule, amsGraph, cameraInfo);
     }
 
-    public async connectDeviceClient(dpsHubConnectionString: string): Promise<IClientConnectResult> {
-        let clientConnectionResult: IClientConnectResult = {
-            clientConnectionStatus: false,
-            clientConnectionMessage: ''
-        };
+    public async initDevice(): Promise<void> {
+        await this.sendMeasurement({
+            [MotionDetectorInterface.Event.InferenceEventVideoUrl]: 'https://portal.loopbox-nl.com/'
+        });
 
-        try {
-            clientConnectionResult = await this.connectDeviceClientInternal(dpsHubConnectionString, this.onHandleDeviceProperties);
-
-            if (clientConnectionResult.clientConnectionStatus === true) {
-                await this.deferredStart.promise;
-            }
-
-            if (this.deviceSettings[IoTCameraDeviceSettings.AutoStart] === true) {
-                try {
-                    await this.startLvaProcessingInternal(true);
-                }
-                catch (ex) {
-                    this.lvaGatewayModule.logger(['AmsMotionDetectorDevice', 'error'], `Error while trying to auto-start Lva graph: ${ex.message}`);
-                }
-            }
-        }
-        catch (ex) {
-            clientConnectionResult.clientConnectionStatus = false;
-            clientConnectionResult.clientConnectionMessage = `An error occurred while accessing the device twin properties`;
-        }
-
-        return clientConnectionResult;
+        await this.updateDeviceProperties({
+            [MotionDetectorInterface.Property.InferenceImageUrl]: 'https://iotcsavisionai.blob.core.windows.net/image-link-test/seattlesbest-1_199_.jpg',
+            [MotionDetectorInterface.Property.InferenceVideoUrl]: 'https://portal.loopbox-nl.com/'
+        });
     }
 
     public async processLvaInferences(inferences: IMotionInference[]): Promise<void> {
@@ -98,7 +76,10 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
                 ++inferenceCount;
 
                 await this.sendMeasurement({
-                    [MotionDetectorInterface.Telemetry.Inference]: inference
+                    [MotionDetectorInterface.Telemetry.Inference]: inference,
+                    [MotionDetectorInterface.Event.InferenceEventVideoUrl]: '',
+                    [MotionDetectorInterface.Property.InferenceImageUrl]: '',
+                    [MotionDetectorInterface.Property.InferenceVideoUrl]: ''
                 });
             }
 
@@ -115,7 +96,7 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
 
     @bind
     protected async onHandleDeviceProperties(desiredChangedSettings: any) {
-        await super.onHandleDeviceProperties(desiredChangedSettings);
+        await super.onHandleDevicePropertiesInternal(desiredChangedSettings);
 
         try {
             this.lvaGatewayModule.logger(['AmsMotionDetectorDevice', 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);

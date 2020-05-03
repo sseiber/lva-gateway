@@ -43,7 +43,7 @@
                 "name": "imageEncoding",
                 "type": "String",
                 "description": "image encoding for frames",
-                "default": "jpg"
+                "default": "bmp"
             }
         ],
         "sources": [
@@ -111,6 +111,16 @@
                 "inputs": [
                     {
                         "moduleName": "yolo3InferenceSource"
+                    }
+                ]
+            },
+            {
+                "@type": "#Microsoft.Media.MediaGraphAssetSink",
+                "name": "assetSink",
+                "assetNamePattern": "Md_Asset_${System.DateTime}",
+                "inputs": [
+                    {
+                        "moduleName": "rtspSource"
                     }
                 ]
             }

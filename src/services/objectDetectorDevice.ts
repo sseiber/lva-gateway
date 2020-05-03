@@ -3,11 +3,7 @@ import {
     ModuleService,
     AmsGraph
 } from './module';
-import {
-    IClientConnectResult,
-    IoTCameraDeviceSettings,
-    AmsCameraDevice
-} from './device';
+import { AmsCameraDevice } from './device';
 import { bind, emptyObj } from '../utils';
 
 interface IObjectInference {
@@ -27,16 +23,25 @@ interface IObjectInference {
 }
 
 enum ObjectDetectorSettings {
-    DetectionClasses = 'wpDetectionClasses'
+    PrimaryDetectionClass = 'wpPrimaryDetectionClass',
+    PrimaryConfidenceThreshold = 'wpPrimaryConfidenceThreshold',
+    SecondaryDetectionClass = 'wpSecondaryDetectionClass',
+    SecondaryConfidenceThreshold = 'wpSecondaryConfidenceThreshold'
 }
 
 interface IObjectDetectorSettings {
-    [ObjectDetectorSettings.DetectionClasses]: string;
+    [ObjectDetectorSettings.PrimaryDetectionClass]: string;
+    [ObjectDetectorSettings.PrimaryConfidenceThreshold]: number;
+    [ObjectDetectorSettings.SecondaryDetectionClass]: string;
+    [ObjectDetectorSettings.SecondaryConfidenceThreshold]: number;
 }
 
 const ObjectDetectorInterface = {
     Telemetry: {
-        InferenceCount: 'tlInferenceCount',
+        PrimaryDetectionCount: 'tlPrimaryDetectionCount',
+        SecondaryDetectionCount: 'tlSeconaryDetectionCount',
+        PrimaryConfidence: 'tlPrimaryConfidence',
+        SecondaryConfidence: 'tlSecondaryConfidence',
         Inference: 'tlInference'
     },
     Event: {
@@ -47,47 +52,34 @@ const ObjectDetectorInterface = {
         InferenceImageUrl: 'rpInferenceImageUrl'
     },
     Setting: {
-        DetectionClasses: ObjectDetectorSettings.DetectionClasses
+        PrimaryDetectionClass: ObjectDetectorSettings.PrimaryDetectionClass,
+        PrimaryConfidenceThreshold: ObjectDetectorSettings.PrimaryConfidenceThreshold,
+        SecondaryDetectionClass: ObjectDetectorSettings.SecondaryDetectionClass,
+        SecondaryConfidenceThreshold: ObjectDetectorSettings.SecondaryConfidenceThreshold
     }
 };
 
 export class AmsObjectDetectorDevice extends AmsCameraDevice {
     private objectDetectorSettings: IObjectDetectorSettings = {
-        [ObjectDetectorSettings.DetectionClasses]: ''
+        [ObjectDetectorSettings.PrimaryDetectionClass]: '',
+        [ObjectDetectorSettings.PrimaryConfidenceThreshold]: 0.0,
+        [ObjectDetectorSettings.SecondaryDetectionClass]: '',
+        [ObjectDetectorSettings.SecondaryConfidenceThreshold]: 0.0
     };
 
     constructor(lvaGatewayModule: ModuleService, amsGraph: AmsGraph, cameraInfo: ICameraDeviceProvisionInfo) {
         super(lvaGatewayModule, amsGraph, cameraInfo);
     }
 
-    public async connectDeviceClient(dpsHubConnectionString: string): Promise<IClientConnectResult> {
-        let clientConnectionResult: IClientConnectResult = {
-            clientConnectionStatus: false,
-            clientConnectionMessage: ''
-        };
+    public async initDevice(): Promise<void> {
+        await this.sendMeasurement({
+            [ObjectDetectorInterface.Event.InferenceEventVideoUrl]: 'https://portal.loopbox-nl.com/'
+        });
 
-        try {
-            clientConnectionResult = await this.connectDeviceClientInternal(dpsHubConnectionString, this.onHandleDeviceProperties);
-
-            if (clientConnectionResult.clientConnectionStatus === true) {
-                await this.deferredStart.promise;
-            }
-
-            if (this.deviceSettings[IoTCameraDeviceSettings.AutoStart] === true) {
-                try {
-                    await this.startLvaProcessingInternal(true);
-                }
-                catch (ex) {
-                    this.lvaGatewayModule.logger(['AmsObjectDetectorDevice', 'error'], `Error while trying to auto-start Lva graph: ${ex.message}`);
-                }
-            }
-        }
-        catch (ex) {
-            clientConnectionResult.clientConnectionStatus = false;
-            clientConnectionResult.clientConnectionMessage = `An error occurred while accessing the device twin properties`;
-        }
-
-        return clientConnectionResult;
+        await this.updateDeviceProperties({
+            [ObjectDetectorInterface.Property.InferenceImageUrl]: 'https://iotcsavisionai.blob.core.windows.net/image-link-test/dunkin-3_199_.jpg',
+            [ObjectDetectorInterface.Property.InferenceVideoUrl]: 'https://portal.loopbox-nl.com/'
+        });
     }
 
     public async processLvaInferences(inferences: IObjectInference[]): Promise<void> {
@@ -97,24 +89,51 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
         }
 
         try {
-            let inferenceCount = 0;
+            let primaryDetectionCount = 0;
+            let secondaryDetectionCount = 0;
 
             for (const inference of inferences) {
-                // TODO:
-                // Watch out for sub-string overlap!
-                if (this.objectDetectorSettings[ObjectDetectorSettings.DetectionClasses].includes((inference.entity?.tag?.value || '').toUpperCase())) {
-                    ++inferenceCount;
+                const detectedClass = (inference.entity?.tag?.value || '').toUpperCase();
+                const confidence = (inference.entity?.tag?.confidence || 0.0) * 100;
+                const inferenceTelemetry = {};
 
-                    await this.sendMeasurement({
-                        [ObjectDetectorInterface.Telemetry.Inference]: inference
-                    });
+                if (detectedClass === this.objectDetectorSettings[ObjectDetectorSettings.PrimaryDetectionClass]) {
+                    ++primaryDetectionCount;
+
+                    inferenceTelemetry[ObjectDetectorInterface.Telemetry.Inference] = inference;
+
+                    if (confidence >= this.objectDetectorSettings[ObjectDetectorSettings.PrimaryConfidenceThreshold]) {
+                        inferenceTelemetry[ObjectDetectorInterface.Telemetry.PrimaryConfidence] = confidence;
+                    }
+                }
+
+                if (detectedClass === this.objectDetectorSettings[ObjectDetectorSettings.SecondaryDetectionClass]) {
+                    ++secondaryDetectionCount;
+
+                    inferenceTelemetry[ObjectDetectorInterface.Telemetry.Inference] = inference;
+
+                    if (confidence >= this.objectDetectorSettings[ObjectDetectorSettings.SecondaryConfidenceThreshold]) {
+                        inferenceTelemetry[ObjectDetectorInterface.Telemetry.SecondaryConfidence] = confidence;
+                    }
+                }
+
+                if (Object.keys(inferenceTelemetry).length > 0) {
+                    await this.sendMeasurement(inferenceTelemetry);
                 }
             }
 
-            if (inferenceCount > 0) {
-                await this.sendMeasurement({
-                    [ObjectDetectorInterface.Telemetry.InferenceCount]: inferenceCount
-                });
+            const inferenceCountTelemetry = {};
+
+            if (primaryDetectionCount > 0) {
+                inferenceCountTelemetry[ObjectDetectorInterface.Telemetry.PrimaryDetectionCount] = primaryDetectionCount;
+            }
+
+            if (secondaryDetectionCount > 0) {
+                inferenceCountTelemetry[ObjectDetectorInterface.Telemetry.SecondaryDetectionCount] = secondaryDetectionCount;
+            }
+
+            if (Object.keys(inferenceCountTelemetry).length > 0) {
+                await this.sendMeasurement(inferenceCountTelemetry);
             }
         }
         catch (ex) {
@@ -124,7 +143,7 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
 
     @bind
     protected async onHandleDeviceProperties(desiredChangedSettings: any) {
-        await super.onHandleDeviceProperties(desiredChangedSettings);
+        await super.onHandleDevicePropertiesInternal(desiredChangedSettings);
 
         try {
             this.lvaGatewayModule.logger(['AmsObjectDetectorDevice', 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
@@ -143,8 +162,14 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
                 const value = desiredChangedSettings[`${setting}`]?.value;
 
                 switch (setting) {
-                    case ObjectDetectorInterface.Setting.DetectionClasses:
-                        patchedProperties[setting] = this.objectDetectorSettings[setting] = (value || '').toUpperCase();
+                    case ObjectDetectorInterface.Setting.PrimaryDetectionClass:
+                    case ObjectDetectorInterface.Setting.SecondaryDetectionClass:
+                        patchedProperties[setting] = (this.objectDetectorSettings[setting] as any) = (value || '').toUpperCase();
+                        break;
+
+                    case ObjectDetectorInterface.Setting.PrimaryConfidenceThreshold:
+                    case ObjectDetectorInterface.Setting.SecondaryConfidenceThreshold:
+                        patchedProperties[setting] = (this.objectDetectorSettings[setting] as any) = (value || 0.0);
                         break;
 
                     default:
