@@ -22,7 +22,7 @@
                         "type": "docker",
                         "settings": {
                             "image": "mcr.microsoft.com/azureiotedge-agent:1.0",
-                            "createOptions": "{\"HostConfig\":{\"CpuShares\": \"512\"}}"
+                            "createOptions": ""
                         }
                     },
                     "edgeHub": {
@@ -49,7 +49,7 @@
                     "lvaYolov3": {
                         "settings": {
                             "image": "",
-                            "createOptions": "{}"
+                            "createOptions": "{\"HostConfig\":{\"CpuShares\": \"512\"}}"
                         },
                         "type": "docker",
                         "status": "running",

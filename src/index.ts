@@ -10,7 +10,28 @@ import { forget } from './utils';
 
 const composeOptions: ComposeOptions = {
     relativeTo: __dirname,
-    logCompose: true
+    logCompose: {
+        serializers: {
+            req: (req) => {
+                return `${(req.method || '').toUpperCase()} ${req.url?.origin} ${req.url?.pathname}`;
+            },
+            res: (res) => {
+                return `${res.statusCode} ${res.raw?.statusMessage}`;
+            },
+            tags: (tags) => {
+                return `[${tags}]`;
+            },
+            responseTime: (responseTime) => {
+                return `${responseTime}ms`;
+            }
+        },
+        prettyPrint: {
+            colorize: true,
+            messageFormat: '{tags} {data} {req} {res} {responseTime}',
+            translateTime: 'SYS:yyyy-mm-dd"T"HH:MM:sso',
+            ignore: 'pid,hostname,tags,data,req,res,responseTime'
+        }
+    }
 };
 
 // process.on('unhandledRejection', (e: any) => {
