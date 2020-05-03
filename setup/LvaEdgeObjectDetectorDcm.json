@@ -1,0 +1,526 @@
+{
+    "@id": "urn:AzureMediaServices:LvaEdgeObjectDetectorDevice:1",
+    "@type": "CapabilityModel",
+    "implements": [
+        {
+            "@type": "InterfaceInstance",
+            "displayName": {
+                "en": "Lva Edge Interface"
+            },
+            "name": "LvaEdgeInterface",
+            "schema": {
+                "@id": "urn:AzureMediaServices:LvaEdgeInterface:1",
+                "@type": "Interface",
+                "displayName": {
+                    "en": "Lva Edge Interface"
+                },
+                "contents": [
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Graph Instance Created"
+                        },
+                        "name": "evGraphInstanceCreated",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Graph Instance Deleted"
+                        },
+                        "name": "evGraphInstanceDeleted",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Graph Instance Started"
+                        },
+                        "name": "evGraphInstanceStarted",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Graph Instance Stopped"
+                        },
+                        "name": "evGraphInstanceStopped",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Media Recording Started"
+                        },
+                        "name": "evMediaRecordingStarted",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Start LVA Command"
+                        },
+                        "name": "evStartLvaGraphCommandReceived",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Stop LVA Command"
+                        },
+                        "name": "evStopLvaGraphCommandReceived",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": "Command",
+                        "commandType": "asynchronous",
+                        "response": {
+                            "@type": "SchemaField",
+                            "displayName": {
+                                "en": "StartLvaResponse"
+                            },
+                            "name": "StartLvaResponse",
+                            "schema": "string"
+                        },
+                        "displayName": {
+                            "en": "Start LVA Processing"
+                        },
+                        "name": "cmStartLvaProcessing"
+                    },
+                    {
+                        "@type": "Command",
+                        "commandType": "asynchronous",
+                        "response": {
+                            "@type": "SchemaField",
+                            "displayName": {
+                                "en": "StopLvaResponse"
+                            },
+                            "name": "StopLvaResponse",
+                            "schema": "string"
+                        },
+                        "displayName": {
+                            "en": "Stop LVA Processing"
+                        },
+                        "name": "cmStopLvaProcessing"
+                    }
+                ]
+            }
+        },
+        {
+            "@type": "InterfaceInstance",
+            "displayName": {
+                "en": "IoT Camera Device Interface"
+            },
+            "name": "IoTCameraDeviceInterface",
+            "schema": {
+                "@id": "urn:AzureMediaServices:IoTCameraDeviceInterface:1",
+                "@type": "Interface",
+                "displayName": {
+                    "en": "IoT Camera Device Interface"
+                },
+                "contents": [
+                    {
+                        "@type": "Telemetry",
+                        "displayName": {
+                            "en": "System Heartbeat"
+                        },
+                        "name": "tlSystemHeartbeat",
+                        "schema": "integer"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/State"
+                        ],
+                        "displayName": {
+                            "en": "IoT Central Client State"
+                        },
+                        "name": "stIoTCentralClientState",
+                        "schema": {
+                            "@type": "Enum",
+                            "valueSchema": "string",
+                            "enumValues": [
+                                {
+                                    "@type": "EnumValue",
+                                    "displayName": {
+                                        "en": "disconnected"
+                                    },
+                                    "enumValue": "disconnected",
+                                    "name": "disconnected"
+                                },
+                                {
+                                    "@type": "EnumValue",
+                                    "displayName": {
+                                        "en": "connected"
+                                    },
+                                    "enumValue": "connected",
+                                    "name": "connected"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/State"
+                        ],
+                        "displayName": {
+                            "en": "Camera State"
+                        },
+                        "name": "stCameraState",
+                        "schema": {
+                            "@type": "Enum",
+                            "valueSchema": "string",
+                            "enumValues": [
+                                {
+                                    "@type": "EnumValue",
+                                    "displayName": {
+                                        "en": "inactive"
+                                    },
+                                    "enumValue": "inactive",
+                                    "name": "inactive"
+                                },
+                                {
+                                    "@type": "EnumValue",
+                                    "displayName": {
+                                        "en": "active"
+                                    },
+                                    "enumValue": "active",
+                                    "name": "active"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Camera Name"
+                        },
+                        "name": "rpCameraName",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Rtsp Url"
+                        },
+                        "name": "rpRtspUrl",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Rtsp Auth Username"
+                        },
+                        "name": "rpRtspAuthUsername",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Rtsp Auth Password"
+                        },
+                        "name": "rpRtspAuthPassword",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Manufacturer"
+                        },
+                        "name": "rpManufacturer",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Model"
+                        },
+                        "name": "rpModel",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "AmsDeviceTag"
+                        },
+                        "name": "rpAmsDeviceTag",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Auto Start"
+                        },
+                        "name": "wpAutoStart",
+                        "writable": true,
+                        "schema": "boolean"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Debug Telemetry"
+                        },
+                        "name": "wpDebugTelemetry",
+                        "writable": true,
+                        "schema": "boolean"
+                    }
+                ]
+            }
+        },
+        {
+            "@type": "InterfaceInstance",
+            "displayName": {
+                "en": "Lva Edge Object Detector Interface"
+            },
+            "name": "LvaEdgeObjectDetectorInterface",
+            "schema": {
+                "@id": "urn:AzureMediaServices:LvaEdgeObjectDetectorInterface:1",
+                "@type": "Interface",
+                "displayName": {
+                    "en": "Lva Edge Object Detector Interface"
+                },
+                "contents": [
+                    {
+                        "@type": "Telemetry",
+                        "displayName": {
+                            "en": "Primary Detection Count"
+                        },
+                        "name": "tlPrimaryDetectionCount",
+                        "schema": "integer"
+                    },
+                    {
+                        "@type": "Telemetry",
+                        "displayName": {
+                            "en": "Secondary Detection Count"
+                        },
+                        "name": "tlSeconaryDetectionCount",
+                        "schema": "integer"
+                    },
+                    {
+                        "@type": "Telemetry",
+                        "displayName": {
+                            "en": "Primary Confidence"
+                        },
+                        "name": "tlPrimaryConfidence",
+                        "schema": "double"
+                    },
+                    {
+                        "@type": "Telemetry",
+                        "displayName": {
+                            "en": "Secondary Confidence"
+                        },
+                        "name": "tlSecondaryConfidence",
+                        "schema": "double"
+                    },
+                    {
+                        "@type": "Telemetry",
+                        "displayName": {
+                            "en": "Inference"
+                        },
+                        "name": "tlInference",
+                        "schema": {
+                            "@type": "Object",
+                            "displayName": {
+                                "en": "Object"
+                            },
+                            "fields": [
+                                {
+                                    "@type": "SchemaField",
+                                    "displayName": {
+                                        "en": "type"
+                                    },
+                                    "name": "type",
+                                    "schema": "string"
+                                },
+                                {
+                                    "@type": "SchemaField",
+                                    "displayName": {
+                                        "en": "entity"
+                                    },
+                                    "name": "entity",
+                                    "schema": {
+                                        "@type": "Object",
+                                        "displayName": {
+                                            "en": "Object"
+                                        },
+                                        "fields": [
+                                            {
+                                                "@type": "SchemaField",
+                                                "displayName": {
+                                                    "en": "box"
+                                                },
+                                                "name": "box",
+                                                "schema": {
+                                                    "@type": "Object",
+                                                    "displayName": {
+                                                        "en": "Object"
+                                                    },
+                                                    "fields": [
+                                                        {
+                                                            "@type": "SchemaField",
+                                                            "displayName": {
+                                                                "en": "l"
+                                                            },
+                                                            "name": "l",
+                                                            "schema": "double"
+                                                        },
+                                                        {
+                                                            "@type": "SchemaField",
+                                                            "displayName": {
+                                                                "en": "t"
+                                                            },
+                                                            "name": "t",
+                                                            "schema": "double"
+                                                        },
+                                                        {
+                                                            "@type": "SchemaField",
+                                                            "displayName": {
+                                                                "en": "w"
+                                                            },
+                                                            "name": "w",
+                                                            "schema": "double"
+                                                        },
+                                                        {
+                                                            "@type": "SchemaField",
+                                                            "displayName": {
+                                                                "en": "h"
+                                                            },
+                                                            "name": "h",
+                                                            "schema": "double"
+                                                        }
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "@type": "SchemaField",
+                                                "displayName": {
+                                                    "en": "tag"
+                                                },
+                                                "name": "tag",
+                                                "schema": {
+                                                    "@type": "Object",
+                                                    "displayName": {
+                                                        "en": "Object"
+                                                    },
+                                                    "fields": [
+                                                        {
+                                                            "@type": "SchemaField",
+                                                            "displayName": {
+                                                                "en": "confidence"
+                                                            },
+                                                            "name": "confidence",
+                                                            "schema": "double"
+                                                        },
+                                                        {
+                                                            "@type": "SchemaField",
+                                                            "displayName": {
+                                                                "en": "value"
+                                                            },
+                                                            "name": "value",
+                                                            "schema": "string"
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Inference Event Video"
+                        },
+                        "name": "evInferenceEventVideoUrl",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Inference Video"
+                        },
+                        "name": "rpInferenceVideoUrl",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Inference Image"
+                        },
+                        "name": "rpInferenceImageUrl",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Primary Detection Class"
+                        },
+                        "name": "wpPrimaryDetectionClass",
+                        "writable": true,
+                        "schema": "string"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Primary Confidence Threshold"
+                        },
+                        "name": "wpPrimaryConfidenceThreshold",
+                        "writable": true,
+                        "schema": "double"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Secondary Detection Class"
+                        },
+                        "name": "wpSecondaryDetectionClass",
+                        "writable": true,
+                        "schema": "string"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Secondary Confidence Threshold"
+                        },
+                        "name": "wpSecondaryConfidenceThreshold",
+                        "writable": true,
+                        "schema": "double"
+                    }
+                ]
+            }
+        }
+    ],
+    "displayName": {
+        "en": "Lva Edge Object Detector Device"
+    },
+    "@context": [
+        "http://azureiot.com/v1/contexts/IoTModel.json"
+    ]
+}
