@@ -26,3 +26,5 @@ This project includes scripts for building the Docker image and for initial proj
   - [done] device needs to return to what it was doing (rtsp feed, ai model, etc.)
   - [done] need to store/persist device name, rtsp feed/creds, ai model etc.
 * Reconcile all try/catch stacks
+  - User facing errors should be caught at the deviceMethod level and translated into readable strings
+  - Log error message can remain descriptive (sans secrets/privacy)

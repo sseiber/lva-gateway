@@ -30,7 +30,6 @@ import * as fse from 'fs-extra';
 import { resolve as pathResolve } from 'path';
 import * as crypto from 'crypto';
 import * as Wreck from '@hapi/wreck';
-import * as _random from 'lodash.random';
 import { bind, defer, emptyObj, forget } from '../utils';
 
 const contentRootDirectory = process.env.CONTENT_ROOT || '/data/content';
@@ -615,7 +614,7 @@ export class ModuleService {
         }
 
         // let Docker restart our container
-        this.server.log(['ModuleService', 'error'], `Exiting container now`);
+        this.server.log(['ModuleService', 'info'], `Shutting down main process - module container will restart`);
         process.exit(1);
     }
 
@@ -852,7 +851,7 @@ export class ModuleService {
 
                     const amsInferenceDevice = this.amsInferenceDeviceMap.get(cameraId);
                     if (!amsInferenceDevice) {
-                        this.server.log(['ModuleService', 'error'], `Can't route telemetry to cameraId: ${cameraId}`);
+                        this.server.log(['ModuleService', 'error'], `Received Lva Edge telemetry for cameraId: "${cameraId}" but that device does not exist in Lva Gateway`);
                     }
                     else {
                         if (inputName === LvaGatewayEdgeInputs.LvaDiagnostics || inputName === LvaGatewayEdgeInputs.LvaOperational) {
@@ -1250,29 +1249,37 @@ export class ModuleService {
         this.server.log(['ModuleService', 'info'], `${LvaGatewayInterface.Command.AddCamera} command received`);
 
         try {
-            const paramPayload = commandRequest?.payload;
-            if (typeof paramPayload !== 'object') {
-                throw new Error(`Missing or wrong payload time for command: ${LvaGatewayInterface.Command.AddCamera}`);
+            const cameraId = commandRequest?.payload?.[AddCameraCommandRequestParams.CameraId];
+            const cameraName = commandRequest?.payload?.[AddCameraCommandRequestParams.CameraName];
+            const rtspUrl = commandRequest?.payload?.[AddCameraCommandRequestParams.RtspUrl];
+            const rtspAuthUsername = commandRequest?.payload?.[AddCameraCommandRequestParams.RtspAuthUsername];
+            const rtspAuthPassword = commandRequest?.payload?.[AddCameraCommandRequestParams.RtspAuthPassword];
+            const detectionType = commandRequest?.payload?.[AddCameraCommandRequestParams.DetectionType];
+
+            if (!cameraId || !cameraName || !rtspUrl || !rtspAuthUsername || !rtspAuthPassword || !detectionType) {
+                await commandResponse.send(202, {
+                    value: `The ${LvaGatewayInterface.Command.DeleteCamera} command is missing required parameters, cameraId, cameraName, rtspUrl, rtspAuthUsername, rtspAuthPassword, detectionType`
+                });
+
+                return;
             }
 
             const provisionResult = await this.createAmsInferenceDevice({
-                cameraId: paramPayload?.[AddCameraCommandRequestParams.CameraId],
-                cameraName: paramPayload?.[AddCameraCommandRequestParams.CameraName],
-                rtspUrl: paramPayload?.[AddCameraCommandRequestParams.RtspUrl],
-                rtspAuthUsername: paramPayload?.[AddCameraCommandRequestParams.RtspAuthUsername],
-                rtspAuthPassword: paramPayload?.[AddCameraCommandRequestParams.RtspAuthPassword],
-                detectionType: paramPayload?.[AddCameraCommandRequestParams.DetectionType]
+                cameraId,
+                cameraName,
+                rtspUrl,
+                rtspAuthUsername,
+                rtspAuthPassword,
+                detectionType
             });
 
-            const statusCode = (provisionResult.dpsProvisionStatus === true && provisionResult.clientConnectionStatus === true) ? 201 : 400;
+            await commandResponse.send(202, {
+                value: provisionResult.clientConnectionMessage
 
-            await commandResponse.send(statusCode, provisionResult.clientConnectionMessage);
+            });
         }
         catch (ex) {
-            const message = `Error creating LVA Edge gateway camera device: ${ex.message}`;
-            this.server.log(['ModuleService', 'error'], message);
-
-            await commandResponse.send(400, message);
+            this.server.log(['ModuleService', 'error'], `Error creating LVA Edge gateway camera device: ${ex.message}`);
         }
     }
 
@@ -1281,20 +1288,26 @@ export class ModuleService {
         this.server.log(['ModuleService', 'info'], `${LvaGatewayInterface.Command.DeleteCamera} command received`);
 
         try {
-            const paramPayload = commandRequest?.payload;
-            if (typeof paramPayload !== 'object') {
-                throw new Error(`Missing or wrong payload time for command`);
+            const cameraId = commandRequest?.payload?.[DeleteCameraCommandRequestParams.CameraId];
+            if (!cameraId) {
+                await commandResponse.send(202, {
+                    value: `The ${LvaGatewayInterface.Command.DeleteCamera} command requires a Camera Id parameter`
+                });
+
+                return;
             }
 
-            const deleteResult = await this.deprovisionAmsInferenceDevice(paramPayload?.[DeleteCameraCommandRequestParams.CameraId]);
+            const deleteResult = await this.deprovisionAmsInferenceDevice(cameraId);
 
-            await commandResponse.send(deleteResult ? 204 : 400, deleteResult ? 'Succeeded' : 'Failed');
+            await commandResponse.send(202, {
+                value: deleteResult
+                    ? `The ${LvaGatewayInterface.Command.DeleteCamera} command succeeded`
+                    : `An error occurred while executing the ${LvaGatewayInterface.Command.DeleteCamera} command`
+
+            });
         }
         catch (ex) {
-            const message = `Error deleting LVA Edge gateway camera device: ${ex.message}`;
-            this.server.log(['ModuleService', 'error'], message);
-
-            await commandResponse.send(400, message);
+            this.server.log(['ModuleService', 'error'], `Error deleting LVA Edge gateway camera device: ${ex.message}`);
         }
     }
 
@@ -1304,14 +1317,11 @@ export class ModuleService {
 
         try {
             // sending response before processing, since this is a restart request
-            await commandResponse.send(200, 'Success');
+            await commandResponse.send(200, {
+                value: 'Success'
+            });
 
-            const paramPayload = commandRequest?.payload;
-            if (typeof paramPayload !== 'object') {
-                throw new Error(`Missing or wrong payload time for command`);
-            }
-
-            await this.restartModule(paramPayload?.[RestartModuleCommandRequestParams.Timeout] || 0, 'RestartModule command received');
+            await this.restartModule(commandRequest?.payload?.[RestartModuleCommandRequestParams.Timeout] || 0, 'RestartModule command received');
         }
         catch (ex) {
             this.server.log(['ModuleService', 'error'], `Error sending response for ${LvaGatewayInterface.Command.RestartModule} command: ${ex.message}`);
