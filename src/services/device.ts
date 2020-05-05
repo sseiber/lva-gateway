@@ -89,6 +89,7 @@ const IoTCameraDeviceInterface = {
 };
 
 export abstract class AmsCameraDevice {
+    protected id: string;
     protected lvaGatewayModule: ModuleService;
     protected amsGraph: AmsGraph;
     protected cameraInfo: ICameraDeviceProvisionInfo;
@@ -103,6 +104,7 @@ export abstract class AmsCameraDevice {
     };
 
     constructor(lvaGatewayModule: ModuleService, amsGraph: AmsGraph, cameraInfo: ICameraDeviceProvisionInfo) {
+        this.id = (Math.floor(100000 + Math.random() * 900000)).toString();
         this.lvaGatewayModule = lvaGatewayModule;
         this.amsGraph = amsGraph;
         this.cameraInfo = cameraInfo;
@@ -110,6 +112,10 @@ export abstract class AmsCameraDevice {
 
     public abstract async initDevice(): Promise<void>;
     public abstract async processLvaInferences(inferenceData: any): Promise<void>;
+
+    public getId() {
+        return this.id;
+    }
 
     public async connectDeviceClient(dpsHubConnectionString: string): Promise<IClientConnectResult> {
         let clientConnectionResult: IClientConnectResult = {
@@ -407,13 +413,12 @@ export abstract class AmsCameraDevice {
         try {
             const startLvaGraphResult = await this.startLvaProcessingInternal(false);
 
-            await commandResponse.send(startLvaGraphResult ? 201 : 400, `LVA Edge start graph request: ${startLvaGraphResult ? 'succeeded' : 'failed'}`);
+            await commandResponse.send(202, {
+                value: `LVA Edge start graph request: ${startLvaGraphResult ? 'succeeded' : 'failed'}`
+            });
         }
         catch (ex) {
-            const message = `startLvaProcessing error: ${ex.message}`;
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], message);
-
-            await commandResponse.send(400, message);
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `startLvaProcessing error: ${ex.message}`);
         }
     }
 
@@ -434,13 +439,12 @@ export abstract class AmsCameraDevice {
                 });
             }
 
-            await commandResponse.send(stopLvaGraphResult ? 201 : 400, `LVA Edge stop graph request: ${stopLvaGraphResult ? 'succeeded' : 'failed'}`);
+            await commandResponse.send(202, {
+                value: `LVA Edge stop graph request: ${stopLvaGraphResult ? 'succeeded' : 'failed'}`
+            });
         }
         catch (ex) {
-            const message = `Stop LVA error ${ex.message}`;
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], message);
-
-            await commandResponse.send(400, message);
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `Stop LVA error ${ex.message}`);
         }
     }
 }
