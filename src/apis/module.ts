@@ -1,6 +1,6 @@
 import { inject, RoutePlugin, route } from 'spryly';
 import { Request, ResponseToolkit } from '@hapi/hapi';
-import { ModuleService } from '../services/module';
+import { ICameraDeviceProvisionInfo, ModuleService } from '../services/module';
 import {
     badRequest as boom_badRequest,
     badImplementation as boom_badImplementation
@@ -13,7 +13,7 @@ export class ModuleRoutes extends RoutePlugin {
 
     @route({
         method: 'POST',
-        path: '/api/v1/module/camera',
+        path: '/api/v1/module/camera/{cameraId}',
         options: {
             tags: ['module'],
             description: 'Create a camera device'
@@ -21,15 +21,27 @@ export class ModuleRoutes extends RoutePlugin {
     })
     public async postCreateCamera(request: Request, h: ResponseToolkit) {
         try {
-            const cameraId = request?.payload?.cameraId || '';
-            const cameraName = request?.payload?.cameraName || 'Unkonwn';
-            const detectionType = request?.payload?.detectionType || 'cat';
+            const cameraInfo: ICameraDeviceProvisionInfo = {
+                cameraId: request.params?.cameraId,
+                cameraName: (request.payload as any)?.cameraName,
+                rtspUrl: (request.payload as any)?.rtspUrl,
+                rtspAuthUsername: (request.payload as any)?.rtspAuthUsername,
+                rtspAuthPassword: (request.payload as any)?.rtspAuthPassword,
+                detectionType: (request.payload as any)?.detectionType || 'person'
+            };
 
-            if (!cameraId || !cameraName || !detectionType) {
+            if (!cameraInfo.cameraId
+                || !cameraInfo.cameraName
+                || !cameraInfo.rtspUrl
+                || !cameraInfo.rtspAuthUsername
+                || !cameraInfo.rtspAuthPassword
+                || !cameraInfo.detectionType
+            ) {
                 throw boom_badRequest('Missing parameters (cameraId, cameraName, detectionType)');
             }
 
-            const dpsProvisionResult = await this.module.createCamera(cameraId, cameraName, detectionType);
+            const dpsProvisionResult = await this.module.createCamera(cameraInfo);
+
             const resultMessage = dpsProvisionResult.dpsProvisionMessage || dpsProvisionResult.clientConnectionMessage;
             if (dpsProvisionResult.dpsProvisionStatus === false || dpsProvisionResult.clientConnectionStatus === false) {
                 throw boom_badImplementation(resultMessage);
@@ -52,7 +64,7 @@ export class ModuleRoutes extends RoutePlugin {
     })
     public async deleteCamera(request: Request, h: ResponseToolkit) {
         try {
-            const cameraId = request?.params?.cameraId;
+            const cameraId = request.params?.cameraId;
             if (!cameraId) {
                 throw boom_badRequest('Missing cameraId');
             }
@@ -83,8 +95,8 @@ export class ModuleRoutes extends RoutePlugin {
     })
     public async postSendCameraTelemetry(request: Request, h: ResponseToolkit) {
         try {
-            const cameraId = request?.params?.cameraId;
-            const telemetry = request?.payload?.telemetry;
+            const cameraId = request.params?.cameraId;
+            const telemetry = (request.payload as any)?.telemetry;
 
             if (!cameraId || !telemetry) {
                 throw boom_badRequest('Missing cameraId or telemetry');
@@ -116,8 +128,8 @@ export class ModuleRoutes extends RoutePlugin {
     })
     public async postSendCameraInferenceTelemetry(request: Request, h: ResponseToolkit) {
         try {
-            const cameraId = request?.params?.cameraId;
-            const inferences = request?.payload?.inferences;
+            const cameraId = request.params?.cameraId;
+            const inferences = (request.payload as any)?.inferences;
 
             if (!cameraId || emptyObj(inferences)) {
                 throw boom_badRequest('Missing cameraId or telemetry');

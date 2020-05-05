@@ -1,9 +1,9 @@
-import { ModuleService, IAmsGraph } from './module';
 import {
-    IClientConnectResult,
-    IoTCameraDeviceSettings,
-    AmsCameraDevice
-} from './device';
+    ICameraDeviceProvisionInfo,
+    ModuleService,
+    AmsGraph
+} from './module';
+import { AmsCameraDevice } from './device';
 import { bind, emptyObj } from '../utils';
 
 interface IObjectInference {
@@ -23,122 +23,130 @@ interface IObjectInference {
 }
 
 enum ObjectDetectorSettings {
-    DetectionClass = 'wpDetectionClass'
+    PrimaryDetectionClass = 'wpPrimaryDetectionClass',
+    PrimaryConfidenceThreshold = 'wpPrimaryConfidenceThreshold',
+    SecondaryDetectionClass = 'wpSecondaryDetectionClass',
+    SecondaryConfidenceThreshold = 'wpSecondaryConfidenceThreshold'
 }
 
 interface IObjectDetectorSettings {
-    [ObjectDetectorSettings.DetectionClass]: string;
+    [ObjectDetectorSettings.PrimaryDetectionClass]: string;
+    [ObjectDetectorSettings.PrimaryConfidenceThreshold]: number;
+    [ObjectDetectorSettings.SecondaryDetectionClass]: string;
+    [ObjectDetectorSettings.SecondaryConfidenceThreshold]: number;
 }
 
 const ObjectDetectorInterface = {
     Telemetry: {
-        InferenceCount: 'tlInferenceCount',
+        PrimaryDetectionCount: 'tlPrimaryDetectionCount',
+        SecondaryDetectionCount: 'tlSeconaryDetectionCount',
+        PrimaryConfidence: 'tlPrimaryConfidence',
+        SecondaryConfidence: 'tlSecondaryConfidence',
         Inference: 'tlInference'
     },
+    Event: {
+        InferenceEventVideoUrl: 'evInferenceEventVideoUrl'
+    },
+    Property: {
+        InferenceVideoUrl: 'rpInferenceVideoUrl',
+        InferenceImageUrl: 'rpInferenceImageUrl'
+    },
     Setting: {
-        DetectionClass: ObjectDetectorSettings.DetectionClass
+        PrimaryDetectionClass: ObjectDetectorSettings.PrimaryDetectionClass,
+        PrimaryConfidenceThreshold: ObjectDetectorSettings.PrimaryConfidenceThreshold,
+        SecondaryDetectionClass: ObjectDetectorSettings.SecondaryDetectionClass,
+        SecondaryConfidenceThreshold: ObjectDetectorSettings.SecondaryConfidenceThreshold
     }
 };
 
 export class AmsObjectDetectorDevice extends AmsCameraDevice {
     private objectDetectorSettings: IObjectDetectorSettings = {
-        [ObjectDetectorSettings.DetectionClass]: ''
+        [ObjectDetectorSettings.PrimaryDetectionClass]: '',
+        [ObjectDetectorSettings.PrimaryConfidenceThreshold]: 0.0,
+        [ObjectDetectorSettings.SecondaryDetectionClass]: '',
+        [ObjectDetectorSettings.SecondaryConfidenceThreshold]: 0.0
     };
 
-    constructor(lvaGatewayModule: ModuleService, amsGraph: IAmsGraph, cameraId: string, cameraName: string) {
-        super(lvaGatewayModule, amsGraph, cameraId, cameraName);
+    constructor(lvaGatewayModule: ModuleService, amsGraph: AmsGraph, cameraInfo: ICameraDeviceProvisionInfo) {
+        super(lvaGatewayModule, amsGraph, cameraInfo);
     }
 
-    public async connectDeviceClient(dpsHubConnectionString: string): Promise<IClientConnectResult> {
-        let clientConnectionResult: IClientConnectResult = {
-            clientConnectionStatus: false,
-            clientConnectionMessage: ''
-        };
+    public async initDevice(): Promise<void> {
+        await this.sendMeasurement({
+            [ObjectDetectorInterface.Event.InferenceEventVideoUrl]: 'https://portal.loopbox-nl.com/'
+        });
 
-        try {
-            clientConnectionResult = await this.connectDeviceClientInternal(dpsHubConnectionString, this.onHandleDeviceProperties);
-
-            await this.deferredStart.promise;
-
-            if (this.deviceSettings[IoTCameraDeviceSettings.AutoStart] === true) {
-                try {
-                    await this.startLvaProcessingInternal(true);
-                }
-                catch (ex) {
-                    this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'error'], `Error while trying to auto-start Lva graph: ${ex.message}`);
-                }
-            }
-        }
-        catch (ex) {
-            clientConnectionResult.clientConnectionStatus = false;
-            clientConnectionResult.clientConnectionMessage = `An error occurred while accessing the device twin properties`;
-        }
-
-        return clientConnectionResult;
+        await this.updateDeviceProperties({
+            [ObjectDetectorInterface.Property.InferenceImageUrl]: 'https://iotcsavisionai.blob.core.windows.net/image-link-test/dunkin-3_199_.jpg',
+            [ObjectDetectorInterface.Property.InferenceVideoUrl]: 'https://portal.loopbox-nl.com/'
+        });
     }
 
     public async processLvaInferences(inferences: IObjectInference[]): Promise<void> {
         if (!Array.isArray(inferences) || !this.deviceClient) {
-            this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'error'], `Missing inferences array or client not connected`);
+            this.lvaGatewayModule.logger(['AmsObjectDetectorDevice', 'error'], `Missing inferences array or client not connected`);
             return;
         }
 
         try {
-            let inferenceCount = 0;
+            let primaryDetectionCount = 0;
+            let secondaryDetectionCount = 0;
 
             for (const inference of inferences) {
-                if ((inference.entity?.tag?.value || '').toUpperCase() === this.objectDetectorSettings[ObjectDetectorSettings.DetectionClass]) {
-                    ++inferenceCount;
+                const detectedClass = (inference.entity?.tag?.value || '').toUpperCase();
+                const confidence = (inference.entity?.tag?.confidence || 0.0) * 100;
+                const inferenceTelemetry = {};
+
+                if (detectedClass === this.objectDetectorSettings[ObjectDetectorSettings.PrimaryDetectionClass]) {
+                    ++primaryDetectionCount;
+
+                    inferenceTelemetry[ObjectDetectorInterface.Telemetry.Inference] = inference;
+
+                    if (confidence >= this.objectDetectorSettings[ObjectDetectorSettings.PrimaryConfidenceThreshold]) {
+                        inferenceTelemetry[ObjectDetectorInterface.Telemetry.PrimaryConfidence] = confidence;
+                    }
                 }
 
-                await this.sendMeasurement({
-                    [ObjectDetectorInterface.Telemetry.Inference]: inference
-                });
+                if (detectedClass === this.objectDetectorSettings[ObjectDetectorSettings.SecondaryDetectionClass]) {
+                    ++secondaryDetectionCount;
+
+                    inferenceTelemetry[ObjectDetectorInterface.Telemetry.Inference] = inference;
+
+                    if (confidence >= this.objectDetectorSettings[ObjectDetectorSettings.SecondaryConfidenceThreshold]) {
+                        inferenceTelemetry[ObjectDetectorInterface.Telemetry.SecondaryConfidence] = confidence;
+                    }
+                }
+
+                if (Object.keys(inferenceTelemetry).length > 0) {
+                    await this.sendMeasurement(inferenceTelemetry);
+                }
             }
 
-            if (inferenceCount > 0) {
-                await this.sendMeasurement({
-                    [ObjectDetectorInterface.Telemetry.InferenceCount]: inferenceCount
-                });
+            const inferenceCountTelemetry = {};
+
+            if (primaryDetectionCount > 0) {
+                inferenceCountTelemetry[ObjectDetectorInterface.Telemetry.PrimaryDetectionCount] = primaryDetectionCount;
+            }
+
+            if (secondaryDetectionCount > 0) {
+                inferenceCountTelemetry[ObjectDetectorInterface.Telemetry.SecondaryDetectionCount] = secondaryDetectionCount;
+            }
+
+            if (Object.keys(inferenceCountTelemetry).length > 0) {
+                await this.sendMeasurement(inferenceCountTelemetry);
             }
         }
         catch (ex) {
-            this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'error'], `Error processing downstream message: ${ex.message}`);
+            this.lvaGatewayModule.logger(['AmsObjectDetectorDevice', 'error'], `Error processing downstream message: ${ex.message}`);
         }
-    }
-
-    public setGraphInstance(amsGraph: IAmsGraph): boolean {
-        this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'info'], `Setting graph instance`);
-
-        if (!amsGraph?.instance || !amsGraph?.topology) {
-            this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'error'], `The amsGraph was undefined`);
-            return false;
-        }
-
-        if (amsGraph?.initialized === true) {
-            this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'warning'], `Graph instance already set for graph: ${amsGraph?.instance?.name || '(name not detected)'}`);
-            return true;
-        }
-
-        amsGraph.instance.name = (amsGraph.instance?.name || '').replace('###RtspCameraId', this.cameraId);
-        amsGraph.instance.properties.topologyName = (amsGraph.instance?.properties?.topologyName || '###RtspCameraId').replace('###RtspCameraId', this.cameraId);
-
-        amsGraph.topology.name = (amsGraph.topology?.name || '').replace('###RtspCameraId', this.cameraId);
-        amsGraph.topology.properties.sources[0].name = `RtspSource_${this.cameraId}`;
-        amsGraph.topology.properties.sources[0].endpoint.url = this.deviceSettings[IoTCameraDeviceSettings.RtspUrl];
-        amsGraph.topology.properties.sources[0].endpoint.credentials.username = this.deviceSettings[IoTCameraDeviceSettings.RtspAuthUsername];
-        amsGraph.topology.properties.sources[0].endpoint.credentials.password = this.deviceSettings[IoTCameraDeviceSettings.RtspAuthPassword];
-        amsGraph.topology.properties.processors[0].inputs[0].moduleName = `RtspSource_${this.cameraId}`;
-
-        return amsGraph.initialized = true;
     }
 
     @bind
     protected async onHandleDeviceProperties(desiredChangedSettings: any) {
-        await super.onHandleDeviceProperties(desiredChangedSettings);
+        await super.onHandleDevicePropertiesInternal(desiredChangedSettings);
 
         try {
-            this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
+            this.lvaGatewayModule.logger(['AmsObjectDetectorDevice', 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
 
             const patchedProperties = {};
 
@@ -154,8 +162,14 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
                 const value = desiredChangedSettings[`${setting}`]?.value;
 
                 switch (setting) {
-                    case ObjectDetectorInterface.Setting.DetectionClass:
-                        patchedProperties[setting] = this.objectDetectorSettings[setting] = (value || '').toUpperCase();
+                    case ObjectDetectorInterface.Setting.PrimaryDetectionClass:
+                    case ObjectDetectorInterface.Setting.SecondaryDetectionClass:
+                        patchedProperties[setting] = (this.objectDetectorSettings[setting] as any) = (value || '').toUpperCase();
+                        break;
+
+                    case ObjectDetectorInterface.Setting.PrimaryConfidenceThreshold:
+                    case ObjectDetectorInterface.Setting.SecondaryConfidenceThreshold:
+                        patchedProperties[setting] = (this.objectDetectorSettings[setting] as any) = (value || 0.0);
                         break;
 
                     default:
@@ -168,7 +182,7 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
             }
         }
         catch (ex) {
-            this.lvaGatewayModule.log(['AmsObjectDetectorDevice', 'error'], `Exception while handling desired properties: ${ex.message}`);
+            this.lvaGatewayModule.logger(['AmsObjectDetectorDevice', 'error'], `Exception while handling desired properties: ${ex.message}`);
         }
 
         this.deferredStart.resolve();
