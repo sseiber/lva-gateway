@@ -349,20 +349,19 @@ Create a Linux VM with IoT Edge from the marketplace
 Following are some sample values when creating the VM box.
 
 Basics:
+| Subscription       |    Dv-UK-Sbox|
+|-|-|
+| Resource group     |    (new) DV\_LVA\_RG\_EUS|
+|Virtual machine name  | dvIoTEdgeLinux|
+|  Region          |       East US|
+| Availability options  | No infrastructure redundancy required |
+| Authentication type  |  Password |
+| UserName       |        \[Username\]|
+| Password         |      \*\*\* |
+| Public inbound ports  | Allow Selected Ports SSH(22)|
+| Azure Spot    |         No|
 
-  Subscription           Dv-UK-Sbox
-  ---------------------- ---------------------------------------
-  Resource group         (new) DV\_LVA\_RG\_EUS
-  Virtual machine name   dvIoTEdgeLinux
-  Region                 East US
-  Availability options   No infrastructure redundancy required
-  Authentication type    Password
-  UserName               iot
-  Password               \*\*\*
-  Public inbound ports   Allow Selected Ports SSH(22)
-  Azure Spot             No
-
-Disks
+Disks:
 
   OS disk type            Premium SSD
   ----------------------- -------------
