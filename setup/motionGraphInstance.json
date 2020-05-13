@@ -18,7 +18,11 @@
                 "value": ""
             },
             {
-                "name": "wpSensitivity",
+                "name": "assetName",
+                "value": ""
+            },
+            {
+                "name": "sensitivity",
                 "value": ""
             }
         ]

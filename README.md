@@ -18,13 +18,16 @@ This project includes scripts for building the Docker image and for initial proj
 
 ### To do
 * Object detector device should take a "list" of detector labels
-* Manage the "delete camera" flow
-  - polling on the heath check to determine if still connected to the Hub
-  - diagnose the Hub responses to get to the specific errors
-  - gateway module should receive the error that device is disconnected to so gateway can manage the delete and re-provision of the device
+* Device lifecycle
+    * Multiple instances of gateway
+        - Need to further guarantee ownership of leaf device to gateway. Add properties to the device so it can be identified by the owning gateway in restart scenarios.
+    * Manage the "delete camera" flow
+        - polling on the heath check to determine if still connected to the Hub
+        - diagnose the Hub responses to get to the specific errors
+        - gateway module should receive the error that device is disconnected to so gateway can manage the delete and re-provision of the device
 * Gateway module needs to keep track of devices in case it reboots and needs to re-provision each
-  - [done] device needs to return to what it was doing (rtsp feed, ai model, etc.)
-  - [done] need to store/persist device name, rtsp feed/creds, ai model etc.
+    - [done] device needs to return to what it was doing (rtsp feed, ai model, etc.)
+    - [done] need to store/persist device name, rtsp feed/creds, ai model etc.
 * Reconcile all try/catch stacks
-  - User facing errors should be caught at the deviceMethod level and translated into readable strings
-  - Log error message can remain descriptive (sans secrets/privacy)
+    - User facing errors should be caught at the deviceMethod level and translated into readable strings
+    - Log error message can remain descriptive (sans secrets/privacy)
