@@ -148,35 +148,21 @@ Locate the \$edgeAgent object
 
 Modify the registry credentials only if you are building custom modules
 
-\"properties.desired\": {
-
-\"schemaVersion\": \"1.0\",
-
-\"runtime\": {
-
-\"type\": \"docker\",
-
-\"settings\": {
-
-\"minDockerVersion\": \"v1.25\",
-
-\"loggingOptions\": \"\",
-
-\"registryCredentials\": {
-
-\"meshams\": {
-
-\"address\": \"\[UserName\].azurecr.io\",
-
-\"password\": \"\*\*\*\*\",
-
-\"username\": \"\[UserName\]\"
-
-}
-
-}
-
-}
+	"properties.desired": {
+		"schemaVersion": "1.0",
+		"runtime": {
+			"type": "docker",
+			"settings": {
+				"minDockerVersion": "v1.25",
+				"loggingOptions": "",
+				"registryCredentials": {
+					"meshams": {
+						"address": "[UserName].azurecr.io",
+						"password": "****",
+						"username": "[UserName]"
+					}
+				}
+			}
 
 Then for each of the modules listed under systemModules you will need to
 enter the image element. Use the default image text if you are not
@@ -197,31 +183,19 @@ as follows:
 Locate the LvaEdgeGatewayModule element and using the collected data in
 the note editor fill in the highlighted named values.
 
-\"LvaEdgeGatewayModule\": {
-
-\"properties.desired\": {
-
-\"wpIoTCentralAppHost\": \"\<YOUR\_APP\>.azureiotcentral.com\",
-
-\"wpIoTCentralAppApiToken\": \"\",
-
-\"wpMasterDeviceProvisioningKey\": \"\",
-
-\"wpScopeId\": \"\",
-
-\"wpGatewayInstanceId\": \"\",
-
-\"wpGatewayModuleId\": \"LvaEdgeGatewayModule\",
-
-\"wpLvaEdgeModuleId\": \"lvaEdge\",
-
-\"wpDebugTelemetry\": false,
-
-\"wpDebugRoutedMessage\": false
-
-}
-
-}
+	"LvaEdgeGatewayModule": {
+		"properties.desired": {
+			"wpIoTCentralAppHost": "<YOUR_APP>.azureiotcentral.com",
+			"wpIoTCentralAppApiToken": "",
+			"wpMasterDeviceProvisioningKey": "",
+			"wpScopeId": "",
+			"wpGatewayInstanceId": "",
+			"wpGatewayModuleId": "LvaEdgeGatewayModule",
+			"wpLvaEdgeModuleId": "lvaEdge",
+			"wpDebugTelemetry": false,
+			"wpDebugRoutedMessage": false
+		}
+	}
 
 You cannot enter the GatewayInstanceId until you add a device, but
 because you need the Deployment Manifest file, you will have to return
@@ -236,34 +210,21 @@ therefore you will need to add the values to the file before you deploy
 create an instance of Lva Gateway Edge as described in the Create and
 Associate the Edge Gateway section.
 
-\"lvaEdge\": {
+	"lvaEdge":{
+		"properties.desired": {
+			"applicationDataDirectory": "/var/lib/azuremediaservices",
+			"azureMediaServicesArmId": "/subscriptions/[SUBSCRIPTION_ID]/resourceGroups/[RESOURCE]/providers/microsoft.media/mediaservices/[SERVICE]",
+			"aadTenantId": "[Tenant ID]",
+			"aadServicePrincipalAppId": "[Service Principal]",
+			"aadServicePrincipalSecret": "[SECRET]",
+			"aadEndpoint": "https://login.microsoftonline.com",
+			"aadResourceId": "https://management.core.windows.net/",
+			"armEndpoint": "https://management.azure.com/",
+			"diagnosticsEventsOutputName": "AmsDiagnostics",
+			"operationalMetricsOutputName": "AmsOperational"
+		}
+	}
 
-\"properties.desired\": {
-
-\"applicationDataDirectory\": \"/var/lib/azuremediaservices\",
-
-\"azureMediaServicesArmId\":
-\"/subscriptions/\[SUBSCRIPTION\_ID\]/resourceGroups/\[RESOURCE\]/providers/microsoft.media/mediaservices/\[SERVICE\]\",
-
-\"aadTenantId\": \"\[Tenant ID\]\",
-
-\"aadServicePrincipalAppId\": \"\[Service Principal\]\",
-
-\"aadServicePrincipalSecret\": \"\[SECRET\]\",
-
-\"aadEndpoint\": \"https://login.microsoftonline.com\",
-
-\"aadResourceId\": \"https://management.core.windows.net/\",
-
-\"armEndpoint\": \"https://management.azure.com/\",
-
-\"diagnosticsEventsOutputName\": \"AmsDiagnostics\",
-
-\"operationalMetricsOutputName\": \"AmsOperational\"
-
-}
-
-}
 
   Field                       Media Services Properties
   --------------------------- ---------------------------
