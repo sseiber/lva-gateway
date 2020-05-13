@@ -9,10 +9,11 @@ import {
 } from 'azure-iot-device';
 import {
     ICameraDeviceProvisionInfo,
-    ModuleService,
-    AmsGraph
+    ModuleService
 } from './module';
+import { AmsGraph } from './amsGraph';
 import { bind, defer, emptyObj } from '../utils';
+import * as moment from 'moment';
 
 export type DevicePropertiesHandler = (desiredChangedSettings: any) => Promise<void>;
 
@@ -89,7 +90,8 @@ const IoTCameraDeviceInterface = {
 };
 
 export abstract class AmsCameraDevice {
-    protected id: string;
+    protected amsAssetName: string = '';
+    protected amsAssetCreationTime: moment.Moment = moment().utc();
     protected lvaGatewayModule: ModuleService;
     protected amsGraph: AmsGraph;
     protected cameraInfo: ICameraDeviceProvisionInfo;
@@ -98,24 +100,23 @@ export abstract class AmsCameraDevice {
 
     protected deferredStart = defer();
     protected healthState = HealthState.Good;
+    protected activeVideoInference: boolean = false;
+    protected lastInferenceTime: number = 0;
     protected deviceSettings: IIoTCameraDeviceSettings = {
         [IoTCameraDeviceSettings.AutoStart]: false,
         [IoTCameraDeviceSettings.DebugTelemetry]: false
     };
 
     constructor(lvaGatewayModule: ModuleService, amsGraph: AmsGraph, cameraInfo: ICameraDeviceProvisionInfo) {
-        this.id = (Math.floor(100000 + Math.random() * 900000)).toString();
         this.lvaGatewayModule = lvaGatewayModule;
         this.amsGraph = amsGraph;
         this.cameraInfo = cameraInfo;
     }
 
-    public abstract async initDevice(): Promise<void>;
+    public abstract setGraphParameters(): any;
+    public abstract async deviceReady(): Promise<void>;
     public abstract async processLvaInferences(inferenceData: any): Promise<void>;
-
-    public getId() {
-        return this.id;
-    }
+    public abstract async inferenceTimer(): Promise<void>;
 
     public async connectDeviceClient(dpsHubConnectionString: string): Promise<IClientConnectResult> {
         let clientConnectionResult: IClientConnectResult = {
@@ -127,9 +128,13 @@ export abstract class AmsCameraDevice {
             clientConnectionResult = await this.connectDeviceClientInternal(dpsHubConnectionString, this.onHandleDeviceProperties);
 
             if (clientConnectionResult.clientConnectionStatus === true) {
-                await this.initDevice();
-
                 await this.deferredStart.promise;
+
+                await this.deviceReady();
+
+                setInterval(async () => {
+                    await this.inferenceTimer();
+                }, 3000);
             }
 
             if (this.deviceSettings[IoTCameraDeviceSettings.AutoStart] === true) {
@@ -295,6 +300,8 @@ export abstract class AmsCameraDevice {
             [LvaInterface.Event.StartLvaGraphCommandReceived]: autoStart ? 'AutoStart' : 'Command'
         });
 
+        const startLvaGraphResult = await this.amsGraph.startLvaGraph(this.setGraphParameters());
+
         if (this.deviceSettings[IoTCameraDeviceSettings.DebugTelemetry] === true) {
             this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Graph Instance Name: ${JSON.stringify(this.amsGraph.getInstanceName(), null, 4)}`);
             this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Graph Instance: ${JSON.stringify(this.amsGraph.getInstance(), null, 4)}`);
@@ -302,7 +309,6 @@ export abstract class AmsCameraDevice {
             this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Graph Topology: ${JSON.stringify(this.amsGraph.getTopology(), null, 4)}`);
         }
 
-        const startLvaGraphResult = await this.amsGraph.startLvaGraph();
         if (startLvaGraphResult) {
             await this.sendMeasurement({
                 [IoTCameraDeviceInterface.State.CameraState]: CameraState.Active
@@ -394,7 +400,7 @@ export abstract class AmsCameraDevice {
         // TODO:
         // Introduce some ONVIF tech to get camera props
         return {
-            rpManufacturer: 'Acme',
+            rpManufacturer: 'Microsoft',
             rpModel: 'Illudium Q-36'
         };
     }
