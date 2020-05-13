@@ -22,7 +22,13 @@
                 "default": "password"
             },
             {
-                "name": "wpSensitivity",
+                "name": "assetName",
+                "type": "String",
+                "description": "name of the AMS CVR asset",
+                "default": "motionDetectorAsset"
+            },
+            {
+                "name": "sensitivity",
                 "type": "String",
                 "description": "motion detection sensitivity",
                 "default": "medium"
@@ -53,7 +59,7 @@
             {
                 "@type": "#Microsoft.Media.MediaGraphMotionDetector",
                 "name": "md",
-                "sensitivity": "${wpSensitivity}",
+                "sensitivity": "${sensitivity}",
                 "inputs": [
                     {
                         "moduleName": "rtspSource"
@@ -75,7 +81,7 @@
             {
                 "@type": "#Microsoft.Media.MediaGraphAssetSink",
                 "name": "assetSink",
-                "assetNamePattern": "Md_Asset_${System.DateTime}",
+                "assetNamePattern": "${assetName}",
                 "inputs": [
                     {
                         "moduleName": "rtspSource"

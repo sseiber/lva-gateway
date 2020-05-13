@@ -313,25 +313,9 @@
                     {
                         "@type": "Telemetry",
                         "displayName": {
-                            "en": "Secondary Detection Count"
-                        },
-                        "name": "tlSeconaryDetectionCount",
-                        "schema": "integer"
-                    },
-                    {
-                        "@type": "Telemetry",
-                        "displayName": {
                             "en": "Primary Confidence"
                         },
                         "name": "tlPrimaryConfidence",
-                        "schema": "double"
-                    },
-                    {
-                        "@type": "Telemetry",
-                        "displayName": {
-                            "en": "Secondary Confidence"
-                        },
-                        "name": "tlSecondaryConfidence",
                         "schema": "double"
                     },
                     {
@@ -492,24 +476,6 @@
                             "en": "Primary Confidence Threshold"
                         },
                         "name": "wpPrimaryConfidenceThreshold",
-                        "writable": true,
-                        "schema": "double"
-                    },
-                    {
-                        "@type": "Property",
-                        "displayName": {
-                            "en": "Secondary Detection Class"
-                        },
-                        "name": "wpSecondaryDetectionClass",
-                        "writable": true,
-                        "schema": "string"
-                    },
-                    {
-                        "@type": "Property",
-                        "displayName": {
-                            "en": "Secondary Confidence Threshold"
-                        },
-                        "name": "wpSecondaryConfidenceThreshold",
                         "writable": true,
                         "schema": "double"
                     }

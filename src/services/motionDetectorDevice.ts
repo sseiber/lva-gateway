@@ -1,9 +1,10 @@
 import {
     ICameraDeviceProvisionInfo,
-    ModuleService,
-    AmsGraph
+    ModuleService
 } from './module';
+import { AmsGraph } from './amsGraph';
 import { AmsCameraDevice } from './device';
+import * as moment from 'moment';
 import { bind, emptyObj } from '../utils';
 
 interface IMotionInference {
@@ -52,12 +53,26 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
         super(lvaGatewayModule, amsGraph, cameraInfo);
     }
 
-    public async initDevice(): Promise<void> {
+    public setGraphParameters(): any {
+        this.amsAssetName = `Motion-${moment().utc().format('YYYYMMDD-HHmmss')}`;
+        this.amsAssetCreationTime = moment().utc();
+
+        return {
+            rtspUrl: this.cameraInfo.rtspUrl,
+            rtspAuthUsername: this.cameraInfo.rtspAuthUsername || 'username',
+            rtspAuthPassword: this.cameraInfo.rtspAuthPassword || 'password',
+            sensitivity: this.motionDetectorSettings[MotionDetectorSettings.Sensitivity],
+            assetName: this.amsAssetName
+        };
+    }
+
+    public async deviceReady(): Promise<void> {
         await this.sendMeasurement({
             [MotionDetectorInterface.Event.InferenceEventVideoUrl]: 'https://portal.loopbox-nl.com/'
         });
 
         await this.updateDeviceProperties({
+            [MotionDetectorSettings.Sensitivity]: this.motionDetectorSettings[MotionDetectorSettings.Sensitivity],
             [MotionDetectorInterface.Property.InferenceImageUrl]: 'https://iotcsavisionai.blob.core.windows.net/image-link-test/seattlesbest-1_199_.jpg',
             [MotionDetectorInterface.Property.InferenceVideoUrl]: 'https://portal.loopbox-nl.com/'
         });
@@ -76,21 +91,36 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
                 ++inferenceCount;
 
                 await this.sendMeasurement({
-                    [MotionDetectorInterface.Telemetry.Inference]: inference,
-                    [MotionDetectorInterface.Event.InferenceEventVideoUrl]: '',
-                    [MotionDetectorInterface.Property.InferenceImageUrl]: '',
-                    [MotionDetectorInterface.Property.InferenceVideoUrl]: ''
+                    [MotionDetectorInterface.Telemetry.Inference]: inference
                 });
+
+                this.lastInferenceTime = Date.now();
             }
 
             if (inferenceCount > 0) {
-                await this.sendMeasurement({
+                const inferenceTelemetry: any = {
                     [MotionDetectorInterface.Telemetry.InferenceCount]: inferenceCount
-                });
+                };
+
+                if (this.activeVideoInference === false) {
+                    this.activeVideoInference = true;
+
+                    const startTime = moment().utc().subtract(5, 'seconds').toISOString();
+                    inferenceTelemetry[MotionDetectorInterface.Event.InferenceEventVideoUrl] = `https://portal.loopbox-nl.com/ampplayer?an=${this.amsAssetName}&st=${startTime}`;
+                }
+
+                await this.sendMeasurement(inferenceTelemetry);
             }
         }
         catch (ex) {
             this.lvaGatewayModule.logger(['AmsMotionDetectorDevice', 'error'], `Error processing downstream message: ${ex.message}`);
+        }
+    }
+
+    @bind
+    public async inferenceTimer(): Promise<void> {
+        if (Date.now() - this.lastInferenceTime > 2500) {
+            this.activeVideoInference = false;
         }
     }
 
@@ -117,8 +147,6 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
                 switch (setting) {
                     case MotionDetectorInterface.Setting.Sensitivity:
                         patchedProperties[setting] = this.motionDetectorSettings[setting] = value || '';
-
-                        this.amsGraph.setParam(setting, value);
                         break;
 
                     default:
