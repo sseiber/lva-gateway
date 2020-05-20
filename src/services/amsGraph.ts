@@ -5,11 +5,12 @@ import {
 import { Message as IoTMessage } from 'azure-iot-device';
 import * as fse from 'fs-extra';
 import { resolve as pathResolve } from 'path';
+import * as moment from 'moment';
 
 const contentRootDirectory = process.env.CONTENT_ROOT || '/data/content';
 
 export class AmsGraph {
-    public static async createAmsGraph(lvaGatewayModule: ModuleService, cameraInfo: ICameraDeviceProvisionInfo): Promise<AmsGraph> {
+    public static async createAmsGraph(lvaGatewayModule: ModuleService, amsAccountName: string, cameraInfo: ICameraDeviceProvisionInfo): Promise<AmsGraph> {
         try {
             const graphInstancePath = pathResolve(contentRootDirectory, `${cameraInfo.detectionType}GraphInstance.json`);
             const graphInstance = fse.readJSONSync(graphInstancePath);
@@ -23,7 +24,7 @@ export class AmsGraph {
 
             // lvaGatewayModule.logger(['AmsGraph', 'info'], `### graphData: ${JSON.stringify(graphTopology, null, 4)}`);
 
-            const amsGraph = new AmsGraph(lvaGatewayModule, cameraInfo, graphInstance, graphTopology);
+            const amsGraph = new AmsGraph(lvaGatewayModule, amsAccountName, cameraInfo, graphInstance, graphTopology);
 
             return amsGraph;
         }
@@ -54,6 +55,8 @@ export class AmsGraph {
     }
 
     private lvaGatewayModule: ModuleService;
+    private amsAccountName: string;
+    private amsAssetName: string;
     private rtspUrl: string;
     private rtspAuthUsername: string;
     private rtspAuthPassword: string;
@@ -62,8 +65,10 @@ export class AmsGraph {
     private instanceName: any;
     private topologyName: any;
 
-    constructor(lvaGatewayModule: ModuleService, cameraInfo: ICameraDeviceProvisionInfo, instance: any, topology: any) {
+    constructor(lvaGatewayModule: ModuleService, amsAccountName: string, cameraInfo: ICameraDeviceProvisionInfo, instance: any, topology: any) {
         this.lvaGatewayModule = lvaGatewayModule;
+        this.amsAccountName = amsAccountName;
+        this.amsAssetName = '';
         this.rtspUrl = cameraInfo.rtspUrl;
         this.rtspAuthUsername = cameraInfo.rtspAuthUsername;
         this.rtspAuthPassword = cameraInfo.rtspAuthPassword;
@@ -79,18 +84,6 @@ export class AmsGraph {
             ['@apiVersion']: topology['@apiVersion'],
             name: topology.name
         };
-    }
-
-    public getRtspUrl() {
-        return this.rtspUrl;
-    }
-
-    public getRtspAuthUsername() {
-        return this.rtspAuthUsername;
-    }
-
-    public getRtspAuthPassword() {
-        return this.rtspAuthPassword;
     }
 
     public getInstance() {
@@ -182,8 +175,10 @@ export class AmsGraph {
         return result;
     }
 
-    public async createVideoStreamingLink(): Promise<void> {
-        return;
+    public createInferenceVideoLink(videoPlaybackHost: string): string {
+        const startTime = moment.utc().subtract(5, 'seconds').format('YYYY-MM-DDTHH:mm:ss[Z]');
+
+        return `${videoPlaybackHost}/ampplayer?ac=${this.amsAccountName}an=${this.amsAssetName}&st=${startTime}`;
     }
 
     private async setTopology() {
@@ -196,6 +191,12 @@ export class AmsGraph {
     }
 
     private async setInstance(graphParameters: any) {
+        this.amsAssetName = graphParameters.assetName;
+
+        this.setParam('rtspUrl', this.rtspUrl);
+        this.setParam('rtspAuthUsername', this.rtspAuthUsername);
+        this.setParam('rtspAuthPassword', this.rtspAuthPassword);
+
         for (const param in graphParameters) {
             if (!graphParameters.hasOwnProperty(param)) {
                 continue;

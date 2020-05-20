@@ -61,6 +61,18 @@ interface IDeviceOperationResult {
     message: string;
 }
 
+interface IModuleDeploymentProperties {
+    lvaEdgeModuleId: string;
+    amsAccountName: string;
+}
+
+interface IIoTCentralAppKeys {
+    iotCentralAppHost: string;
+    iotCentralAppApiToken: string;
+    iotCentralDeviceProvisioningKey: string;
+    iotCentralScopeId: string;
+}
+
 interface ISystemProperties {
     cpuModel: string;
     cpuCores: number;
@@ -81,25 +93,11 @@ enum LvaGatewayDeviceProperties {
 }
 
 enum LvaGatewaySettings {
-    IoTCentralAppHost = 'wpIoTCentralAppHost',
-    IoTCentralAppApiToken = 'wpIoTCentralAppApiToken',
-    MasterDeviceProvisioningKey = 'wpMasterDeviceProvisioningKey',
-    ScopeId = 'wpScopeId',
-    GatewayInstanceId = 'wpGatewayInstanceId',
-    GatewayModuleId = 'wpGatewayModuleId',
-    LvaEdgeModuleId = 'wpLvaEdgeModuleId',
     DebugTelemetry = 'wpDebugTelemetry',
     DebugRoutedMessage = 'wpDebugRoutedMessage'
 }
 
 interface ILvaGatewaySettings {
-    [LvaGatewaySettings.IoTCentralAppHost]: string;
-    [LvaGatewaySettings.IoTCentralAppApiToken]: string;
-    [LvaGatewaySettings.MasterDeviceProvisioningKey]: string;
-    [LvaGatewaySettings.ScopeId]: string;
-    [LvaGatewaySettings.GatewayInstanceId]: string;
-    [LvaGatewaySettings.GatewayModuleId]: string;
-    [LvaGatewaySettings.LvaEdgeModuleId]: string;
     [LvaGatewaySettings.DebugTelemetry]: boolean;
     [LvaGatewaySettings.DebugRoutedMessage]: boolean;
 }
@@ -165,13 +163,6 @@ const LvaGatewayInterface = {
         ModuleRestart: 'evModuleRestart'
     },
     Setting: {
-        IoTCentralAppHost: LvaGatewaySettings.IoTCentralAppHost,
-        IoTCentralAppApiToken: LvaGatewaySettings.IoTCentralAppApiToken,
-        MasterDeviceProvisioningKey: LvaGatewaySettings.MasterDeviceProvisioningKey,
-        ScopeId: LvaGatewaySettings.ScopeId,
-        GatewayInstanceId: LvaGatewaySettings.GatewayInstanceId,
-        GatewayModuleId: LvaGatewaySettings.GatewayModuleId,
-        LvaEdgeModuleId: LvaGatewaySettings.LvaEdgeModuleId,
         DebugTelemetry: LvaGatewaySettings.DebugTelemetry,
         DebugRoutedMessage: LvaGatewaySettings.DebugRoutedMessage
     },
@@ -210,31 +201,21 @@ export class ModuleService {
     @inject('storage')
     private storage: StorageService;
 
-    private iotcModuleId: string = '';
+    private iotcGatewayInstanceId: string = '';
+    private iotcGatewayModuleId: string = '';
+    private moduleDeploymentProperties: IModuleDeploymentProperties;
+    private iotCentralAppKeys: IIoTCentralAppKeys;
+
     private moduleClient: ModuleClient = null;
     private moduleTwin: Twin = null;
     private deferredStart = defer();
     private healthState = HealthState.Good;
     private healthCheckFailStreak: number = 0;
     private moduleSettings: ILvaGatewaySettings = {
-        [LvaGatewaySettings.IoTCentralAppHost]: '',
-        [LvaGatewaySettings.IoTCentralAppApiToken]: '',
-        [LvaGatewaySettings.MasterDeviceProvisioningKey]: '',
-        [LvaGatewaySettings.ScopeId]: '',
-        [LvaGatewaySettings.GatewayInstanceId]: '',
-        [LvaGatewaySettings.GatewayModuleId]: '',
-        [LvaGatewaySettings.LvaEdgeModuleId]: '',
         [LvaGatewaySettings.DebugTelemetry]: false,
         [LvaGatewaySettings.DebugRoutedMessage]: false
     };
     private moduleSettingsDefaults: ILvaGatewaySettings = {
-        [LvaGatewaySettings.IoTCentralAppHost]: '',
-        [LvaGatewaySettings.IoTCentralAppApiToken]: '',
-        [LvaGatewaySettings.MasterDeviceProvisioningKey]: '',
-        [LvaGatewaySettings.ScopeId]: '',
-        [LvaGatewaySettings.GatewayInstanceId]: '',
-        [LvaGatewaySettings.GatewayModuleId]: '',
-        [LvaGatewaySettings.LvaEdgeModuleId]: '',
         [LvaGatewaySettings.DebugTelemetry]: false,
         [LvaGatewaySettings.DebugRoutedMessage]: false
     };
@@ -242,12 +223,19 @@ export class ModuleService {
     private dpsProvisioningHost: string = defaultDpsProvisioningHost;
     private healthCheckRetries: number = defaultHealthCheckRetries;
 
+    public getInstanceId(): string {
+        return this.iotcGatewayInstanceId;
+    }
+
     public async init(): Promise<void> {
         this.server.log(['ModuleService', 'info'], 'initialize');
 
         this.server.method({ name: 'module.startModule', method: this.startModule });
 
-        this.iotcModuleId = this.config.get('IOTEDGE_MODULEID') || '';
+        this.iotcGatewayInstanceId = this.config.get('IOTEDGE_DEVICEID') || '';
+        this.iotcGatewayModuleId = this.config.get('IOTEDGE_MODULEID') || '';
+        this.moduleDeploymentProperties.lvaEdgeModuleId = this.config.get('lvaEdgeModuleId') || '';
+        this.moduleDeploymentProperties.amsAccountName = this.config.get('amsAccountName') || '';
 
         this.dpsProvisioningHost = this.config.get('dpsProvisioningHost') || defaultDpsProvisioningHost;
         this.healthCheckRetries = this.config.get('healthCheckRetries') || defaultHealthCheckRetries;
@@ -288,7 +276,7 @@ export class ModuleService {
                 responseTimeoutInSeconds: 30
             };
 
-            await this.moduleClient.invokeMethod(this.moduleSettings[LvaGatewaySettings.GatewayInstanceId], this.moduleSettings[LvaGatewaySettings.LvaEdgeModuleId], methodParams);
+            await this.moduleClient.invokeMethod(this.iotcGatewayInstanceId, this.moduleDeploymentProperties.lvaEdgeModuleId, methodParams);
         }
         catch (ex) {
             this.server.log(['ModuleService', 'error'], `invokeLvaModuleMethod failed: ${ex.message}`);
@@ -439,9 +427,22 @@ export class ModuleService {
         return result;
     }
 
+    private async getIoTCentralAppKeys(): Promise<IIoTCentralAppKeys> {
+        let result;
+
+        try {
+            result = await this.storage.get('state', 'iotCentral.appKeys');
+        }
+        catch (ex) {
+            this.server.log(['ModuleService', 'error'], `Error reading app keys: ${ex.message}`);
+        }
+
+        return result;
+    }
+
     private async connectModuleClient(): Promise<boolean> {
         let result = true;
-        let connectionStatus = `IoT Central successfully connected module: ${this.iotcModuleId}`;
+        let connectionStatus = `IoT Central successfully connected module: ${this.iotcGatewayModuleId}, instance id: ${this.iotcGatewayInstanceId}`;
 
         if (this.moduleClient) {
             await this.moduleClient.close();
@@ -487,6 +488,7 @@ export class ModuleService {
 
             const systemProperties = await this.getSystemProperties();
             const moduleProperties = await this.getModuleProperties();
+            this.iotCentralAppKeys = await this.getIoTCentralAppKeys();
 
             const deviceProperties = {
                 ...moduleProperties,
@@ -521,11 +523,11 @@ export class ModuleService {
 
         try {
             const deviceListResponse = await this.iotcApiRequest(
-                `https://${this.moduleSettings[LvaGatewaySettings.IoTCentralAppHost]}/api/preview/devices`,
+                `https://${this.iotCentralAppKeys.iotCentralAppHost}/api/preview/devices`,
                 'get',
                 {
                     headers: {
-                        Authorization: this.moduleSettings[LvaGatewaySettings.IoTCentralAppApiToken]
+                        Authorization: this.iotCentralAppKeys.iotCentralAppApiToken
                     },
                     json: true
                 });
@@ -539,16 +541,16 @@ export class ModuleService {
                     this.server.log(['ModuleService', 'info'], `Getting properties for device: ${device.id}`);
 
                     const devicePropertiesResponse = await this.iotcApiRequest(
-                        `https://${this.moduleSettings[LvaGatewaySettings.IoTCentralAppHost]}/api/preview/devices/${device.id}/properties`,
+                        `https://${this.iotCentralAppKeys.iotCentralAppHost}/api/preview/devices/${device.id}/properties`,
                         'get',
                         {
                             headers: {
-                                Authorization: this.moduleSettings[LvaGatewaySettings.IoTCentralAppApiToken]
+                                Authorization: this.iotCentralAppKeys.iotCentralAppApiToken
                             },
                             json: true
                         });
 
-                    if (devicePropertiesResponse.payload.IoTCameraDeviceInterface?.[AmsDeviceTag] === AmsDeviceTagValue) {
+                    if (devicePropertiesResponse.payload.IoTCameraDeviceInterface?.[AmsDeviceTag] === `${this.iotcGatewayInstanceId}:${AmsDeviceTagValue}`) {
                         const deviceInterfaceProperties = devicePropertiesResponse.payload.IoTCameraDeviceInterface;
 
                         const detectionType = devicePropertiesResponse.payload.LvaEdgeMotionDetectorInterface ? AddCameraDetectionType.Motion : AddCameraDetectionType.Object;
@@ -701,15 +703,13 @@ export class ModuleService {
                 return deviceProvisionResult;
             }
 
-            if (!this.moduleSettings[LvaGatewaySettings.IoTCentralAppHost]
-                || !this.moduleSettings[LvaGatewaySettings.IoTCentralAppApiToken]
-                || !this.moduleSettings[LvaGatewaySettings.MasterDeviceProvisioningKey]
-                || !this.moduleSettings[LvaGatewaySettings.ScopeId]
-                || !this.moduleSettings[LvaGatewaySettings.GatewayInstanceId]
-                || !this.moduleSettings[LvaGatewaySettings.GatewayModuleId]) {
+            if (!this.iotCentralAppKeys.iotCentralAppHost
+                || !this.iotCentralAppKeys.iotCentralAppApiToken
+                || !this.iotCentralAppKeys.iotCentralDeviceProvisioningKey
+                || !this.iotCentralAppKeys.iotCentralScopeId) {
 
                 deviceProvisionResult.dpsProvisionStatus = false;
-                deviceProvisionResult.dpsProvisionMessage = `Missing camera management settings (IoTCentralAppHost, LvaGatewayMangementToken, MasterDeviceProvisioningKey, ScopeId, GatewayInstanceId, GatewayModuleId)`;
+                deviceProvisionResult.dpsProvisionMessage = `Missing camera management settings (ScopeId)`;
                 this.server.log(['ModuleService', 'error'], deviceProvisionResult.dpsProvisionMessage);
 
                 return deviceProvisionResult;
@@ -747,21 +747,21 @@ export class ModuleService {
         };
 
         try {
-            const amsGraph = await AmsGraph.createAmsGraph(this, cameraInfo);
+            const amsGraph = await AmsGraph.createAmsGraph(this, this.moduleDeploymentProperties.lvaEdgeModuleId, cameraInfo);
 
-            const deviceKey = this.computeDeviceKey(cameraInfo.cameraId, this.moduleSettings[LvaGatewaySettings.MasterDeviceProvisioningKey]);
+            const deviceKey = this.computeDeviceKey(cameraInfo.cameraId, this.iotCentralAppKeys.iotCentralDeviceProvisioningKey);
             const provisioningSecurityClient = new SymmetricKeySecurityClient(cameraInfo.cameraId, deviceKey);
             const provisioningClient = ProvisioningDeviceClient.create(
                 this.dpsProvisioningHost,
-                this.moduleSettings[LvaGatewaySettings.ScopeId],
+                this.iotCentralAppKeys.iotCentralScopeId,
                 new ProvisioningTransport(),
                 provisioningSecurityClient);
 
             provisioningClient.setProvisioningPayload({
                 iotcModelId: LvaInferenceDeviceMap[cameraInfo.detectionType].templateId,
                 iotcGateway: {
-                    iotcGatewayId: this.moduleSettings[LvaGatewaySettings.GatewayInstanceId],
-                    iotcModuleId: this.moduleSettings[LvaGatewaySettings.GatewayModuleId]
+                    iotcGatewayId: this.iotcGatewayInstanceId,
+                    iotcModuleId: this.iotcGatewayModuleId
                 }
             });
 
@@ -812,11 +812,11 @@ export class ModuleService {
             this.server.log(['ModuleService', 'info'], `Deleting IoT Central device instance: ${cameraId}`);
             try {
                 await this.iotcApiRequest(
-                    `https://${this.moduleSettings[LvaGatewaySettings.IoTCentralAppHost]}/api/preview/devices/${cameraId}`,
+                    `https://${this.iotCentralAppKeys.iotCentralAppHost}/api/preview/devices/${cameraId}`,
                     'delete',
                     {
                         headers: {
-                            Authorization: this.moduleSettings[LvaGatewaySettings.IoTCentralAppApiToken]
+                            Authorization: this.iotCentralAppKeys.iotCentralAppApiToken
                         },
                         json: true
                     });
@@ -950,13 +950,6 @@ export class ModuleService {
                 let changedSettingResult;
 
                 switch (desiredSettingsKey) {
-                    case LvaGatewayInterface.Setting.IoTCentralAppHost:
-                    case LvaGatewayInterface.Setting.IoTCentralAppApiToken:
-                    case LvaGatewayInterface.Setting.MasterDeviceProvisioningKey:
-                    case LvaGatewayInterface.Setting.ScopeId:
-                    case LvaGatewayInterface.Setting.GatewayInstanceId:
-                    case LvaGatewayInterface.Setting.GatewayModuleId:
-                    case LvaGatewayInterface.Setting.LvaEdgeModuleId:
                     case LvaGatewayInterface.Setting.DebugTelemetry:
                     case LvaGatewayInterface.Setting.DebugRoutedMessage:
                         changedSettingResult = await this.moduleSettingChange(moduleSettingsForPatching, desiredSettingsKey, desiredChangedSettings?.[`${desiredSettingsKey}`]);
@@ -1022,17 +1015,6 @@ export class ModuleService {
         };
 
         switch (setting) {
-            case LvaGatewayInterface.Setting.IoTCentralAppHost:
-            case LvaGatewayInterface.Setting.IoTCentralAppApiToken:
-            case LvaGatewayInterface.Setting.MasterDeviceProvisioningKey:
-            case LvaGatewayInterface.Setting.ScopeId:
-            case LvaGatewayInterface.Setting.GatewayInstanceId:
-            case LvaGatewayInterface.Setting.GatewayModuleId:
-            case LvaGatewayInterface.Setting.LvaEdgeModuleId:
-                result.value = moduleSettingsForPatching[setting].value = value || '';
-                moduleSettingsForPatching[setting].handled = true;
-                break;
-
             case LvaGatewayInterface.Setting.DebugTelemetry:
             case LvaGatewayInterface.Setting.DebugRoutedMessage:
                 result.value = moduleSettingsForPatching[setting].value = value || false;

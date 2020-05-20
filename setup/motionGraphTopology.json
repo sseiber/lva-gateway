@@ -62,7 +62,7 @@
                 "sensitivity": "${sensitivity}",
                 "inputs": [
                     {
-                        "moduleName": "rtspSource"
+                        "nodeName": "rtspSource"
                     }
                 ]
             }
@@ -74,7 +74,7 @@
                 "hubOutputName": "${hubSinkOutputName}",
                 "inputs": [
                     {
-                        "moduleName": "md"
+                        "nodeName": "md"
                     }
                 ]
             },
@@ -82,9 +82,12 @@
                 "@type": "#Microsoft.Media.MediaGraphAssetSink",
                 "name": "assetSink",
                 "assetNamePattern": "${assetName}",
+                "segmentLength": "PT30S",
+                "localMediaCacheMaximumSizeMb": "2048",
+                "localMediaCachePath": "/var/lib/azuremediaservices/tmp/",
                 "inputs": [
                     {
-                        "moduleName": "rtspSource"
+                        "nodeName": "rtspSource"
                     }
                 ]
             }

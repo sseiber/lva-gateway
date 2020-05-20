@@ -56,7 +56,6 @@
             {
                 "@type": "#Microsoft.Media.MediaGraphRtspSource",
                 "name": "rtspSource",
-                "transport": "tcp",
                 "endpoint": {
                     "@type": "#Microsoft.Media.MediaGraphClearEndpoint",
                     "url": "${rtspUrl}",
@@ -74,14 +73,14 @@
                 "name": "frameRateFilter",
                 "inputs": [
                     {
-                        "moduleName": "rtspSource"
+                        "nodeName": "rtspSource"
                     }
                 ],
                 "maximumFps": 2
             },
             {
                 "@type": "#Microsoft.Media.MediaGraphHttpExtension",
-                "name": "yolo3InferenceSource",
+                "name": "httpExtension",
                 "endpoint": {
                     "@type": "#Microsoft.Media.MediaGraphClearEndpoint",
                     "url": "${inferencingUrl}",
@@ -104,7 +103,7 @@
                 },
                 "inputs": [
                     {
-                        "moduleName": "frameRateFilter"
+                        "nodeName": "frameRateFilter"
                     }
                 ]
             }
@@ -116,7 +115,7 @@
                 "hubOutputName": "lvaTelemetry",
                 "inputs": [
                     {
-                        "moduleName": "yolo3InferenceSource"
+                        "moduleName": "httpExtension"
                     }
                 ]
             },
@@ -124,9 +123,12 @@
                 "@type": "#Microsoft.Media.MediaGraphAssetSink",
                 "name": "assetSink",
                 "assetNamePattern": "${assetName}",
+                "segmentLength": "PT30S",
+                "localMediaCacheMaximumSizeMb": "2048",
+                "localMediaCachePath": "/var/lib/azuremediaservices/tmp/",
                 "inputs": [
                     {
-                        "moduleName": "rtspSource"
+                        "nodeName": "rtspSource"
                     }
                 ]
             }

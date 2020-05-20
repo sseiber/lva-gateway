@@ -9,6 +9,12 @@
             "model": "Data Box Edge",
             "processorManufacturer": "Intel",
             "totalStorage": 1000000
+        },
+        "appKeys": {
+            "iotCentralAppHost": "<IOT_CENTRAL_HOST>",
+            "iotCentralAppApiToken": "<IOT_CENTRAL_API_ACCESS_TOKEN>",
+            "iotCentralDeviceProvisioningKey": "<IOT_CENTRAL_DEVICE_PROVISIONING_KEY>",
+            "iotCentralScopeId": "<IOT_CENTRAL_SCOPE_ID>"
         }
     }
 }
