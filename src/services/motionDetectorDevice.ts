@@ -60,13 +60,8 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
     }
 
     public async deviceReady(): Promise<void> {
-        await this.sendMeasurement({
-            [AiInferenceInterface.Event.InferenceEventVideoUrl]: 'https://portal.loopbox-nl.com/'
-        });
-
         await this.updateDeviceProperties({
-            [AiInferenceInterface.Property.InferenceImageUrl]: 'https://iotcsavisionai.blob.core.windows.net/image-link-test/seattlesbest-1_199_.jpg',
-            [AiInferenceInterface.Property.InferenceVideoUrl]: 'https://portal.loopbox-nl.com/',
+            [AiInferenceInterface.Property.InferenceImageUrl]: 'https://iotcsavisionai.blob.core.windows.net/image-link-test/rtspcapture.jpg',
             [MotionDetectorInterface.Setting.Sensitivity]: this.motionDetectorSettings[MotionDetectorSettings.Sensitivity]
         });
     }

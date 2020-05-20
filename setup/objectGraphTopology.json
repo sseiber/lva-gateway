@@ -56,6 +56,12 @@
                 "type": "String",
                 "description": "image encoding for frames",
                 "default": "bmp"
+            },
+            {
+                "name": "hubSinkOutputName",
+                "type": "String",
+                "description": "hub sink output name",
+                "default": "lvaTelemetry"
             }
         ],
         "sources": [
@@ -128,7 +134,7 @@
             {
                 "@type": "#Microsoft.Media.MediaGraphIoTHubMessageSink",
                 "name": "hubSink",
-                "hubOutputName": "lvaTelemetry",
+                "hubOutputName": "${hubSinkOutputName}",
                 "inputs": [
                     {
                         "nodeName": "httpExtension"
