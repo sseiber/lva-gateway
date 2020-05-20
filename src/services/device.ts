@@ -117,7 +117,6 @@ const LvaEdgeDiagnosticsInterface = {
 export const AiInferenceInterface = {
     Telemetry: {
         InferenceCount: 'tlInferenceCount',
-        Confidence: 'tlConfidence',
         Inference: 'tlInference'
     },
     Event: {
