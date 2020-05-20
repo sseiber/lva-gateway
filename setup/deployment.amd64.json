@@ -9,10 +9,10 @@
                         "minDockerVersion": "v1.25",
                         "loggingOptions": "",
                         "registryCredentials": {
-                            "<MODULE_CONTAINER_REGISTRY_NAME>": {
-                                "username": "",
-                                "password": "",
-                                "address": "MODULE_CONTAINER_REGISTRY_ADDRESS"
+                            "<CONTAINER_REGISTRY_NAME>": {
+                                "address": "<CONTAINER_REGISTRY_ADDRESS>",
+                                "password": "<CONTAINER_REGISTRY_PASSWORD>",
+                                "username": "<CONTAINER_REGISTRY_NAME>"
                             }
                         }
                     }
@@ -38,17 +38,25 @@
                 "modules": {
                     "LvaEdgeGatewayModule": {
                         "settings": {
-                            "image": "",
+                            "image": "<YOUR_GATEWAY_IMAGE_NAME>",
                             "createOptions": "{\"HostConfig\":{\"PortBindings\":{\"9070/tcp\":[{\"HostPort\":\"9070\"}]},\"Binds\":[\"/data/storage:/data/storage\",\"/data/media:/data/media/\"]}}"
                         },
                         "type": "docker",
+                        "env": {
+                            "lvaEdgeModuleId": {
+                                "value": "lvaEdge"
+                            },
+                            "amsAccountName": {
+                                "value": "<YOUR_AZURE_MEDIA_ACCOUNT_NAME>"
+                            }
+                        },
                         "status": "running",
                         "restartPolicy": "always",
                         "version": "1.0"
                     },
                     "lvaYolov3": {
                         "settings": {
-                            "image": "",
+                            "image": "<IMAGE_NAME_OF_HTTPEXTENSION_MODULE_FOR_YOLO3>",
                             "createOptions": "{\"HostConfig\":{\"CpuShares\": \"512\"}}"
                         },
                         "type": "docker",
@@ -58,7 +66,7 @@
                     },
                     "lvaEdge": {
                         "settings": {
-                            "image": "",
+                            "image": "<WILL_EVENTUALLY_BE_FROM_AZURE_MARKETPLACE>",
                             "createOptions": "{\"HostConfig\":{\"Binds\":[\"/data/media:/var/media/\"]}}"
                         },
                         "type": "docker",
@@ -98,13 +106,13 @@
         "lvaEdge": {
             "properties.desired": {
                 "applicationDataDirectory": "/var/lib/azuremediaservices",
-                "azureMediaServicesArmId": "",
-                "aadTenantId": "",
-                "aadServicePrincipalAppId": "",
-                "aadServicePrincipalSecret": "",
-                "aadEndpoint": "https://login.microsoftonline.com",
-                "aadResourceId": "https://management.core.windows.net/",
-                "armEndpoint": "https://management.azure.com/",
+                "azureMediaServicesArmId": "<FROM_AZURE_PORTAL>",
+                "aadTenantId": "<FROM_AZURE_PORTAL>",
+                "aadServicePrincipalAppId": "<FROM_AZURE_PORTAL>",
+                "aadServicePrincipalSecret": "<FROM_AZURE_PORTAL>",
+                "aadEndpoint": "<FROM_AZURE_PORTAL>",
+                "aadResourceId": "<FROM_AZURE_PORTAL>",
+                "armEndpoint": "<FROM_AZURE_PORTAL>",
                 "diagnosticsEventsOutputName": "AmsDiagnostics",
                 "operationalMetricsOutputName": "AmsOperational"
             }

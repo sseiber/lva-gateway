@@ -1,14 +1,14 @@
 {
     "system": {
-        "systemName": "",
-        "systemId": ""
+        "systemName": "<FOR_CUSTOMER_USE>",
+        "systemId": "<FOR_CUSTOMER_USE>"
     },
     "iotCentral": {
         "properties": {
-            "manufacturer": "Microsoft",
-            "model": "Data Box Edge",
-            "processorManufacturer": "Intel",
-            "totalStorage": 1000000
+            "manufacturer": "<GATEWAY_HARDWARE>",
+            "model": "<GATEWAY_HARDWARE>",
+            "processorManufacturer": "<GATEWAY_HARDWARE>",
+            "totalStorage": 0
         },
         "appKeys": {
             "iotCentralAppHost": "<IOT_CENTRAL_HOST>",
