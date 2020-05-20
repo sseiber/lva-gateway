@@ -425,7 +425,7 @@ export abstract class AmsCameraDevice {
                 [IoTCameraInterface.Property.RtspUrl]: this.cameraInfo.rtspUrl,
                 [IoTCameraInterface.Property.RtspAuthUsername]: this.cameraInfo.rtspAuthUsername,
                 [IoTCameraInterface.Property.RtspAuthPassword]: this.cameraInfo.rtspAuthPassword,
-                [IoTCameraInterface.Property.AmsDeviceTag]: `${this.lvaGatewayModule.getInstanceId}:${AmsDeviceTagValue}`
+                [IoTCameraInterface.Property.AmsDeviceTag]: `${this.lvaGatewayModule.getInstanceId()}:${AmsDeviceTagValue}`
             });
 
             await this.sendMeasurement({

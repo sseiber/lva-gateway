@@ -127,11 +127,11 @@ enum AddCameraDetectionType {
 }
 
 const LvaInferenceDeviceMap = {
-    motion: {
+    [AddCameraDetectionType.Motion]: {
         templateId: 'urn:AzureMediaServices:LvaEdgeMotionDetectorDevice:1',
         deviceClass: AmsMotionDetectorDevice
     },
-    object: {
+    [AddCameraDetectionType.Object]: {
         templateId: 'urn:AzureMediaServices:LvaEdgeObjectDetectorDevice:1',
         deviceClass: AmsObjectDetectorDevice
     }
@@ -203,7 +203,10 @@ export class ModuleService {
 
     private iotcGatewayInstanceId: string = '';
     private iotcGatewayModuleId: string = '';
-    private moduleDeploymentProperties: IModuleDeploymentProperties;
+    private moduleDeploymentProperties: IModuleDeploymentProperties = {
+        lvaEdgeModuleId: '',
+        amsAccountName: ''
+    };
     private iotCentralAppKeys: IIoTCentralAppKeys;
 
     private moduleClient: ModuleClient = null;
@@ -550,10 +553,10 @@ export class ModuleService {
                             json: true
                         });
 
-                    if (devicePropertiesResponse.payload.IoTCameraDeviceInterface?.[AmsDeviceTag] === `${this.iotcGatewayInstanceId}:${AmsDeviceTagValue}`) {
-                        const deviceInterfaceProperties = devicePropertiesResponse.payload.IoTCameraDeviceInterface;
+                    if (devicePropertiesResponse.payload.IoTCameraInterface?.[AmsDeviceTag] === `${this.iotcGatewayInstanceId}:${AmsDeviceTagValue}`) {
+                        const deviceInterfaceProperties = devicePropertiesResponse.payload.IoTCameraInterface;
 
-                        const detectionType = devicePropertiesResponse.payload.LvaEdgeMotionDetectorInterface ? AddCameraDetectionType.Motion : AddCameraDetectionType.Object;
+                        const detectionType = devicePropertiesResponse.payload.AiMotionDetectorInterface ? AddCameraDetectionType.Motion : AddCameraDetectionType.Object;
                         this.server.log(['ModuleService', 'info'], `Recreating device: ${device.id} - detectionType: ${detectionType}`);
 
                         await this.createAmsInferenceDevice({

@@ -22,7 +22,7 @@
                 "value": ""
             },
             {
-                "name": "sensitivity",
+                "name": "motionSensitivity",
                 "value": ""
             }
         ]

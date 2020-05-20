@@ -68,7 +68,7 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
 
     public setGraphParameters(): any {
         return {
-            sensitivity: this.objectDetectorSettings[ObjectDetectorSettings.MotionDetectorSensitivity],
+            motionSensitivity: this.objectDetectorSettings[ObjectDetectorSettings.MotionDetectorSensitivity],
             assetName: `Object-${moment.utc().format('YYYYMMDD-HHmmss')}`
         };
     }
