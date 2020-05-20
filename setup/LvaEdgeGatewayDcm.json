@@ -143,69 +143,6 @@
                                     {
                                         "@type": "Property",
                                         "displayName": {
-                                            "en": "IoT Central App Host"
-                                        },
-                                        "name": "wpIoTCentralAppHost",
-                                        "writable": true,
-                                        "schema": "string"
-                                    },
-                                    {
-                                        "@type": "Property",
-                                        "displayName": {
-                                            "en": "Lva Gateway API Management Token"
-                                        },
-                                        "name": "wpIoTCentralAppApiToken",
-                                        "writable": true,
-                                        "schema": "string"
-                                    },
-                                    {
-                                        "@type": "Property",
-                                        "displayName": {
-                                            "en": "Master Device Provisioning Key"
-                                        },
-                                        "name": "wpMasterDeviceProvisioningKey",
-                                        "writable": true,
-                                        "schema": "string"
-                                    },
-                                    {
-                                        "@type": "Property",
-                                        "displayName": {
-                                            "en": "Scope Id"
-                                        },
-                                        "name": "wpScopeId",
-                                        "writable": true,
-                                        "schema": "string"
-                                    },
-                                    {
-                                        "@type": "Property",
-                                        "displayName": {
-                                            "en": "Gateway Instance Id"
-                                        },
-                                        "name": "wpGatewayInstanceId",
-                                        "writable": true,
-                                        "schema": "string"
-                                    },
-                                    {
-                                        "@type": "Property",
-                                        "displayName": {
-                                            "en": "Gateway Module Id"
-                                        },
-                                        "name": "wpGatewayModuleId",
-                                        "writable": true,
-                                        "schema": "string"
-                                    },
-                                    {
-                                        "@type": "Property",
-                                        "displayName": {
-                                            "en": "LVA Edge Module Id"
-                                        },
-                                        "name": "wpLvaEdgeModuleId",
-                                        "writable": true,
-                                        "schema": "string"
-                                    },
-                                    {
-                                        "@type": "Property",
-                                        "displayName": {
                                             "en": "Debug Telemetry"
                                         },
                                         "name": "wpDebugTelemetry",

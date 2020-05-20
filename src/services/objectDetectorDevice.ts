@@ -1,9 +1,14 @@
 import {
     ICameraDeviceProvisionInfo,
-    ModuleService,
-    AmsGraph
+    ModuleService
 } from './module';
-import { AmsCameraDevice } from './device';
+import { AmsGraph } from './amsGraph';
+import {
+    IoTCameraSettings,
+    AiInferenceInterface,
+    AmsCameraDevice
+} from './device';
+import * as moment from 'moment';
 import { bind, emptyObj } from '../utils';
 
 interface IObjectInference {
@@ -22,63 +27,58 @@ interface IObjectInference {
     };
 }
 
+enum MotionDetectorSensitivity {
+    Low = 'low',
+    Medium = 'medium',
+    High = 'high'
+}
+
 enum ObjectDetectorSettings {
-    PrimaryDetectionClass = 'wpPrimaryDetectionClass',
-    PrimaryConfidenceThreshold = 'wpPrimaryConfidenceThreshold',
-    SecondaryDetectionClass = 'wpSecondaryDetectionClass',
-    SecondaryConfidenceThreshold = 'wpSecondaryConfidenceThreshold'
+    MotionDetectorSensitivity = 'wpSensitivity',
+    DetectionClasses = 'wpDetectionClasses',
+    ConfidenceThreshold = 'wpConfidenceThreshold'
 }
 
 interface IObjectDetectorSettings {
-    [ObjectDetectorSettings.PrimaryDetectionClass]: string;
-    [ObjectDetectorSettings.PrimaryConfidenceThreshold]: number;
-    [ObjectDetectorSettings.SecondaryDetectionClass]: string;
-    [ObjectDetectorSettings.SecondaryConfidenceThreshold]: number;
+    [ObjectDetectorSettings.MotionDetectorSensitivity]: MotionDetectorSensitivity;
+    [ObjectDetectorSettings.DetectionClasses]: string;
+    [ObjectDetectorSettings.ConfidenceThreshold]: number;
 }
 
 const ObjectDetectorInterface = {
-    Telemetry: {
-        PrimaryDetectionCount: 'tlPrimaryDetectionCount',
-        SecondaryDetectionCount: 'tlSeconaryDetectionCount',
-        PrimaryConfidence: 'tlPrimaryConfidence',
-        SecondaryConfidence: 'tlSecondaryConfidence',
-        Inference: 'tlInference'
-    },
-    Event: {
-        InferenceEventVideoUrl: 'evInferenceEventVideoUrl'
-    },
-    Property: {
-        InferenceVideoUrl: 'rpInferenceVideoUrl',
-        InferenceImageUrl: 'rpInferenceImageUrl'
-    },
     Setting: {
-        PrimaryDetectionClass: ObjectDetectorSettings.PrimaryDetectionClass,
-        PrimaryConfidenceThreshold: ObjectDetectorSettings.PrimaryConfidenceThreshold,
-        SecondaryDetectionClass: ObjectDetectorSettings.SecondaryDetectionClass,
-        SecondaryConfidenceThreshold: ObjectDetectorSettings.SecondaryConfidenceThreshold
+        MotionDetectorSensitivity: ObjectDetectorSettings.MotionDetectorSensitivity,
+        DetectionClasses: ObjectDetectorSettings.DetectionClasses,
+        ConfidenceThreshold: ObjectDetectorSettings.ConfidenceThreshold
     }
 };
 
 export class AmsObjectDetectorDevice extends AmsCameraDevice {
     private objectDetectorSettings: IObjectDetectorSettings = {
-        [ObjectDetectorSettings.PrimaryDetectionClass]: '',
-        [ObjectDetectorSettings.PrimaryConfidenceThreshold]: 0.0,
-        [ObjectDetectorSettings.SecondaryDetectionClass]: '',
-        [ObjectDetectorSettings.SecondaryConfidenceThreshold]: 0.0
+        [ObjectDetectorSettings.MotionDetectorSensitivity]: MotionDetectorSensitivity.Medium,
+        [ObjectDetectorSettings.DetectionClasses]: 'person',
+        [ObjectDetectorSettings.ConfidenceThreshold]: 70.0
     };
+
+    private detectionClasses: string[] = this.objectDetectorSettings[ObjectDetectorSettings.DetectionClasses].toUpperCase().split(/[\s,]+/);
 
     constructor(lvaGatewayModule: ModuleService, amsGraph: AmsGraph, cameraInfo: ICameraDeviceProvisionInfo) {
         super(lvaGatewayModule, amsGraph, cameraInfo);
     }
 
-    public async initDevice(): Promise<void> {
-        await this.sendMeasurement({
-            [ObjectDetectorInterface.Event.InferenceEventVideoUrl]: 'https://portal.loopbox-nl.com/'
-        });
+    public setGraphParameters(): any {
+        return {
+            motionSensitivity: this.objectDetectorSettings[ObjectDetectorSettings.MotionDetectorSensitivity],
+            assetName: `Object-${moment.utc().format('YYYYMMDD-HHmmss')}`
+        };
+    }
 
+    public async deviceReady(): Promise<void> {
         await this.updateDeviceProperties({
-            [ObjectDetectorInterface.Property.InferenceImageUrl]: 'https://iotcsavisionai.blob.core.windows.net/image-link-test/dunkin-3_199_.jpg',
-            [ObjectDetectorInterface.Property.InferenceVideoUrl]: 'https://portal.loopbox-nl.com/'
+            [AiInferenceInterface.Property.InferenceImageUrl]: 'https://iotcsavisionai.blob.core.windows.net/image-link-test/rtspcapture.jpg',
+            [ObjectDetectorInterface.Setting.MotionDetectorSensitivity]: this.objectDetectorSettings[ObjectDetectorSettings.MotionDetectorSensitivity],
+            [ObjectDetectorInterface.Setting.DetectionClasses]: this.objectDetectorSettings[ObjectDetectorSettings.DetectionClasses],
+            [ObjectDetectorInterface.Setting.ConfidenceThreshold]: this.objectDetectorSettings[ObjectDetectorSettings.ConfidenceThreshold]
         });
     }
 
@@ -89,51 +89,35 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
         }
 
         try {
-            let primaryDetectionCount = 0;
-            let secondaryDetectionCount = 0;
+            let detectionCount = 0;
 
             for (const inference of inferences) {
                 const detectedClass = (inference.entity?.tag?.value || '').toUpperCase();
                 const confidence = (inference.entity?.tag?.confidence || 0.0) * 100;
-                const inferenceTelemetry = {};
 
-                if (detectedClass === this.objectDetectorSettings[ObjectDetectorSettings.PrimaryDetectionClass]) {
-                    ++primaryDetectionCount;
+                if (this.detectionClasses.includes(detectedClass) && confidence >= this.objectDetectorSettings[ObjectDetectorSettings.ConfidenceThreshold]) {
+                    ++detectionCount;
 
-                    inferenceTelemetry[ObjectDetectorInterface.Telemetry.Inference] = inference;
+                    this.lastInferenceTime = Date.now();
 
-                    if (confidence >= this.objectDetectorSettings[ObjectDetectorSettings.PrimaryConfidenceThreshold]) {
-                        inferenceTelemetry[ObjectDetectorInterface.Telemetry.PrimaryConfidence] = confidence;
-                    }
-                }
-
-                if (detectedClass === this.objectDetectorSettings[ObjectDetectorSettings.SecondaryDetectionClass]) {
-                    ++secondaryDetectionCount;
-
-                    inferenceTelemetry[ObjectDetectorInterface.Telemetry.Inference] = inference;
-
-                    if (confidence >= this.objectDetectorSettings[ObjectDetectorSettings.SecondaryConfidenceThreshold]) {
-                        inferenceTelemetry[ObjectDetectorInterface.Telemetry.SecondaryConfidence] = confidence;
-                    }
-                }
-
-                if (Object.keys(inferenceTelemetry).length > 0) {
-                    await this.sendMeasurement(inferenceTelemetry);
+                    await this.sendMeasurement({
+                        [AiInferenceInterface.Telemetry.Inference]: inference
+                    });
                 }
             }
 
-            const inferenceCountTelemetry = {};
+            if (detectionCount > 0) {
+                const inferenceTelemetry: any = {
+                    [AiInferenceInterface.Telemetry.InferenceCount]: detectionCount
+                };
 
-            if (primaryDetectionCount > 0) {
-                inferenceCountTelemetry[ObjectDetectorInterface.Telemetry.PrimaryDetectionCount] = primaryDetectionCount;
-            }
+                // if (this.activeVideoInference === false) {
+                //     this.activeVideoInference = true;
 
-            if (secondaryDetectionCount > 0) {
-                inferenceCountTelemetry[ObjectDetectorInterface.Telemetry.SecondaryDetectionCount] = secondaryDetectionCount;
-            }
+                inferenceTelemetry[AiInferenceInterface.Event.InferenceEventVideoUrl] = this.amsGraph.createInferenceVideoLink(this.iotCameraSettings[IoTCameraSettings.VideoPlaybackHost]);
+                // }
 
-            if (Object.keys(inferenceCountTelemetry).length > 0) {
-                await this.sendMeasurement(inferenceCountTelemetry);
+                await this.sendMeasurement(inferenceTelemetry);
             }
         }
         catch (ex) {
@@ -142,7 +126,14 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
     }
 
     @bind
-    protected async onHandleDeviceProperties(desiredChangedSettings: any) {
+    public async inferenceTimer(): Promise<void> {
+        if (Date.now() - this.lastInferenceTime > 2500) {
+            this.activeVideoInference = false;
+        }
+    }
+
+    @bind
+    protected async onHandleDeviceProperties(desiredChangedSettings: any): Promise<void> {
         await super.onHandleDevicePropertiesInternal(desiredChangedSettings);
 
         try {
@@ -162,13 +153,20 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
                 const value = desiredChangedSettings[`${setting}`]?.value;
 
                 switch (setting) {
-                    case ObjectDetectorInterface.Setting.PrimaryDetectionClass:
-                    case ObjectDetectorInterface.Setting.SecondaryDetectionClass:
-                        patchedProperties[setting] = (this.objectDetectorSettings[setting] as any) = (value || '').toUpperCase();
+                    case ObjectDetectorInterface.Setting.DetectionClasses: {
+                        const detectionClassesString = (value || '');
+
+                        this.detectionClasses = detectionClassesString.toUpperCase().split(/[\s,]+/);
+
+                        patchedProperties[setting] = detectionClassesString;
+                        break;
+                    }
+
+                    case ObjectDetectorInterface.Setting.MotionDetectorSensitivity:
+                        patchedProperties[setting] = (this.objectDetectorSettings[setting] as any) = (value || '');
                         break;
 
-                    case ObjectDetectorInterface.Setting.PrimaryConfidenceThreshold:
-                    case ObjectDetectorInterface.Setting.SecondaryConfidenceThreshold:
+                    case ObjectDetectorInterface.Setting.ConfidenceThreshold:
                         patchedProperties[setting] = (this.objectDetectorSettings[setting] as any) = (value || 0.0);
                         break;
 

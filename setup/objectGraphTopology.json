@@ -2,7 +2,7 @@
     "@apiVersion": "1.0",
     "name": "LvaIotcObjectDetection",
     "properties": {
-        "description": "Object detection graph using Yolo3 through HTTP Extension",
+        "description": "Event-based video recording to Assets based on motion events, and using HTTP Extension to send images to an external inference engine",
         "parameters": [
             {
                 "name": "rtspUrl",
@@ -20,6 +20,18 @@
                 "type": "String",
                 "description": "rtsp source password.",
                 "default": "password"
+            },
+            {
+                "name": "assetName",
+                "type": "String",
+                "description": "name of the AMS CVR asset",
+                "default": "objectDetectorAsset"
+            },
+            {
+                "name": "motionSensitivity",
+                "type": "String",
+                "description": "motion detection sensitivity",
+                "default": "medium"
             },
             {
                 "name": "inferencingUrl",
@@ -50,7 +62,6 @@
             {
                 "@type": "#Microsoft.Media.MediaGraphRtspSource",
                 "name": "rtspSource",
-                "transport": "tcp",
                 "endpoint": {
                     "@type": "#Microsoft.Media.MediaGraphClearEndpoint",
                     "url": "${rtspUrl}",
@@ -64,18 +75,28 @@
         ],
         "processors": [
             {
+                "@type": "#Microsoft.Media.MediaGraphMotionDetectionProcessor",
+                "name": "motionDetection",
+                "sensitivity": "${motionSensitivity}",
+                "inputs": [
+                    {
+                        "nodeName": "rtspSource"
+                    }
+                ]
+            },
+            {
                 "@type": "#Microsoft.Media.MediaGraphFrameRateFilterProcessor",
                 "name": "frameRateFilter",
                 "inputs": [
                     {
-                        "moduleName": "rtspSource"
+                        "nodeName": "motionDetection"
                     }
                 ],
                 "maximumFps": 2
             },
             {
                 "@type": "#Microsoft.Media.MediaGraphHttpExtension",
-                "name": "yolo3InferenceSource",
+                "name": "httpExtension",
                 "endpoint": {
                     "@type": "#Microsoft.Media.MediaGraphClearEndpoint",
                     "url": "${inferencingUrl}",
@@ -98,7 +119,7 @@
                 },
                 "inputs": [
                     {
-                        "moduleName": "frameRateFilter"
+                        "nodeName": "frameRateFilter"
                     }
                 ]
             }
@@ -110,17 +131,20 @@
                 "hubOutputName": "lvaTelemetry",
                 "inputs": [
                     {
-                        "moduleName": "yolo3InferenceSource"
+                        "nodeName": "httpExtension"
                     }
                 ]
             },
             {
                 "@type": "#Microsoft.Media.MediaGraphAssetSink",
                 "name": "assetSink",
-                "assetNamePattern": "Md_Asset_${System.DateTime}",
+                "assetNamePattern": "${assetName}",
+                "segmentLength": "PT30S",
+                "localMediaCacheMaximumSizeMb": "2048",
+                "localMediaCachePath": "/var/lib/azuremediaservices/tmp/",
                 "inputs": [
                     {
-                        "moduleName": "rtspSource"
+                        "nodeName": "rtspSource"
                     }
                 ]
             }
