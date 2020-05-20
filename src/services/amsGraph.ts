@@ -178,16 +178,16 @@ export class AmsGraph {
     public createInferenceVideoLink(videoPlaybackHost: string): string {
         const startTime = moment.utc().subtract(5, 'seconds').format('YYYY-MM-DDTHH:mm:ss[Z]');
 
-        return `${videoPlaybackHost}/ampplayer?ac=${this.amsAccountName}an=${this.amsAssetName}&st=${startTime}`;
+        return `${videoPlaybackHost}/ampplayer?ac=${this.amsAccountName}&an=${this.amsAssetName}&st=${startTime}`;
     }
 
     private async setTopology() {
-        await this.lvaGatewayModule.invokeLvaModuleMethod(`GraphTopologySet`, this.topology);
+        return this.lvaGatewayModule.invokeLvaModuleMethod(`GraphTopologySet`, this.topology);
     }
 
     // @ts-ignore
     private async deleteTopology() {
-        await this.lvaGatewayModule.invokeLvaModuleMethod(`GraphTopologyDelete`, this.topologyName);
+        return this.lvaGatewayModule.invokeLvaModuleMethod(`GraphTopologyDelete`, this.topologyName);
     }
 
     private async setInstance(graphParameters: any) {
@@ -205,19 +205,19 @@ export class AmsGraph {
             this.setParam(param, graphParameters[param]);
         }
 
-        await this.lvaGatewayModule.invokeLvaModuleMethod(`GraphInstanceSet`, this.instance);
+        return this.lvaGatewayModule.invokeLvaModuleMethod(`GraphInstanceSet`, this.instance);
     }
 
     // @ts-ignore
     private async deleteInstance() {
-        await this.lvaGatewayModule.invokeLvaModuleMethod(`GraphInstanceDelete`, this.instanceName);
+        return this.lvaGatewayModule.invokeLvaModuleMethod(`GraphInstanceDelete`, this.instanceName);
     }
 
     private async activateInstance() {
-        await this.lvaGatewayModule.invokeLvaModuleMethod(`GraphInstanceActivate`, this.instanceName);
+        return this.lvaGatewayModule.invokeLvaModuleMethod(`GraphInstanceActivate`, this.instanceName);
     }
 
     private async deactivateInstance() {
-        await this.lvaGatewayModule.invokeLvaModuleMethod(`GraphInstanceDeactivate`, this.instanceName);
+        return this.lvaGatewayModule.invokeLvaModuleMethod(`GraphInstanceDeactivate`, this.instanceName);
     }
 }

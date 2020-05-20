@@ -270,19 +270,21 @@ export class ModuleService {
     }
 
     @bind
-    public async invokeLvaModuleMethod(methodName: string, payload: any) {
-        try {
-            const methodParams = {
-                methodName,
-                payload,
-                connectTimeoutInSeconds: 30,
-                responseTimeoutInSeconds: 30
-            };
+    public async invokeLvaModuleMethod(methodName: string, payload: any): Promise<any> {
+        const methodParams = {
+            methodName,
+            payload,
+            connectTimeoutInSeconds: 30,
+            responseTimeoutInSeconds: 30
+        };
 
-            await this.moduleClient.invokeMethod(this.iotcGatewayInstanceId, this.moduleDeploymentProperties.lvaEdgeModuleId, methodParams);
+        const response = await this.moduleClient.invokeMethod(this.iotcGatewayInstanceId, this.moduleDeploymentProperties.lvaEdgeModuleId, methodParams);
+        if (this.moduleSettings[LvaGatewaySettings.DebugTelemetry] === true) {
+            this.server.log(['ModuleService', 'error'], `invokeLvaModuleMethod response: ${JSON.stringify(response, null, 4)}`);
         }
-        catch (ex) {
-            this.server.log(['ModuleService', 'error'], `invokeLvaModuleMethod failed: ${ex.message}`);
+
+        if (response.payload?.error) {
+            throw new Error(response.payload.error?.message);
         }
     }
 
@@ -750,7 +752,7 @@ export class ModuleService {
         };
 
         try {
-            const amsGraph = await AmsGraph.createAmsGraph(this, this.moduleDeploymentProperties.lvaEdgeModuleId, cameraInfo);
+            const amsGraph = await AmsGraph.createAmsGraph(this, this.moduleDeploymentProperties.amsAccountName, cameraInfo);
 
             const deviceKey = this.computeDeviceKey(cameraInfo.cameraId, this.iotCentralAppKeys.iotCentralDeviceProvisioningKey);
             const provisioningSecurityClient = new SymmetricKeySecurityClient(cameraInfo.cameraId, deviceKey);

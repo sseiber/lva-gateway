@@ -115,7 +115,7 @@
                 "hubOutputName": "lvaTelemetry",
                 "inputs": [
                     {
-                        "moduleName": "httpExtension"
+                        "nodeName": "httpExtension"
                     }
                 ]
             },
