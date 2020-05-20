@@ -91,13 +91,6 @@
         },
         "LvaEdgeGatewayModule": {
             "properties.desired": {
-                "wpIoTCentralAppHost": "<YOUR_APP>.azureiotcentral.com",
-                "wpIoTCentralAppApiToken": "",
-                "wpMasterDeviceProvisioningKey": "",
-                "wpScopeId": "",
-                "wpGatewayInstanceId": "",
-                "wpGatewayModuleId": "",
-                "wpLvaEdgeModuleId": "",
                 "wpDebugTelemetry": false,
                 "wpDebugRoutedMessage": false
             }

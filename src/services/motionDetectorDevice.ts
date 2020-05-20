@@ -3,7 +3,11 @@ import {
     ModuleService
 } from './module';
 import { AmsGraph } from './amsGraph';
-import { AmsCameraDevice } from './device';
+import {
+    IoTCameraSettings,
+    AiInferenceInterface,
+    AmsCameraDevice
+} from './device';
 import * as moment from 'moment';
 import { bind, emptyObj } from '../utils';
 
@@ -19,26 +23,21 @@ interface IMotionInference {
     };
 }
 
+enum MotionDetectorSensitivity {
+    Low = 'low',
+    Medium = 'medium',
+    High = 'high'
+}
+
 enum MotionDetectorSettings {
     Sensitivity = 'wpSensitivity'
 }
 
 interface IMotionDetectorSettings {
-    [MotionDetectorSettings.Sensitivity]: string;
+    [MotionDetectorSettings.Sensitivity]: MotionDetectorSensitivity;
 }
 
 const MotionDetectorInterface = {
-    Telemetry: {
-        InferenceCount: 'tlInferenceCount',
-        Inference: 'tlInference'
-    },
-    Event: {
-        InferenceEventVideoUrl: 'evInferenceEventVideoUrl'
-    },
-    Property: {
-        InferenceVideoUrl: 'rpInferenceVideoUrl',
-        InferenceImageUrl: 'rpInferenceImageUrl'
-    },
     Setting: {
         Sensitivity: MotionDetectorSettings.Sensitivity
     }
@@ -46,7 +45,7 @@ const MotionDetectorInterface = {
 
 export class AmsMotionDetectorDevice extends AmsCameraDevice {
     private motionDetectorSettings: IMotionDetectorSettings = {
-        [MotionDetectorSettings.Sensitivity]: ''
+        [MotionDetectorSettings.Sensitivity]: MotionDetectorSensitivity.Medium
     };
 
     constructor(lvaGatewayModule: ModuleService, amsGraph: AmsGraph, cameraInfo: ICameraDeviceProvisionInfo) {
@@ -54,27 +53,21 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
     }
 
     public setGraphParameters(): any {
-        this.amsAssetName = `Motion-${moment().utc().format('YYYYMMDD-HHmmss')}`;
-        this.amsAssetCreationTime = moment().utc();
-
         return {
-            rtspUrl: this.cameraInfo.rtspUrl,
-            rtspAuthUsername: this.cameraInfo.rtspAuthUsername || 'username',
-            rtspAuthPassword: this.cameraInfo.rtspAuthPassword || 'password',
-            sensitivity: this.motionDetectorSettings[MotionDetectorSettings.Sensitivity],
-            assetName: this.amsAssetName
+            motionSensitivity: this.motionDetectorSettings[MotionDetectorSettings.Sensitivity],
+            assetName: `Motion-${moment.utc().format('YYYYMMDD-HHmmss')}`
         };
     }
 
     public async deviceReady(): Promise<void> {
         await this.sendMeasurement({
-            [MotionDetectorInterface.Event.InferenceEventVideoUrl]: 'https://portal.loopbox-nl.com/'
+            [AiInferenceInterface.Event.InferenceEventVideoUrl]: 'https://portal.loopbox-nl.com/'
         });
 
         await this.updateDeviceProperties({
-            [MotionDetectorSettings.Sensitivity]: this.motionDetectorSettings[MotionDetectorSettings.Sensitivity],
-            [MotionDetectorInterface.Property.InferenceImageUrl]: 'https://iotcsavisionai.blob.core.windows.net/image-link-test/seattlesbest-1_199_.jpg',
-            [MotionDetectorInterface.Property.InferenceVideoUrl]: 'https://portal.loopbox-nl.com/'
+            [AiInferenceInterface.Property.InferenceImageUrl]: 'https://iotcsavisionai.blob.core.windows.net/image-link-test/seattlesbest-1_199_.jpg',
+            [AiInferenceInterface.Property.InferenceVideoUrl]: 'https://portal.loopbox-nl.com/',
+            [MotionDetectorInterface.Setting.Sensitivity]: this.motionDetectorSettings[MotionDetectorSettings.Sensitivity]
         });
     }
 
@@ -91,7 +84,7 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
                 ++inferenceCount;
 
                 await this.sendMeasurement({
-                    [MotionDetectorInterface.Telemetry.Inference]: inference
+                    [AiInferenceInterface.Telemetry.Inference]: inference
                 });
 
                 this.lastInferenceTime = Date.now();
@@ -99,15 +92,14 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
 
             if (inferenceCount > 0) {
                 const inferenceTelemetry: any = {
-                    [MotionDetectorInterface.Telemetry.InferenceCount]: inferenceCount
+                    [AiInferenceInterface.Telemetry.InferenceCount]: inferenceCount
                 };
 
-                if (this.activeVideoInference === false) {
-                    this.activeVideoInference = true;
+                // if (this.activeVideoInference === false) {
+                //     this.activeVideoInference = true;
 
-                    const startTime = moment().utc().subtract(5, 'seconds').toISOString();
-                    inferenceTelemetry[MotionDetectorInterface.Event.InferenceEventVideoUrl] = `https://portal.loopbox-nl.com/ampplayer?an=${this.amsAssetName}&st=${startTime}`;
-                }
+                inferenceTelemetry[AiInferenceInterface.Event.InferenceEventVideoUrl] = this.amsGraph.createInferenceVideoLink(this.iotCameraSettings[IoTCameraSettings.VideoPlaybackHost]);
+                // }
 
                 await this.sendMeasurement(inferenceTelemetry);
             }

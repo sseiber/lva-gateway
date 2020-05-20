@@ -25,6 +25,17 @@ This project includes scripts for building the Docker image and for initial proj
         - polling on the heath check to determine if still connected to the Hub
         - diagnose the Hub responses to get to the specific errors
         - gateway module should receive the error that device is disconnected to so gateway can manage the delete and re-provision of the device
+        - Example when gateway and device is deleted:
+            [2020-05-19T23:48:01+0000] ERROR: [AmsCameraDevice,error] sendMeasurement: mqtt.js returned Connection refused: Not authorized error
+            [2020-05-19T23:48:01+0000] ERROR: [AmsCameraDevice,error] inspect the error: {
+                "name": "UnauthorizedError",
+                "transportError": {
+                    "name": "NotConnectedError",
+                    "transportError": {
+                        "code": 5
+                    }
+                }
+            }
 * Gateway module needs to keep track of devices in case it reboots and needs to re-provision each
     - [done] device needs to return to what it was doing (rtsp feed, ai model, etc.)
     - [done] need to store/persist device name, rtsp feed/creds, ai model etc.

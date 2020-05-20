@@ -13,7 +13,6 @@ import {
 } from './module';
 import { AmsGraph } from './amsGraph';
 import { bind, defer, emptyObj } from '../utils';
-import * as moment from 'moment';
 
 export type DevicePropertiesHandler = (desiredChangedSettings: any) => Promise<void>;
 
@@ -22,10 +21,27 @@ export interface IClientConnectResult {
     clientConnectionMessage: string;
 }
 
-interface ICameraProps {
-    rpManufacturer: string;
-    rpModel: string;
+interface IoTDeviceInformation {
+    manufacturer: string;
+    model: string;
+    swVersion: string;
+    osName: string;
+    processorArchitecture: string;
+    processorManufacturer: string;
+    totalStorage: number;
+    totalMemory: number;
 }
+
+export enum IoTCameraSettings {
+    VideoPlaybackHost = 'wpVideoPlaybackHost'
+}
+
+interface IoTCameraSettingsInterface {
+    [IoTCameraSettings.VideoPlaybackHost]: string;
+}
+
+export const AmsDeviceTag = 'rpAmsDeviceTag';
+export const AmsDeviceTagValue = 'AmsInferenceDevice.v1';
 
 enum IoTCentralClientState {
     Disconnected = 'disconnected',
@@ -37,36 +53,7 @@ enum CameraState {
     Active = 'active'
 }
 
-const LvaInterface = {
-    Event: {
-        GraphInstanceCreated: 'evGraphInstanceCreated',
-        GraphInstanceDeleted: 'evGraphInstanceDeleted',
-        GraphInstanceStarted: 'evGraphInstanceStarted',
-        GraphInstanceStopped: 'evGraphInstanceStopped',
-        MediaRecordingStarted: 'evMediaRecordingStarted',
-        StartLvaGraphCommandReceived: 'evStartLvaGraphCommandReceived',
-        StopLvaGraphCommandReceived: 'evStopLvaGraphCommandReceived'
-    },
-    Command: {
-        StartLvaProcessing: 'cmStartLvaProcessing',
-        StopLvaProcessing: 'cmStopLvaProcessing'
-    }
-};
-
-export enum IoTCameraDeviceSettings {
-    AutoStart = 'wpAutoStart',
-    DebugTelemetry = 'wpDebugTelemetry'
-}
-
-interface IIoTCameraDeviceSettings {
-    [IoTCameraDeviceSettings.AutoStart]: boolean;
-    [IoTCameraDeviceSettings.DebugTelemetry]: boolean;
-}
-
-export const AmsDeviceTag = 'rpAmsDeviceTag';
-export const AmsDeviceTagValue = 'AmsInferenceDevice.v1';
-
-const IoTCameraDeviceInterface = {
+const IoTCameraInterface = {
     Telemetry: {
         SystemHeartbeat: 'tlSystemHeartbeat'
     },
@@ -79,19 +66,70 @@ const IoTCameraDeviceInterface = {
         RtspUrl: 'rpRtspUrl',
         RtspAuthUsername: 'rpRtspAuthUsername',
         RtspAuthPassword: 'rpRtspAuthPassword',
-        Manufacturer: 'rpManufacturer',
-        Model: 'rpModel',
         AmsDeviceTag
     },
     Setting: {
-        AutoStart: IoTCameraDeviceSettings.AutoStart,
-        DebugTelemetry: IoTCameraDeviceSettings.DebugTelemetry
+        VideoPlaybackHost: IoTCameraSettings.VideoPlaybackHost
+    }
+};
+
+enum LvaEdgeOperationsSettings {
+    AutoStart = 'wpAutoStart'
+}
+
+interface LvaEdgeOperationsSettingsInterface {
+    [LvaEdgeOperationsSettings.AutoStart]: boolean;
+}
+
+const LvaEdgeOperationsInterface = {
+    Event: {
+        GraphInstanceCreated: 'evGraphInstanceCreated',
+        GraphInstanceDeleted: 'evGraphInstanceDeleted',
+        GraphInstanceStarted: 'evGraphInstanceStarted',
+        GraphInstanceStopped: 'evGraphInstanceStopped',
+        MediaRecordingStarted: 'evMediaRecordingStarted',
+        StartLvaGraphCommandReceived: 'evStartLvaGraphCommandReceived',
+        StopLvaGraphCommandReceived: 'evStopLvaGraphCommandReceived'
+    },
+    Setting: {
+        AutoStart: LvaEdgeOperationsSettings.AutoStart
+    },
+    Command: {
+        StartLvaProcessing: 'cmStartLvaProcessing',
+        StopLvaProcessing: 'cmStopLvaProcessing'
+    }
+};
+
+enum LvaEdgeDiagnosticsSettings {
+    DebugTelemetry = 'wpDebugTelemetry'
+}
+
+interface LvaEdgeDiagnosticsSettingsInterface {
+    [LvaEdgeDiagnosticsSettings.DebugTelemetry]: boolean;
+}
+
+const LvaEdgeDiagnosticsInterface = {
+    Setting: {
+        DebugTelemetry: LvaEdgeDiagnosticsSettings.DebugTelemetry
+    }
+};
+
+export const AiInferenceInterface = {
+    Telemetry: {
+        InferenceCount: 'tlInferenceCount',
+        Confidence: 'tlConfidence',
+        Inference: 'tlInference'
+    },
+    Event: {
+        InferenceEventVideoUrl: 'evInferenceEventVideoUrl'
+    },
+    Property: {
+        InferenceVideoUrl: 'rpInferenceVideoUrl',
+        InferenceImageUrl: 'rpInferenceImageUrl'
     }
 };
 
 export abstract class AmsCameraDevice {
-    protected amsAssetName: string = '';
-    protected amsAssetCreationTime: moment.Moment = moment().utc();
     protected lvaGatewayModule: ModuleService;
     protected amsGraph: AmsGraph;
     protected cameraInfo: ICameraDeviceProvisionInfo;
@@ -102,9 +140,14 @@ export abstract class AmsCameraDevice {
     protected healthState = HealthState.Good;
     protected activeVideoInference: boolean = false;
     protected lastInferenceTime: number = 0;
-    protected deviceSettings: IIoTCameraDeviceSettings = {
-        [IoTCameraDeviceSettings.AutoStart]: false,
-        [IoTCameraDeviceSettings.DebugTelemetry]: false
+    protected iotCameraSettings: IoTCameraSettingsInterface = {
+        [IoTCameraSettings.VideoPlaybackHost]: 'localhost:8094'
+    };
+    protected lvaEdgeOperationsSettings: LvaEdgeOperationsSettingsInterface = {
+        [LvaEdgeOperationsSettings.AutoStart]: false
+    };
+    protected lvaEdgeDiagnosticsSettings: LvaEdgeDiagnosticsSettingsInterface = {
+        [LvaEdgeDiagnosticsSettings.DebugTelemetry]: false
     };
 
     constructor(lvaGatewayModule: ModuleService, amsGraph: AmsGraph, cameraInfo: ICameraDeviceProvisionInfo) {
@@ -137,7 +180,7 @@ export abstract class AmsCameraDevice {
                 }, 3000);
             }
 
-            if (this.deviceSettings[IoTCameraDeviceSettings.AutoStart] === true) {
+            if (this.lvaEdgeOperationsSettings[LvaEdgeOperationsSettings.AutoStart] === true) {
                 try {
                     await this.startLvaProcessingInternal(true);
                 }
@@ -157,7 +200,7 @@ export abstract class AmsCameraDevice {
     @bind
     public async getHealth(): Promise<number> {
         await this.sendMeasurement({
-            [IoTCameraDeviceInterface.Telemetry.SystemHeartbeat]: this.healthState
+            [IoTCameraInterface.Telemetry.SystemHeartbeat]: this.healthState
         });
 
         return this.healthState;
@@ -174,7 +217,7 @@ export abstract class AmsCameraDevice {
             await clientInterface.close();
 
             await this.sendMeasurement({
-                [IoTCameraDeviceInterface.State.CameraState]: CameraState.Inactive
+                [IoTCameraInterface.State.CameraState]: CameraState.Inactive
             });
 
             await this.amsGraph.deleteLvaGraph();
@@ -188,7 +231,7 @@ export abstract class AmsCameraDevice {
         switch (lvaEvent) {
             case 'Microsoft.Media.Graph.Diagnostics.MediaSessionEstablished':
                 return this.sendMeasurement({
-                    [LvaInterface.Event.MediaRecordingStarted]: this.cameraInfo.cameraId
+                    [LvaEdgeOperationsInterface.Event.MediaRecordingStarted]: this.cameraInfo.cameraId
                 });
 
                 break;
@@ -221,9 +264,16 @@ export abstract class AmsCameraDevice {
                 const value = desiredChangedSettings[`${setting}`]?.value;
 
                 switch (setting) {
-                    case IoTCameraDeviceInterface.Setting.AutoStart:
-                    case IoTCameraDeviceInterface.Setting.DebugTelemetry:
-                        patchedProperties[setting] = (this.deviceSettings[setting] as any) = value || false;
+                    case IoTCameraInterface.Setting.VideoPlaybackHost:
+                        patchedProperties[setting] = (this.iotCameraSettings[setting] as any) = value || '';
+                        break;
+
+                    case LvaEdgeOperationsInterface.Setting.AutoStart:
+                        patchedProperties[setting] = (this.lvaEdgeOperationsSettings[setting] as any) = value || false;
+                        break;
+
+                    case LvaEdgeDiagnosticsInterface.Setting.DebugTelemetry:
+                        patchedProperties[setting] = (this.lvaEdgeDiagnosticsSettings[setting] as any) = value || false;
 
                     default:
                         break;
@@ -272,7 +322,7 @@ export abstract class AmsCameraDevice {
 
             await this.deviceClient.sendEvent(iotcMessage);
 
-            if (this.deviceSettings[IoTCameraDeviceSettings.DebugTelemetry] === true) {
+            if (this.lvaEdgeDiagnosticsSettings[LvaEdgeDiagnosticsSettings.DebugTelemetry] === true) {
                 this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `sendEvent: ${JSON.stringify(data, null, 4)}`);
             }
         }
@@ -297,12 +347,12 @@ export abstract class AmsCameraDevice {
 
     protected async startLvaProcessingInternal(autoStart: boolean): Promise<boolean> {
         await this.sendMeasurement({
-            [LvaInterface.Event.StartLvaGraphCommandReceived]: autoStart ? 'AutoStart' : 'Command'
+            [LvaEdgeOperationsInterface.Event.StartLvaGraphCommandReceived]: autoStart ? 'AutoStart' : 'Command'
         });
 
         const startLvaGraphResult = await this.amsGraph.startLvaGraph(this.setGraphParameters());
 
-        if (this.deviceSettings[IoTCameraDeviceSettings.DebugTelemetry] === true) {
+        if (this.lvaEdgeDiagnosticsSettings[LvaEdgeDiagnosticsSettings.DebugTelemetry] === true) {
             this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Graph Instance Name: ${JSON.stringify(this.amsGraph.getInstanceName(), null, 4)}`);
             this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Graph Instance: ${JSON.stringify(this.amsGraph.getInstance(), null, 4)}`);
             this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Graph Topology Name: ${JSON.stringify(this.amsGraph.getInstanceName(), null, 4)}`);
@@ -311,7 +361,7 @@ export abstract class AmsCameraDevice {
 
         if (startLvaGraphResult) {
             await this.sendMeasurement({
-                [IoTCameraDeviceInterface.State.CameraState]: CameraState.Active
+                [IoTCameraInterface.State.CameraState]: CameraState.Active
             });
         }
 
@@ -364,24 +414,26 @@ export abstract class AmsCameraDevice {
 
             this.deviceClient.on('error', this.onDeviceClientError);
 
-            this.deviceClient.onDeviceMethod(LvaInterface.Command.StartLvaProcessing, this.startLvaProcessing);
-            this.deviceClient.onDeviceMethod(LvaInterface.Command.StopLvaProcessing, this.stopLvaProcessing);
+            this.deviceClient.onDeviceMethod(LvaEdgeOperationsInterface.Command.StartLvaProcessing, this.startLvaProcessing);
+            this.deviceClient.onDeviceMethod(LvaEdgeOperationsInterface.Command.StopLvaProcessing, this.stopLvaProcessing);
 
             const cameraProps = await this.getCameraProps();
 
             await this.updateDeviceProperties({
-                [IoTCameraDeviceInterface.Property.CameraName]: this.cameraInfo.cameraName,
-                [IoTCameraDeviceInterface.Property.RtspUrl]: this.cameraInfo.rtspUrl,
-                [IoTCameraDeviceInterface.Property.RtspAuthUsername]: this.cameraInfo.rtspAuthUsername,
-                [IoTCameraDeviceInterface.Property.RtspAuthPassword]: this.cameraInfo.rtspAuthPassword,
-                [IoTCameraDeviceInterface.Property.Manufacturer]: cameraProps.rpManufacturer,
-                [IoTCameraDeviceInterface.Property.Model]: cameraProps.rpModel,
-                [IoTCameraDeviceInterface.Property.AmsDeviceTag]: AmsDeviceTagValue
+                ...cameraProps,
+                [IoTCameraInterface.Property.CameraName]: this.cameraInfo.cameraName,
+                [IoTCameraInterface.Property.RtspUrl]: this.cameraInfo.rtspUrl,
+                [IoTCameraInterface.Property.RtspAuthUsername]: this.cameraInfo.rtspAuthUsername,
+                [IoTCameraInterface.Property.RtspAuthPassword]: this.cameraInfo.rtspAuthPassword,
+                [IoTCameraInterface.Property.AmsDeviceTag]: `${this.lvaGatewayModule.getInstanceId()}:${AmsDeviceTagValue}`,
+                [IoTCameraInterface.Setting.VideoPlaybackHost]: this.iotCameraSettings[IoTCameraSettings.VideoPlaybackHost],
+                [LvaEdgeOperationsInterface.Setting.AutoStart]: this.lvaEdgeOperationsSettings[LvaEdgeOperationsSettings.AutoStart],
+                [LvaEdgeDiagnosticsInterface.Setting.DebugTelemetry]: this.lvaEdgeOperationsSettings[LvaEdgeDiagnosticsSettings.DebugTelemetry]
             });
 
             await this.sendMeasurement({
-                [IoTCameraDeviceInterface.State.IoTCentralClientState]: IoTCentralClientState.Connected,
-                [IoTCameraDeviceInterface.State.CameraState]: CameraState.Inactive
+                [IoTCameraInterface.State.IoTCentralClientState]: IoTCentralClientState.Connected,
+                [IoTCameraInterface.State.CameraState]: CameraState.Inactive
             });
 
             result.clientConnectionStatus = true;
@@ -396,12 +448,18 @@ export abstract class AmsCameraDevice {
         return result;
     }
 
-    private async getCameraProps(): Promise<ICameraProps> {
+    private async getCameraProps(): Promise<IoTDeviceInformation> {
         // TODO:
         // Introduce some ONVIF tech to get camera props
         return {
-            rpManufacturer: 'Microsoft',
-            rpModel: 'Illudium Q-36'
+            manufacturer: 'Axis',
+            model: '1367',
+            swVersion: 'v1.0.0',
+            osName: 'Axis OS',
+            processorArchitecture: 'Axis CPU',
+            processorManufacturer: 'Axis',
+            totalStorage: 0,
+            totalMemory: 0
         };
     }
 
@@ -414,7 +472,7 @@ export abstract class AmsCameraDevice {
     @bind
     // @ts-ignore
     private async startLvaProcessing(commandRequest: DeviceMethodRequest, commandResponse: DeviceMethodResponse) {
-        this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `${LvaInterface.Command.StartLvaProcessing} command received`);
+        this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `${LvaEdgeOperationsInterface.Command.StartLvaProcessing} command received`);
 
         try {
             const startLvaGraphResult = await this.startLvaProcessingInternal(false);
@@ -431,17 +489,17 @@ export abstract class AmsCameraDevice {
     @bind
     // @ts-ignore
     private async stopLvaProcessing(commandRequest: DeviceMethodRequest, commandResponse: DeviceMethodResponse) {
-        this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `${LvaInterface.Command.StopLvaProcessing} command received`);
+        this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `${LvaEdgeOperationsInterface.Command.StopLvaProcessing} command received`);
 
         try {
             await this.sendMeasurement({
-                [LvaInterface.Event.StopLvaGraphCommandReceived]: this.cameraInfo.cameraId
+                [LvaEdgeOperationsInterface.Event.StopLvaGraphCommandReceived]: this.cameraInfo.cameraId
             });
 
             const stopLvaGraphResult = await this.amsGraph.stopLvaGraph();
             if (stopLvaGraphResult) {
                 await this.sendMeasurement({
-                    [IoTCameraDeviceInterface.State.CameraState]: CameraState.Inactive
+                    [IoTCameraInterface.State.CameraState]: CameraState.Inactive
                 });
             }
 

@@ -5,124 +5,101 @@
         {
             "@type": "InterfaceInstance",
             "displayName": {
-                "en": "Lva Edge Interface"
+                "en": "Device Information"
             },
-            "name": "LvaEdgeInterface",
+            "name": "DeviceInformation",
             "schema": {
-                "@id": "urn:AzureMediaServices:LvaEdgeInterface:1",
+                "@id": "urn:azureiot:DeviceManagement:DeviceInformation:1",
                 "@type": "Interface",
                 "displayName": {
-                    "en": "Lva Edge Interface"
+                    "en": "Device information"
                 },
                 "contents": [
                     {
-                        "@type": [
-                            "Telemetry",
-                            "SemanticType/Event"
-                        ],
+                        "@id": "urn:azureiot:DeviceManagement:DeviceInformation:manufacturer:1",
+                        "@type": "Property",
+                        "comment": "Company name of the device manufacturer. This could be the same as the name of the original equipment manufacturer (OEM). Ex. Contoso.",
                         "displayName": {
-                            "en": "Graph Instance Created"
+                            "en": "Manufacturer"
                         },
-                        "name": "evGraphInstanceCreated",
+                        "name": "manufacturer",
                         "schema": "string"
                     },
                     {
-                        "@type": [
-                            "Telemetry",
-                            "SemanticType/Event"
-                        ],
+                        "@id": "urn:azureiot:DeviceManagement:DeviceInformation:model:1",
+                        "@type": "Property",
+                        "comment": "Device model name or ID. Ex. Surface Book 2.",
                         "displayName": {
-                            "en": "Graph Instance Deleted"
+                            "en": "Device model"
                         },
-                        "name": "evGraphInstanceDeleted",
+                        "name": "model",
                         "schema": "string"
                     },
                     {
-                        "@type": [
-                            "Telemetry",
-                            "SemanticType/Event"
-                        ],
+                        "@id": "urn:azureiot:DeviceManagement:DeviceInformation:swVersion:1",
+                        "@type": "Property",
+                        "comment": "Version of the software on your device. This could be the version of your firmware. Ex. 1.3.45",
                         "displayName": {
-                            "en": "Graph Instance Started"
+                            "en": "Software version"
                         },
-                        "name": "evGraphInstanceStarted",
+                        "name": "swVersion",
                         "schema": "string"
                     },
                     {
-                        "@type": [
-                            "Telemetry",
-                            "SemanticType/Event"
-                        ],
+                        "@id": "urn:azureiot:DeviceManagement:DeviceInformation:osName:1",
+                        "@type": "Property",
+                        "comment": "Name of the operating system on the device. Ex. Windows 10 IoT Core.",
                         "displayName": {
-                            "en": "Graph Instance Stopped"
+                            "en": "Operating system name"
                         },
-                        "name": "evGraphInstanceStopped",
+                        "name": "osName",
                         "schema": "string"
                     },
                     {
-                        "@type": [
-                            "Telemetry",
-                            "SemanticType/Event"
-                        ],
+                        "@id": "urn:azureiot:DeviceManagement:DeviceInformation:processorArchitecture:1",
+                        "@type": "Property",
+                        "comment": "Architecture of the processor on the device. Ex. x64 or ARM.",
                         "displayName": {
-                            "en": "Media Recording Started"
+                            "en": "Processor architecture"
                         },
-                        "name": "evMediaRecordingStarted",
+                        "name": "processorArchitecture",
                         "schema": "string"
                     },
                     {
-                        "@type": [
-                            "Telemetry",
-                            "SemanticType/Event"
-                        ],
+                        "@id": "urn:azureiot:DeviceManagement:DeviceInformation:processorManufacturer:1",
+                        "@type": "Property",
+                        "comment": "Name of the manufacturer of the processor on the device. Ex. Intel.",
                         "displayName": {
-                            "en": "Start LVA Command"
+                            "en": "Processor manufacturer"
                         },
-                        "name": "evStartLvaGraphCommandReceived",
+                        "name": "processorManufacturer",
                         "schema": "string"
                     },
                     {
-                        "@type": [
-                            "Telemetry",
-                            "SemanticType/Event"
-                        ],
+                        "@id": "urn:azureiot:DeviceManagement:DeviceInformation:totalStorage:1",
+                        "@type": "Property",
+                        "comment": "Total available storage on the device in kilobytes. Ex. 2048000 kilobytes.",
                         "displayName": {
-                            "en": "Stop LVA Command"
+                            "en": "Total storage"
                         },
-                        "name": "evStopLvaGraphCommandReceived",
-                        "schema": "string"
+                        "name": "totalStorage",
+                        "displayUnit": {
+                            "en": "kilobytes"
+                        },
+                        "schema": "long"
                     },
                     {
-                        "@type": "Command",
-                        "commandType": "asynchronous",
-                        "response": {
-                            "@type": "SchemaField",
-                            "displayName": {
-                                "en": "StartLvaResponse"
-                            },
-                            "name": "StartLvaResponse",
-                            "schema": "string"
-                        },
+                        "@id": "urn:azureiot:DeviceManagement:DeviceInformation:totalMemory:1",
+                        "@type": "Property",
+                        "comment": "Total available memory on the device in kilobytes. Ex. 256000 kilobytes.",
                         "displayName": {
-                            "en": "Start LVA Processing"
+                            "en": "Total memory"
                         },
-                        "name": "cmStartLvaProcessing"
-                    },
-                    {
-                        "@type": "Command",
-                        "commandType": "asynchronous",
-                        "response": {
-                            "@type": "SchemaField",
-                            "displayName": {
-                                "en": "StopLvaResponse"
-                            },
-                            "name": "StopLvaResponse",
-                            "schema": "string"
+                        "name": "totalMemory",
+                        "displayUnit": {
+                            "en": "kilobytes"
                         },
-                        "displayName": {
-                            "en": "Stop LVA Processing"
-                        },
-                        "name": "cmStopLvaProcessing"
+                        "schema": "long"
                     }
                 ]
             }
@@ -130,14 +107,14 @@
         {
             "@type": "InterfaceInstance",
             "displayName": {
-                "en": "IoT Camera Device Interface"
+                "en": "IoT Camera Interface"
             },
-            "name": "IoTCameraDeviceInterface",
+            "name": "IoTCameraInterface",
             "schema": {
-                "@id": "urn:AzureMediaServices:IoTCameraDeviceInterface:1",
+                "@id": "urn:AzureMediaServices:IoTCameraInterface:1",
                 "@type": "Interface",
                 "displayName": {
-                    "en": "IoT Camera Device Interface"
+                    "en": "IoT Camera Interface"
                 },
                 "contents": [
                     {
@@ -247,25 +224,111 @@
                     {
                         "@type": "Property",
                         "displayName": {
-                            "en": "Manufacturer"
-                        },
-                        "name": "rpManufacturer",
-                        "schema": "string"
-                    },
-                    {
-                        "@type": "Property",
-                        "displayName": {
-                            "en": "Model"
-                        },
-                        "name": "rpModel",
-                        "schema": "string"
-                    },
-                    {
-                        "@type": "Property",
-                        "displayName": {
                             "en": "AmsDeviceTag"
                         },
                         "name": "rpAmsDeviceTag",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Video Playback Host"
+                        },
+                        "name": "wpVideoPlaybackHost",
+                        "writable": true,
+                        "schema": "string"
+                    }
+                ]
+            }
+        },
+        {
+            "@type": "InterfaceInstance",
+            "displayName": {
+                "en": "Lva Edge Operations Interface"
+            },
+            "name": "LvaEdgeOperationsInterface",
+            "schema": {
+                "@id": "urn:AzureMediaServices:LvaEdgeOperationsInterface:1",
+                "@type": "Interface",
+                "displayName": {
+                    "en": "Lva Edge Operations Interface"
+                },
+                "contents": [
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Graph Instance Created"
+                        },
+                        "name": "evGraphInstanceCreated",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Graph Instance Deleted"
+                        },
+                        "name": "evGraphInstanceDeleted",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Graph Instance Started"
+                        },
+                        "name": "evGraphInstanceStarted",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Graph Instance Stopped"
+                        },
+                        "name": "evGraphInstanceStopped",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Media Recording Started"
+                        },
+                        "name": "evMediaRecordingStarted",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Start LVA Command"
+                        },
+                        "name": "evStartLvaGraphCommandReceived",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Stop LVA Command"
+                        },
+                        "name": "evStopLvaGraphCommandReceived",
                         "schema": "string"
                     },
                     {
@@ -277,6 +340,54 @@
                         "writable": true,
                         "schema": "boolean"
                     },
+                    {
+                        "@type": "Command",
+                        "commandType": "asynchronous",
+                        "response": {
+                            "@type": "SchemaField",
+                            "displayName": {
+                                "en": "StartLvaResponse"
+                            },
+                            "name": "StartLvaResponse",
+                            "schema": "string"
+                        },
+                        "displayName": {
+                            "en": "Start LVA Processing"
+                        },
+                        "name": "cmStartLvaProcessing"
+                    },
+                    {
+                        "@type": "Command",
+                        "commandType": "asynchronous",
+                        "response": {
+                            "@type": "SchemaField",
+                            "displayName": {
+                                "en": "StopLvaResponse"
+                            },
+                            "name": "StopLvaResponse",
+                            "schema": "string"
+                        },
+                        "displayName": {
+                            "en": "Stop LVA Processing"
+                        },
+                        "name": "cmStopLvaProcessing"
+                    }
+                ]
+            }
+        },
+        {
+            "@type": "InterfaceInstance",
+            "displayName": {
+                "en": "Lva Edge Diagnostics Interface"
+            },
+            "name": "LvaEdgeDiagnosticsInterface",
+            "schema": {
+                "@id": "urn:AzureMediaServices:LvaEdgeDiagnosticsInterface:1",
+                "@type": "Interface",
+                "displayName": {
+                    "en": "Lva Edge Diagnostics Interface"
+                },
+                "contents": [
                     {
                         "@type": "Property",
                         "displayName": {
@@ -292,30 +403,30 @@
         {
             "@type": "InterfaceInstance",
             "displayName": {
-                "en": "Lva Edge Object Detector Interface"
+                "en": "AI Inference Interface"
             },
-            "name": "LvaEdgeObjectDetectorInterface",
+            "name": "AiInferenceInterface",
             "schema": {
-                "@id": "urn:AzureMediaServices:LvaEdgeObjectDetectorInterface:1",
+                "@id": "urn:AzureMediaServices:AiInferenceInterface:1",
                 "@type": "Interface",
                 "displayName": {
-                    "en": "Lva Edge Object Detector Interface"
+                    "en": "AI Inference Interface"
                 },
                 "contents": [
                     {
                         "@type": "Telemetry",
                         "displayName": {
-                            "en": "Primary Detection Count"
+                            "en": "Inference Count"
                         },
-                        "name": "tlPrimaryDetectionCount",
+                        "name": "tlInferenceCount",
                         "schema": "integer"
                     },
                     {
                         "@type": "Telemetry",
                         "displayName": {
-                            "en": "Primary Confidence"
+                            "en": "Confidence"
                         },
-                        "name": "tlPrimaryConfidence",
+                        "name": "tlConfidence",
                         "schema": "double"
                     },
                     {
@@ -460,22 +571,79 @@
                         },
                         "name": "rpInferenceImageUrl",
                         "schema": "string"
+                    }
+                ]
+            }
+        },
+        {
+            "@type": "InterfaceInstance",
+            "displayName": {
+                "en": "AI Object Detector Interface"
+            },
+            "name": "AiObjectDetectorInterface",
+            "schema": {
+                "@id": "urn:AzureMediaServices:AiObjectDetectorInterface:1",
+                "@type": "Interface",
+                "displayName": {
+                    "en": "AI Object Detector Interface"
+                },
+                "contents": [
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Sensitivity"
+                        },
+                        "name": "wpSensitivity",
+                        "writable": true,
+                        "schema": {
+                            "@type": "Enum",
+                            "displayName": {
+                                "en": "Enum"
+                            },
+                            "valueSchema": "string",
+                            "enumValues": [
+                                {
+                                    "@type": "EnumValue",
+                                    "displayName": {
+                                        "en": "High"
+                                    },
+                                    "enumValue": "high",
+                                    "name": "SensitivityEnum_High"
+                                },
+                                {
+                                    "@type": "EnumValue",
+                                    "displayName": {
+                                        "en": "Medium"
+                                    },
+                                    "enumValue": "medium",
+                                    "name": "SensitivityEnum_Medium"
+                                },
+                                {
+                                    "@type": "EnumValue",
+                                    "displayName": {
+                                        "en": "Low"
+                                    },
+                                    "enumValue": "low",
+                                    "name": "SensitivityEnum_Low"
+                                }
+                            ]
+                        }
                     },
                     {
                         "@type": "Property",
                         "displayName": {
-                            "en": "Primary Detection Class"
+                            "en": "Detection Classes"
                         },
-                        "name": "wpPrimaryDetectionClass",
+                        "name": "wpDetectionClasses",
                         "writable": true,
                         "schema": "string"
                     },
                     {
                         "@type": "Property",
                         "displayName": {
-                            "en": "Primary Confidence Threshold"
+                            "en": "Confidence Threshold"
                         },
-                        "name": "wpPrimaryConfidenceThreshold",
+                        "name": "wpConfidenceThreshold",
                         "writable": true,
                         "schema": "double"
                     }

@@ -20,10 +20,6 @@
             {
                 "name": "assetName",
                 "value": ""
-            },
-            {
-                "name": "motionSensitivity",
-                "value": ""
             }
         ]
     }
