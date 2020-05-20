@@ -284,7 +284,7 @@ export class ModuleService {
         }
 
         if (response.payload?.error) {
-            throw new Error(response.payload.error?.message);
+            throw new Error(`(from invokeMethod) ${response.payload.error?.message}`);
         }
     }
 

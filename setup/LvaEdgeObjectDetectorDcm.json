@@ -424,14 +424,6 @@
                     {
                         "@type": "Telemetry",
                         "displayName": {
-                            "en": "Confidence"
-                        },
-                        "name": "tlConfidence",
-                        "schema": "double"
-                    },
-                    {
-                        "@type": "Telemetry",
-                        "displayName": {
                             "en": "Inference"
                         },
                         "name": "tlInference",

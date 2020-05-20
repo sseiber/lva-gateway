@@ -57,7 +57,7 @@
         ],
         "processors": [
             {
-                "@type": "#Microsoft.Media.MediaGraphMotionDetector",
+                "@type": "#Microsoft.Media.MediaGraphMotionDetectionProcessor",
                 "name": "md",
                 "sensitivity": "${motionSensitivity}",
                 "inputs": [
