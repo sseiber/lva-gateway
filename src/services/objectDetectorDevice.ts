@@ -76,9 +76,9 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
     public async deviceReady(): Promise<void> {
         await this.updateDeviceProperties({
             [AiInferenceInterface.Property.InferenceImageUrl]: 'https://iotcsavisionai.blob.core.windows.net/image-link-test/rtspcapture.jpg',
-            [ObjectDetectorSettings.MotionDetectorSensitivity]: this.objectDetectorSettings[ObjectDetectorSettings.MotionDetectorSensitivity],
-            [ObjectDetectorSettings.DetectionClasses]: this.objectDetectorSettings[ObjectDetectorSettings.DetectionClasses],
-            [ObjectDetectorSettings.ConfidenceThreshold]: this.objectDetectorSettings[ObjectDetectorSettings.ConfidenceThreshold]
+            [ObjectDetectorInterface.Setting.MotionDetectorSensitivity]: this.objectDetectorSettings[ObjectDetectorSettings.MotionDetectorSensitivity],
+            [ObjectDetectorInterface.Setting.DetectionClasses]: this.objectDetectorSettings[ObjectDetectorSettings.DetectionClasses],
+            [ObjectDetectorInterface.Setting.ConfidenceThreshold]: this.objectDetectorSettings[ObjectDetectorSettings.ConfidenceThreshold]
         });
     }
 

@@ -67,7 +67,7 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
         await this.updateDeviceProperties({
             [AiInferenceInterface.Property.InferenceImageUrl]: 'https://iotcsavisionai.blob.core.windows.net/image-link-test/seattlesbest-1_199_.jpg',
             [AiInferenceInterface.Property.InferenceVideoUrl]: 'https://portal.loopbox-nl.com/',
-            [MotionDetectorSettings.Sensitivity]: this.motionDetectorSettings[MotionDetectorSettings.Sensitivity]
+            [MotionDetectorInterface.Setting.Sensitivity]: this.motionDetectorSettings[MotionDetectorSettings.Sensitivity]
         });
     }
 

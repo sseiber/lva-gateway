@@ -425,7 +425,10 @@ export abstract class AmsCameraDevice {
                 [IoTCameraInterface.Property.RtspUrl]: this.cameraInfo.rtspUrl,
                 [IoTCameraInterface.Property.RtspAuthUsername]: this.cameraInfo.rtspAuthUsername,
                 [IoTCameraInterface.Property.RtspAuthPassword]: this.cameraInfo.rtspAuthPassword,
-                [IoTCameraInterface.Property.AmsDeviceTag]: `${this.lvaGatewayModule.getInstanceId()}:${AmsDeviceTagValue}`
+                [IoTCameraInterface.Property.AmsDeviceTag]: `${this.lvaGatewayModule.getInstanceId()}:${AmsDeviceTagValue}`,
+                [IoTCameraInterface.Setting.VideoPlaybackHost]: this.iotCameraSettings[IoTCameraSettings.VideoPlaybackHost],
+                [LvaEdgeOperationsInterface.Setting.AutoStart]: this.lvaEdgeOperationsSettings[LvaEdgeOperationsSettings.AutoStart],
+                [LvaEdgeDiagnosticsInterface.Setting.DebugTelemetry]: this.lvaEdgeOperationsSettings[LvaEdgeDiagnosticsSettings.DebugTelemetry]
             });
 
             await this.sendMeasurement({
