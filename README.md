@@ -56,10 +56,9 @@ Description TBD.
 
 
 ### To do
+* Use intermediate certificate instead of master enrollment key
 * Device lifecycle
-    * Multiple instances of gateway
-        - Need to further guarantee ownership of leaf device to gateway. Add properties to the device so it can be identified by the owning gateway in restart scenarios.
-    * Manage the "delete camera" flow
+    * Manage the delete device flow
         - polling on the heath check to determine if still connected to the Hub
         - diagnose the Hub responses to get to the specific errors
         - gateway module should receive the error that device is disconnected to so gateway can manage the delete and re-provision of the device
@@ -74,6 +73,13 @@ Description TBD.
                     }
                 }
             }
+    * Manage the create device flow
+        - be resilliant when discovering devices
+           - retry reading properties from iot central
+           - retry creating devices with dps
+           - do this async with a queue of devices
+           - use backoff
+           - basically devices must get back online if possible
 * Reconcile all try/catch stacks
     - User facing errors should be caught at the deviceMethod level and translated into readable strings
     - Log error message can remain descriptive (sans secrets/privacy)

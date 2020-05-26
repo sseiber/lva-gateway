@@ -192,6 +192,7 @@ export class AmsGraph {
 
     private async setInstance(graphParameters: any) {
         this.amsAssetName = graphParameters.assetName;
+        this.setParam('assetName', this.amsAssetName);
 
         this.setParam('rtspUrl', this.rtspUrl);
         this.setParam('rtspAuthUsername', this.rtspAuthUsername);
