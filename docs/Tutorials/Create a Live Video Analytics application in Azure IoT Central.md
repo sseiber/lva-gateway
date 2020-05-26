@@ -320,10 +320,9 @@ those.
 
 ## Deploy the IoT Edge runtime and the Lva Gateway Modules
 
-Follow this [link](Create a Linux VM with IoT Edge.md) if you are planning to test the Public Safety template using a cloud VM and a simulated stream
-Follow this [link](Deploy IoT Edge and the Lva Gateway modules in NUC.md)
+Follow this [link](Create%20a%20Linux%20VM%20with%20IoT%20Edge.md) if you are planning to test the Public Safety template using a cloud VM and a simulated stream
 
-if you have a real computer such as an Intel NUC and `ONVIF` Camera to run the edge analytics
+Follow this [link](Deploy_IoT_Edge_Lva_Gateway_modules_NUC.md) if you have a real computer such as an Intel NUC and a `ONVIF` Camera to run the edge analytics modules
 
 ## Configure the desire properties and instantiate the Cameras in IoT Central
 
