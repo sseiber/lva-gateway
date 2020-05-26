@@ -2,7 +2,6 @@
 const os = require('os');
 const path = require('path');
 const fse = require('fs-extra');
-const uuid = require('uuid');
 
 const processArgs = require('commander')
     .option('-r, --workspace-root <workspaceRoot>', 'Workspace root folder path')

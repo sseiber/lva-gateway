@@ -55,7 +55,7 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
     public setGraphParameters(): any {
         return {
             motionSensitivity: this.motionDetectorSettings[MotionDetectorSettings.Sensitivity],
-            assetName: `Motion-${moment.utc().format('YYYYMMDD-HHmmss')}`
+            assetName: `${this.lvaGatewayModule.getScopeId()}-${this.cameraInfo.cameraId}-${moment.utc().format('YYYYMMDD-HHmmss')}`
         };
     }
 

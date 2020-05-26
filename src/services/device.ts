@@ -476,8 +476,14 @@ export abstract class AmsCameraDevice {
         try {
             const startLvaGraphResult = await this.startLvaProcessingInternal(false);
 
-            await commandResponse.send(202, {
-                value: `LVA Edge start graph request: ${startLvaGraphResult ? 'succeeded' : 'failed'}`
+            const responseMessage = `LVA Edge start graph request: ${startLvaGraphResult ? 'succeeded' : 'failed'}`;
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], responseMessage);
+
+            await commandResponse.send(202);
+            await this.updateDeviceProperties({
+                [LvaEdgeOperationsInterface.Command.StartLvaProcessing]: {
+                    value: responseMessage
+                }
             });
         }
         catch (ex) {
@@ -502,8 +508,14 @@ export abstract class AmsCameraDevice {
                 });
             }
 
-            await commandResponse.send(202, {
-                value: `LVA Edge stop graph request: ${stopLvaGraphResult ? 'succeeded' : 'failed'}`
+            const responseMessage = `LVA Edge stop graph request: ${stopLvaGraphResult ? 'succeeded' : 'failed'}`;
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], responseMessage);
+
+            await commandResponse.send(202);
+            await this.updateDeviceProperties({
+                [LvaEdgeOperationsInterface.Command.StopLvaProcessing]: {
+                    value: responseMessage
+                }
             });
         }
         catch (ex) {

@@ -29,7 +29,7 @@ import {
 } from 'os';
 import * as crypto from 'crypto';
 import * as Wreck from '@hapi/wreck';
-import { bind, defer, emptyObj, forget } from '../utils';
+import { bind, defer, emptyObj, forget, sleep } from '../utils';
 
 type DeviceOperation = 'DELETE_CAMERA' | 'SEND_EVENT' | 'SEND_INFERENCES';
 
@@ -207,7 +207,12 @@ export class ModuleService {
         lvaEdgeModuleId: '',
         amsAccountName: ''
     };
-    private iotCentralAppKeys: IIoTCentralAppKeys;
+    private iotCentralAppKeys: IIoTCentralAppKeys = {
+        iotCentralAppHost: '',
+        iotCentralAppApiToken: '',
+        iotCentralDeviceProvisioningKey: '',
+        iotCentralScopeId: ''
+    };
 
     private moduleClient: ModuleClient = null;
     private moduleTwin: Twin = null;
@@ -225,6 +230,10 @@ export class ModuleService {
     private amsInferenceDeviceMap = new Map<string, AmsCameraDevice>();
     private dpsProvisioningHost: string = defaultDpsProvisioningHost;
     private healthCheckRetries: number = defaultHealthCheckRetries;
+
+    public getScopeId(): string {
+        return this.iotCentralAppKeys.iotCentralScopeId;
+    }
 
     public getInstanceId(): string {
         return this.iotcGatewayInstanceId;
@@ -542,6 +551,8 @@ export class ModuleService {
             this.server.log(['ModuleService', 'info'], `Found ${deviceList.length} devices`);
 
             for (const device of deviceList) {
+                await sleep(1000);
+
                 try {
                     this.server.log(['ModuleService', 'info'], `Getting properties for device: ${device.id}`);
 
@@ -1048,8 +1059,11 @@ export class ModuleService {
             const detectionType = commandRequest?.payload?.[AddCameraCommandRequestParams.DetectionType];
 
             if (!cameraId || !cameraName || !rtspUrl || !rtspAuthUsername || !rtspAuthPassword || !detectionType) {
-                await commandResponse.send(202, {
-                    value: `The ${LvaGatewayInterface.Command.DeleteCamera} command is missing required parameters, cameraId, cameraName, rtspUrl, rtspAuthUsername, rtspAuthPassword, detectionType`
+                await commandResponse.send(202);
+                await this.updateModuleProperties({
+                    [LvaGatewayInterface.Command.AddCamera]: {
+                        value: `The ${LvaGatewayInterface.Command.DeleteCamera} command is missing required parameters, cameraId, cameraName, rtspUrl, rtspAuthUsername, rtspAuthPassword, detectionType`
+                    }
                 });
 
                 return;
@@ -1064,9 +1078,11 @@ export class ModuleService {
                 detectionType
             });
 
-            await commandResponse.send(202, {
-                value: provisionResult.clientConnectionMessage
-
+            await commandResponse.send(202);
+            await this.updateModuleProperties({
+                [LvaGatewayInterface.Command.AddCamera]: {
+                    value: provisionResult.clientConnectionMessage
+                }
             });
         }
         catch (ex) {
@@ -1081,8 +1097,11 @@ export class ModuleService {
         try {
             const cameraId = commandRequest?.payload?.[DeleteCameraCommandRequestParams.CameraId];
             if (!cameraId) {
-                await commandResponse.send(202, {
-                    value: `The ${LvaGatewayInterface.Command.DeleteCamera} command requires a Camera Id parameter`
+                await commandResponse.send(202);
+                await this.updateModuleProperties({
+                    [LvaGatewayInterface.Command.DeleteCamera]: {
+                        value: `The ${LvaGatewayInterface.Command.DeleteCamera} command requires a Camera Id parameter`
+                    }
                 });
 
                 return;
@@ -1090,11 +1109,14 @@ export class ModuleService {
 
             const deleteResult = await this.deprovisionAmsInferenceDevice(cameraId);
 
-            await commandResponse.send(202, {
-                value: deleteResult
-                    ? `The ${LvaGatewayInterface.Command.DeleteCamera} command succeeded`
-                    : `An error occurred while executing the ${LvaGatewayInterface.Command.DeleteCamera} command`
+            await commandResponse.send(202);
+            await this.updateModuleProperties({
+                [LvaGatewayInterface.Command.DeleteCamera]: {
+                    value: deleteResult
+                        ? `The ${LvaGatewayInterface.Command.DeleteCamera} command succeeded`
+                        : `An error occurred while executing the ${LvaGatewayInterface.Command.DeleteCamera} command`
 
+                }
             });
         }
         catch (ex) {
@@ -1108,8 +1130,11 @@ export class ModuleService {
 
         try {
             // sending response before processing, since this is a restart request
-            await commandResponse.send(200, {
-                value: 'Success'
+            await commandResponse.send(200);
+            await this.updateModuleProperties({
+                [LvaGatewayInterface.Command.RestartModule]: {
+                    value: 'Received command to restart the module'
+                }
             });
 
             await this.restartModule(commandRequest?.payload?.[RestartModuleCommandRequestParams.Timeout] || 0, 'RestartModule command received');
