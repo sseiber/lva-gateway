@@ -29,7 +29,7 @@ import {
 } from 'os';
 import * as crypto from 'crypto';
 import * as Wreck from '@hapi/wreck';
-import { bind, defer, emptyObj, forget } from '../utils';
+import { bind, defer, emptyObj, forget, sleep } from '../utils';
 
 type DeviceOperation = 'DELETE_CAMERA' | 'SEND_EVENT' | 'SEND_INFERENCES';
 
@@ -207,7 +207,12 @@ export class ModuleService {
         lvaEdgeModuleId: '',
         amsAccountName: ''
     };
-    private iotCentralAppKeys: IIoTCentralAppKeys;
+    private iotCentralAppKeys: IIoTCentralAppKeys = {
+        iotCentralAppHost: '',
+        iotCentralAppApiToken: '',
+        iotCentralDeviceProvisioningKey: '',
+        iotCentralScopeId: ''
+    };
 
     private moduleClient: ModuleClient = null;
     private moduleTwin: Twin = null;
@@ -546,6 +551,8 @@ export class ModuleService {
             this.server.log(['ModuleService', 'info'], `Found ${deviceList.length} devices`);
 
             for (const device of deviceList) {
+                await sleep(1000);
+
                 try {
                     this.server.log(['ModuleService', 'info'], `Getting properties for device: ${device.id}`);
 
