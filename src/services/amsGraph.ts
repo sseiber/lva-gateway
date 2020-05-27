@@ -15,7 +15,7 @@ export class AmsGraph {
             const graphInstancePath = pathResolve(contentRootDirectory, `${cameraInfo.detectionType}GraphInstance.json`);
             const graphInstance = fse.readJSONSync(graphInstancePath);
 
-            graphInstance.name = graphInstance.name.replace('###RtspCameraId', cameraInfo.cameraId);
+            graphInstance.name = cameraInfo.cameraId;
 
             // lvaGatewayModule.logger(['AmsGraph', 'info'], `### graphData: ${JSON.stringify(graphInstance, null, 4)}`);
 
