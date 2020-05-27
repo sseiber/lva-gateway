@@ -241,7 +241,7 @@ previously edited.
 
 :::image type="content" source="../media/Create a Live Video Analytics application in Azure IoT Central/replace_manifest.png" alt-text="Replace Manifest":::
 
-#### Add Relationships
+#### Add Relationships  - "Adding relationships step may not be necessary since this will be part of DCM import - relationships are already established after DCM import -Kishor "
 
 In the device Template, Under the Lva Edge Gateway Module, select
 Relationships, click on the Add relationships and add 2 relationships:
@@ -253,7 +253,7 @@ Relationships, click on the Add relationships and add 2 relationships:
 
 After adding the relationships click the Save button.
 
-#### Add Views
+#### Add Views  - "this section may need few screen capture - Kishor"
 
 For regular devices, the views are exported in the template as you can
 see that our cameras have dashboards and settings, but currently IoT
