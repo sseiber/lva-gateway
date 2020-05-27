@@ -147,26 +147,6 @@ There are sections for the module's desired properties therefore, you will
 need to update the JSON file with your AMS and IoT Central instance data
 as follows:
 
-Locate the `LvaEdgeGatewayModule` element and using the collected data in the note editor fill in the JSON elements.
-
-```json
-{
-    "LvaEdgeGatewayModule": {
-         "properties.desired": {
-          "wpIoTCentralAppHost": "<YOUR_APP>.azureiotcentral.com",
-          "wpIoTCentralAppApiToken": "<YOUR API TOKEN>",
-          "wpMasterDeviceProvisioningKey": "<YOUR GROUP PROVISIONING KEY>",
-          "wpScopeId": "<YOUR SCOPE ID>",
-          "wpGatewayInstanceId": "<IoT EDGE GATEWAY DEVICE ID>",
-          "wpGatewayModuleId": "LvaEdgeGatewayModule",
-          "wpLvaEdgeModuleId": "lvaEdge",
-          "wpDebugTelemetry": false,
-          "wpDebugRoutedMessage": false
-         }
-    }
-}
-```
-
 You cannot enter the `GatewayInstanceId` until you add a device, but
 because you need the Deployment Manifest file, you will have to return
 to it later. You can opt to leave all the named values empty as
@@ -202,6 +182,8 @@ therefore you will need to add the AMS values to the file before you deploy.
 \[TODO: document where to get these values from the Azure Portal AMS section\]
 
 ## Create and associate the Edge Gateway with the downstream devices in IoT Central
+
+### Create the device templates for the 2 different camera types
 
 ### Create a Device Template for the Lva Edge Gateway
 
@@ -243,7 +225,7 @@ previously edited.
 
 #### Add Relationships
 
-In the device Template, Under the Lva Edge Gateway Module, select
+In the device Template, Under the **Modules\Lva Edge Gateway Module**, select
 Relationships, click on the Add relationships and add 2 relationships:
 
 |Display Name               |Name          |Target
@@ -323,6 +305,20 @@ those.
 Follow this [link](Create%20a%20Linux%20VM%20with%20IoT%20Edge.md) if you are planning to test the Public Safety template using a cloud VM and a simulated stream
 
 Follow this [link](Deploy_IoT_Edge_Lva_Gateway_modules_NUC.md) if you have a real computer such as an Intel NUC and a `ONVIF` Camera to run the edge analytics modules
+
+## Prepare the data folder on the Edge gateway
+
+In this reference implementation, we are keeping some configuration under the folder
+/data/storage
+
+Using the `ssh` connection (PuTTY):
+
+* create a root folder name data`mkdir/data`
+* navigate to it and create 2 child folders `/data/media` and `/data/storage`
+* Change the mode to read/write to the entire folder `chmod -R 777 /data`
+* Copy the state.json file into storage
+* Use pscp from a command terminal `pscp.exe state.json [username]@[IP Address]:/data/storage/state.json`
+
 
 ## Configure the desire properties and instantiate the Cameras in IoT Central
 
