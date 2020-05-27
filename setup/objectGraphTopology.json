@@ -69,7 +69,7 @@
                 "@type": "#Microsoft.Media.MediaGraphRtspSource",
                 "name": "rtspSource",
                 "endpoint": {
-                    "@type": "#Microsoft.Media.MediaGraphClearEndpoint",
+                    "@type": "#Microsoft.Media.MediaGraphUnsecuredEndpoint",
                     "url": "${rtspUrl}",
                     "credentials": {
                         "@type": "#Microsoft.Media.MediaGraphUsernamePasswordCredentials",
@@ -104,7 +104,7 @@
                 "@type": "#Microsoft.Media.MediaGraphHttpExtension",
                 "name": "httpExtension",
                 "endpoint": {
-                    "@type": "#Microsoft.Media.MediaGraphClearEndpoint",
+                    "@type": "#Microsoft.Media.MediaGraphUnsecuredEndpoint",
                     "url": "${inferencingUrl}",
                     "credentials": {
                         "@type": "#Microsoft.Media.MediaGraphUsernamePasswordCredentials",
@@ -146,7 +146,7 @@
                 "name": "assetSink",
                 "assetNamePattern": "${assetName}",
                 "segmentLength": "PT30S",
-                "localMediaCacheMaximumSizeMb": "2048",
+                "localMediaCacheMaximumSizeMiB": "2048",
                 "localMediaCachePath": "/var/lib/azuremediaservices/tmp/",
                 "inputs": [
                     {
