@@ -1,6 +1,6 @@
 {
     "@apiVersion": "1.0",
-    "name": "LvaIotcMotionDetectionWithCvr_###RtspCameraId",
+    "name": "",
     "properties": {
         "description": "Motion detection graph with cloud recording",
         "topologyName": "LvaIotcMotionDetectionWithCvr",
