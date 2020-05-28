@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # BUild the Lva Gateway Modules
 
 ## Clone the repo
@@ -8,21 +7,11 @@
 Open the repo folder with VSCode
 
 ## Prepare the development environment
-=======
-# Build the Lva Gateway Modules
-
-## Clone the repo
-
-https://github.com/sseiber/lva-gateway
-Populate the deployment manifest and local JSON files from setup
-Move to the repo folder
->>>>>>> master
 
 1. The first time after cloning the repo run the command **npm install** from the VSCode Terminal (this will execute setup scripts and populate the ./configs directory)
 
     1. Locate and delete the `nodes_module` folder if you merge the master branch again
 
-<<<<<<< HEAD
 1. edit ./configs/imageConfig.json
 
 ```json
@@ -31,6 +20,8 @@ Move to the repo folder
     "imageName": "[Server].azurecr.io/lva-edge-gateway"
 }
 ```
+
+1. for convenience create a ./storage directory - this will be ignored from git checkins
 
 ## Edit the state.json file
 
@@ -50,13 +41,7 @@ Move to the repo folder
 
 ## Edit the deployment.amd64.json file
 
-1. Make a copy of ./setup/deployment.amd64.json and paste it to ./storage, this is your working file and it is not checked to GitHub
-=======
-1. Make a copy of ./setup/deployment.amd64.json and copy it to ./storage
-
-## Edit the ./storage/deployment.amd64.json file
-
->>>>>>> master
+1. make a copy of ./setup/deployment.amd64.json and paste it to ./storage, this is your working file and it is not checked to GitHub
 1. on portal.azure.com create a container register (or use your own)
 1. edit the `registryCredentials` section and add your container registry
 1. edit the `LvaEdgeGatewayModule` module section and add your image name and your AMS account name int the `env:amsAccountName:value`
