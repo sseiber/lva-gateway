@@ -1,6 +1,22 @@
-# Create a Linux VM with IoT Edge from the marketplace
+---
+# A suggestion about deploying the VM - I think the instructions could be streamlined if you took the approach that's shown in the IoT Edge docs: https://docs.microsoft.com/en-us/azure/iot-edge/how-to-install-iot-edge-ubuntuvm#deploy-using-deploy-to-azure-button
+# You can embed the deploy button in your article using the following markup: 
+#   [![Deploy to Azure Button for iotedge-vm-deploy](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fazure%2Fiotedge-vm-deploy%2Fmaster%2FedgeDeploy.json)
+# I wouldn't bother mentioning nano - in tutorials we try to show one way of doing things - thi helps users focus on the task they're completing. So either use nano or vi, but just use one and stick to it.
+# Prerequisites are needed as the first level 2 heading:
+# - Azure subscription
+# - Completed previous tutorial and know device connection string, scope id, app id, symmetric key, etc.
+# Add a Next Steps section to point to the next tutorial in the sequence.
+# The preferred to add command line instructions is fenced code blocks:
+# ```bash
+# apt-get update
+# apt-get install libiothsm iotedge
+# iotedge version
+# ```
+# I was prompted for credentials when I tried `docker pull meshams.azurecr.io/rtspvideo` - is this expected?
+---
 
-## Overview
+# Create a Linux VM with IoT Edge from the marketplace
 
 Azure IoT Edge is a fully managed service that delivers cloud intelligence locally by deploying and running
 
