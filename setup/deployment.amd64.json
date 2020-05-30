@@ -66,7 +66,7 @@
                     },
                     "lvaEdge": {
                         "settings": {
-                            "image": "<WILL_EVENTUALLY_BE_FROM_AZURE_MARKETPLACE>",
+                            "image": "mcr.microsoft.com/media/live-video-analytics:1",
                             "createOptions": "{\"HostConfig\":{\"Binds\":[\"/data/media:/var/media/\"]}}"
                         },
                         "type": "docker",
