@@ -1,4 +1,4 @@
-# BUild the Lva Gateway Modules
+# Build the Lva Gateway Modules
 
 ## Clone the repo
 
