@@ -1,4 +1,11 @@
-
+---
+# Are any of the steps in this article specific to using a cloud VM or an on premises device - if not I wouldn't mention it until "Next steps" at the end when you can send people one way or the other.
+# Provide a link to the Azure IoT Central build site.
+# I'd recommend a pricing plan to use - if they're only creating two devices you can use S2 as you can add three devices fro free.
+# Rather than saying "note editor", I'd say something like - "make a note of this value, you need it later in this tutorial" or "make a note of this value, you need it to complete the next tutorial"
+# Make sure you use bold whenever you're referring to something in the UI, such as "Finally, click **View Keys** to copy the **Group Master Key**.
+# Many of the H2s are too long - the guidance is for them to avoid wrapping over more than two lines when they render on the right-hand side on the docs platform. For example, see https://docs.microsoft.com/en-us/azure/iot-central/core/concepts-get-connected
+---
 # Create a Live Video Analytics application in Azure IoT Central
 
 The tutorial shows solution builders how to create an Azure IoT Central Public and Safety Analytics application using IoT Edge and Azure Media Services. The sample application is for a retail store. It's a solution to the common business need to monitor security cameras using object detection to identify interesting events and locate them easier and faster.
