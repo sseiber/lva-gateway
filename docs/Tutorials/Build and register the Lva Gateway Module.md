@@ -6,23 +6,6 @@
 
 Open the repo folder with VSCode
 
-## Prepare the development environment
-
-1. The first time after cloning the repo run the command **npm install** from the VSCode Terminal (this will execute setup scripts and populate the ./configs directory)
-
-    1. Locate and delete the `nodes_module` folder if you merge the master branch again
-
-1. edit ./configs/imageConfig.json
-
-```json
-{
-    "arch": "amd64",
-    "imageName": "[Server].azurecr.io/lva-edge-gateway"
-}
-```
-
-1. for convenience create a ./storage directory - this will be ignored from git checkins
-
 ## Edit the state.json file
 
 1. Make a copy of ./setup/state.json and paste it to ./storage, this is your working file and it is not checked to GitHub
@@ -39,9 +22,25 @@ Open the repo folder with VSCode
 }
 ```
 
+## Copy the state.json file to the Edge device
+
+On the Edge gateway, Create 2 directories from root (you need elevated privileges) and give Read nd and Write permissions to these directories
+
+```bash
+mkdir data/storage
+mkdir data/media
+chmod -R 777 /data
+```
+
+Copy you local state.json file into the newly created storage directory
+PuTTY has the utility pscp to move files
+Example:
+
+`pscp.exe state.json iot@40.121.209.246:/data/storage/state.json`
+
 ## Edit the deployment.amd64.json file
 
-1. make a copy of ./setup/deployment.amd64.json and paste it to ./storage, this is your working file and it is not checked to GitHub
+1. Make a copy of ./setup/deployment.amd64.json and paste it to ./storage, this is your working file and it is not checked to GitHub
 1. on portal.azure.com create a container register (or use your own)
 1. edit the `registryCredentials` section and add your container registry
 1. edit the `LvaEdgeGatewayModule` module section and add your image name and your AMS account name int the `env:amsAccountName:value`
@@ -51,6 +50,22 @@ Open the repo folder with VSCode
 1. use the `API access` tab and copy the information there to the deployment file in the `lvaEdge:properties.desired` section
 
 ## Build the code
+
+> [!NOTE]
+> Follow this step only if you are need to modify the code
+
+1. The first time after cloning the repo run the command **npm install** from the VSCode Terminal (this will execute setup scripts and populate the ./configs directory)
+
+    1. Locate and delete the `nodes_module` folder if you merge the master branch again
+
+1. edit ./configs/imageConfig.json
+
+```json
+{
+    "arch": "amd64",
+    "imageName": "[Server].azurecr.io/lva-edge-gateway"
+}
+```
 
 run the command **npm version patch** but before it is a good practice to reload all the VSCode Services. Use the Command Pallet and call `Developer: Reload Window`
 

@@ -18,7 +18,7 @@ The sample application that you build includes two simulated devices and one IoT
 
 ## Create the IoT Central Application from the Public Safety Template
 
-Navigate to the Azure IoT Central build site then sign in with a Microsoft personal, work, or school account.
+Navigate to the [Azure IoT Central build site](https://apps.azureiotcentral.com/build) then sign in with a Microsoft personal, work, or school account.
 Select Build from the left navigation pane then click on Retail.  From the featured templates select Public Safety and click on the Create App button.
 
 > [!NOTE]
@@ -36,7 +36,7 @@ Select an application Name, URL and pricing plan. Enter your billing information
 
 :::image type="content" source="../media/Create a Live Video Analytics application in Azure IoT Central/new_application.png" alt-text="New application":::
 
-You will need to collect some information from the application to configure your Edge device.
+Once provisioning is complete, you will need to collect some information from the application to configure your Edge device.
 
 ### Get the Application ID
 
@@ -53,25 +53,32 @@ Then navigate to API Tokens and generate a new Token for the Operator Role.
 > [!TIP]
 > Once generated, copy the token as it will not show again and you need it to complete the next tutorial.
 
-### Get the Group Master Key
+### Get the Primary Key
 
-Finally, click View Keys to copy the Group Master Key.
+Finally, click View Keys to copy the Primary Key.
 
 ## Configure Azure Media Services
 
 You need Azure Media Services to store the detections made by the Live
 Video Analytics Edge gateway.
 
-Navigate to Azure Portal and create a new Media Services resource.
+Navigate to the [Azure Portal](https://portal.azure.com) and create a new Media Services resource.
 
 Provide account name, subscription, resource group, location and storage
-account.
+account. You can choose the same resource group as your IoT Central app if you wish.
 
 Press Create and you will be presented with the properties for your
 newly created AMS.
 
 You can always navigate back to the Properties tab but be aware that
-you will need to prepare the `Deployment Manifest` with these values.
+you will need these values to prepare the `Deployment Manifest` discussed later.
+
+Next, you will need to configure an Active Directory service principal for this resource. Navigate to the `API Access` blade. Make sure `Service Principal Authentication` is selected. Create a new AAD app with the same name as the Azure Media Services resource, and create a secret.
+
+:::image type="content" source="../media/Create a Live Video Analytics application in Azure IoT Central/AMS_AAD_app.png" alt-text="Configure AAD app for AMS":::
+
+> [!TIP]
+> Once generated, copy the secret as it will not show again.
 
 ## Clone the LvaGateway Repository and personalize it to your resources
 
@@ -90,10 +97,10 @@ maintaining the source.
 In this project you find all the Deployment Manifests and the Device
 Capability Model (DCM) for the Lva Gateway and the Camera Objects.
 
-Once you pull all the files from the repo, open VSCode (or another text editor) on the
+Once you have cloned the repository, open VSCode (or another text editor) on the
 target directory, to edit the deployment JSON files.
 
-Locate the Storage folder, this folder is ignored by GitHub and this is
+Locate the Storage directory, this directory is ignored by GitHub and this is
 where you should keep confidential information such as passwords and
 Primary Keys.
 
@@ -102,8 +109,8 @@ Primary Keys.
 This is your `deployment manifest` and it is required as part of
 the device template when setting up the IoT Central application.
 
-To start, open the file `deployment.amd64.json` in the **Storage folder**,
-(there is a copy in the setup folder as well).
+To start, open the file `deployment.amd64.json` in the **Storage directory**,
+(there is a copy in the setup directory as well).
 
 \[TODO: Validate this\]
 By the time this template is ready, the modules will be hosted in
@@ -140,7 +147,7 @@ Modify the registry credentials only if you are building custom modules
 }
 ```
 
-Then for each of the modules listed under `systemModules` you will need to
+Then for each of the modules listed under `modules` you will need to
 enter the image element with the desired version. Use the following default image values if you are not
 providing your own registry.
 
@@ -150,19 +157,29 @@ providing your own registry.
 |lvaYolov3|              meshams.azurecr.io/yolov3-onnx:latest|
 |lvaEdge|                meshams.azurecr.io/lvaedge:rc3|
 
-There are sections for the module's desired properties therefore, you will
-need to update the JSON file with your AMS and IoT Central instance data
+You will need to set the name of your AMS resource in the `LvaEdgeGatewayModule` node under the `modules` node. It's a setting on the `env` node.
+
+```json
+"env": {
+     "lvaEdgeModuleId": {
+          "value": "lvaEdge"
+     },
+     "amsAccountName": {
+          "value": "<YOUR_AZURE_MEDIA_ACCOUNT_NAME>"
+     }
+}
+```
+
+There are sections for the module's desired properties outside of the `modules` node. You will need to update the JSON file with your AMS and IoT Central instance data
 as follows:
 
-You cannot enter the `GatewayInstanceId` until you add a device, but
-because you need the Deployment Manifest file, you will have to return
-to it later. You can opt to leave all the named values empty as
+You can opt to leave all the named values empty as
 defaulted and then update the desired properties as described later in
 the Configure the Desired Properties section.
 
 \[TODO: Validate\]
 
-Locate the `lvaEdge` module.
+Locate the `lvaEdge` node, this will be outside of the `modules` node.
 
 The template does not expose these desired properties in IoT Central,
 therefore you will need to add the AMS values to the file before you deploy.
@@ -186,11 +203,19 @@ therefore you will need to add the AMS values to the file before you deploy.
 }
 ```
 
-\[TODO: document where to get these values from the Azure Portal AMS section\]
+* The `azureMediaServicesArmId` can be retrieved on the properties tab of your AMS resource, it will be called `RESOURCE ID`.
+
+:::image type="content" source="../media/Create a Live Video Analytics application in Azure IoT Central/AMS_Properties.png" alt-text="Azure Media Services Properties":::
+
+* The aadTenantId can be found under Azure Active Directory on the Azure portal.
+
+:::image type="content" source="../media/Create a Live Video Analytics application in Azure IoT Central/AAD_tenantId.png" alt-text="AAD tenant Id":::
+
+* For the aadServicePrincipal appId and secret, these are the app id and secret for the Azure Media Services resource we setup earlier. The app id can be found by navigating to Azure Active Directory on the Azure portal and searching for the app under `App Registrations`.
+
+:::image type="content" source="../media/Create a Live Video Analytics application in Azure IoT Central/AAD_applicationId.png" alt-text="AAD app id":::
 
 ## Create and associate the Edge Gateway with the downstream devices in IoT Central
-
-### Create the device templates for the 2 different camera types
 
 ### Create a Device Template for the Lva Edge Gateway
 
@@ -201,6 +226,8 @@ From the Select template type choose **Azure IoT Edge**
 
 Click Next: Customize.
 
+Enter `Lva Edge Gateway` for the name.
+
 Check the box for Gateway Device with downstream devices
 
 Do not browse for the deployment manifest yet! If you do, the deployment wizard
@@ -210,22 +237,20 @@ enter the manifest in a different step.
 
 :::image type="content" source="../media/Create a Live Video Analytics application in Azure IoT Central/Upload_Deployment_Manifest.png" alt-text="Do not upload deployment manifest":::
 
-Click Next: Review
+Click Next: Review button.
 
-Click Skip + Review and then Create button.
-
-**Change the Name** to Lva Edge Gateway and press enter
+Click Create button.
 
 #### Add Interface
 
 You will be prompted to add a Capability Model, click the box to import
-and using the Windows Explorer popup, navigate to the setup folder and
+and using the file dialog, navigate to the setup directory and
 select the `LvaEdgeGatewayDCM`.json file.
 
 #### Replace manifest
 
-Locate the "Replace manifest" button and on the Windows file-browser
-find the develop.amd64.json from the **Storage** folder that you
+Locate the "Replace manifest" button and on the file dialog
+find the deployment.amd64.json from the **Storage** directory that you
 previously edited.
 
 :::image type="content" source="../media/Create a Live Video Analytics application in Azure IoT Central/replace_manifest.png" alt-text="Replace Manifest":::
@@ -249,21 +274,20 @@ see that our cameras have dashboards and settings, but currently IoT
 Edge Devices cannot be exported, therefore we need to add the views
 manually.
 
-Let's add The Views for the `Lva Edge Gateway`.
+Let's add the Views for the `Lva Edge Gateway`.
 
 Navigate to Views and click the **Visualizing the device** box.
 
-Enter the required information for the Form Name.
+Enter the required information for the name, let's call it `Lva Edge Gateway`.
 
-Add the Device Information properties to the view.
+Add the Device Information properties to the view. Make sure to click the "Add Tile" button and rename the tile to "Device Information". After the tile is added, click the save button.
 
 After adding the interface, replacing the manifest, adding
 **Relationships** and the **Views** click Publish.
 
 ## Instantiate a Lva Edge Gateway and grab the secrets for IoT Edge Provision
 
-Navigate to the Devices pane and select the `Lva Edge Gateway` device
-template. We are going to create an instance of this type.
+Navigate to the Devices pane and select `Lva Edge Gateway`. We are going to create an instance of this type.
 
 Select + New
 
@@ -282,18 +306,18 @@ explained further in the Update IoT agent Configuration).
 
 You need the credentials that allow the device to connect to your IoT Central application. The get the device credentials:
 
-1. On the **Device** page, select the `Lva Edge Gateway` you created.
+1. On the **Device** page, select `Lva Edge Gateway` and select the device you created.
 
-1. Select **Connect**.
+2. Select **Connect**.
 
-1. On the **Device connection** page, make a note of the **ID Scope**, the **Device ID**, and the **Primary Key**. You use these values later.
+3. On the **Device connection** page, ensure that SAS is selected for `Connect method`.
 
-1. Under the Authentication methods section select Devices  and ensure SAS tokens on this app are enabled
+4. Make a note of the **ID Scope**, the **Device ID**, and the **Primary Key**. You use these values later.
 
-1. Select **Close**.
+5. Select **Close**.
 
 > [!NOTE]
-> The LvaGatewayModule creates new direct connected devices using IoT Central API therefore select SAS for `Devices` instead of `Azure Edge Devices`
+> The LvaGatewayModule creates new direct connected devices using IoT Central API. In the `Administration` tab under `Device connection`, select SAS for `Devices` instead of `Azure Edge Devices`
 
 :::image type="content" source="../media/Create a Live Video Analytics application in Azure IoT Central/device_connection.png" alt-text="Device connection":::
 
@@ -303,29 +327,36 @@ From the cloned GitHub, locate the deployment.amd64.json file from the
 setup subdirectory with VSCode or your favorite JSON editor.
 
 The project keeps this as a placeholder and recommends you create a new
-folder Storage and make a copy. As a good practice is to ignore all the
-Storage folder in GitHub, so you can keep your secrets without checking
+directory Storage and make a copy. As a good practice is to ignore all the
+Storage directory in GitHub, so you can keep your secrets without checking
 those.
 
-## next steps
+[TODO: What else should happen here?]
+
 ## Deploy the IoT Edge runtime and the Lva Gateway Modules
 
 Follow this [link](Create%20a%20Linux%20VM%20with%20IoT%20Edge.md) if you are planning to test the Public Safety template using a cloud VM and a simulated stream
 
 Follow this [link](Deploy_IoT_Edge_Lva_Gateway_modules_NUC.md) if you have a real computer such as an Intel NUC and a `ONVIF` Camera to run the edge analytics modules
 
-## Prepare the data folder on the Edge gateway
+## Prepare the data directory on the Edge gateway
 
-In this reference implementation, we are keeping some configuration under the folder
+In this reference implementation, we are keeping some configuration under the directory
 /data/storage
 
 Using the `ssh` connection (PuTTY):
 
-* create a root folder name data `mkdir/data`
-* navigate to it and create 2 child folders `/data/media` and `/data/storage`
-* Change the mode to read/write to the entire folder `chmod -R 777 /data`
+[TODO: The data/media and data/storage directories already exist in the Linux VM, this is not necessary]
+
+[TODO: Creating the state.json file? Steps mention copying it but there's no instructions on configuring it.]
+
+* create a root directory named data `mkdir /data`
+* navigate to it and create 2 child directories `/data/media` and `/data/storage`
+* Change the mode to read/write to the entire directory `chmod -R 777 /data`
 * Copy the state.json file into storage
-* Use pscp from a command terminal `pscp.exe state.json [username]@[IP Address]:/data/storage/state.json`
+  * If you are on a Windows machine, use pscp from a command terminal on your machine `pscp.exe state.json [username]@[IP Address]:/data/storage/state.json`
+  * If you are on a Mac/Linux machine, use scp from a command terminal on your machine `scp state.json [username]@[IP Address]:/data/storage/state.json`
+
 
 ## Configure the desire properties and instantiate the Cameras in IoT Central
 
@@ -337,6 +368,8 @@ To create a camera, follow these steps
 
 ### Ensure the Lva Edge Gateway has the correct settings
 
+[TODO: I'm not sure where to find this, a screenshot would help. I'm not sure if I'm supposed to go to the device templates or go to the device instance I've created. I'm not sure what "parameters" or "Gateway Instance Id" the doc is referring to.]
+
 Go to the Lva Edge Gateway and select the Manage tab.
 
 You pointed these parameters to this application, but ensure they match.
@@ -344,6 +377,8 @@ You pointed these parameters to this application, but ensure they match.
 The Gateway Instance Id, is the Device ID for your Lva Edge Gateway
 
 ### Run the Command Add Camera
+
+Go to Devices and select the Lva Edge Gateway, and pick the device instance you created. Select the Command tab, and fill in the following information on the `Add Camera Request` command.
 
 | Field          | Description             | Sample Value            |
 |---------|---------|---------|
@@ -356,6 +391,8 @@ The Gateway Instance Id, is the Device ID for your Lva Edge Gateway
 | Detection Type | Dropdown                | Object Detection        |
 
 ### Ensure the camera shows up as a downstream device for the Lva Edge Gateway
+
+[TODO: Document]
 
 ### Set the object detection settings for the camera
 
