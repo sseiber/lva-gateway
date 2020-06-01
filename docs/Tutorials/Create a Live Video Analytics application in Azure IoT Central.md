@@ -231,13 +231,16 @@ therefore you will need to add the AMS values to the file before you deploy.
 }
 ```
 
-## Copy the state.json file to the Edge device
+## Copy the state.json file to the Edge device and prepate the data directory
 
-On the Edge gateway, Create 2 directories from root (you need elevated privileges) and give Read nd and Write permissions to these directories
+In this reference implementation, we are keeping some configuration under the directory
+/data/storage
+
+On the Edge gateway, Create 2 directories from root (you need elevated privileges) and give Read and and Write permissions to these directories
 
 ```bash
-mkdir data/storage
-mkdir data/media
+mkdir -p data/storage
+mkdir -p data/media
 chmod -R 777 /data
 ```
 
@@ -370,25 +373,6 @@ those.
 Follow this [link](Create%20a%20Linux%20VM%20with%20IoT%20Edge.md) if you are planning to test the Public Safety template using a cloud VM and a simulated stream
 
 Follow this [link](Deploy_IoT_Edge_Lva_Gateway_modules_NUC.md) if you have a real computer such as an Intel NUC and a `ONVIF` Camera to run the edge analytics modules
-
-## Prepare the data directory on the Edge gateway
-
-In this reference implementation, we are keeping some configuration under the directory
-/data/storage
-
-Using the `ssh` connection (PuTTY):
-
-[TODO: The data/media and data/storage directories already exist in the Linux VM, this is not necessary]
-
-[TODO: Creating the state.json file? Steps mention copying it but there's no instructions on configuring it.]
-
-* create a root directory named data `mkdir /data`
-* navigate to it and create 2 child directories `/data/media` and `/data/storage`
-* Change the mode to read/write to the entire directory `chmod -R 777 /data`
-* Copy the state.json file into storage
-  * If you are on a Windows machine, use pscp from a command terminal on your machine `pscp.exe state.json [username]@[IP Address]:/data/storage/state.json`
-  * If you are on a Mac/Linux machine, use scp from a command terminal on your machine `scp state.json [username]@[IP Address]:/data/storage/state.json`
-
 
 ## Configure the desire properties and instantiate the Cameras in IoT Central
 
