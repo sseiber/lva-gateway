@@ -87,7 +87,9 @@ const LvaEdgeOperationsInterface = {
         GraphInstanceDeleted: 'evGraphInstanceDeleted',
         GraphInstanceStarted: 'evGraphInstanceStarted',
         GraphInstanceStopped: 'evGraphInstanceStopped',
-        MediaRecordingStarted: 'evMediaRecordingStarted',
+        RecordingStarted: 'evRecordingStarted',
+        RecordingStopped: 'evRecordingStopped',
+        RecordingAvailable: 'evRecordingAvailable',
         StartLvaGraphCommandReceived: 'evStartLvaGraphCommandReceived',
         StopLvaGraphCommandReceived: 'evStopLvaGraphCommandReceived'
     },
@@ -109,6 +111,17 @@ interface LvaEdgeDiagnosticsSettingsInterface {
 }
 
 const LvaEdgeDiagnosticsInterface = {
+    Event: {
+        RuntimeError: 'evRuntimeError',
+        AuthenticationError: 'evAuthenticationError',
+        AuthorizationError: 'evAuthorizationError',
+        DataDropped: 'evDataDropped',
+        MediaFormatError: 'evMediaFormatError',
+        MediaSessionEstablished: 'evMediaSessionEstablished',
+        NetworkError: 'evNetworkError',
+        ProtocolError: 'evProtocolError',
+        StorageError: 'evStorageError'
+    },
     Setting: {
         DebugTelemetry: LvaEdgeDiagnosticsSettings.DebugTelemetry
     }
@@ -132,6 +145,7 @@ export abstract class AmsCameraDevice {
     protected lvaGatewayModule: ModuleService;
     protected amsGraph: AmsGraph;
     protected cameraInfo: ICameraDeviceProvisionInfo;
+    protected assetName: string;
     protected deviceClient: IoTDeviceClient;
     protected deviceTwin: Twin;
 
@@ -211,6 +225,8 @@ export abstract class AmsCameraDevice {
         try {
             this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Deactiving graph instance: ${this.amsGraph.getInstanceName()}`);
 
+            await this.amsGraph.deleteLvaGraph();
+
             const clientInterface = this.deviceClient;
             this.deviceClient = null;
             await clientInterface.close();
@@ -218,21 +234,75 @@ export abstract class AmsCameraDevice {
             await this.sendMeasurement({
                 [IoTCameraInterface.State.CameraState]: CameraState.Inactive
             });
-
-            await this.amsGraph.deleteLvaGraph();
         }
         catch (ex) {
             this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `Error while deleting camera: ${this.cameraInfo.cameraId}`);
         }
     }
 
-    public async sendLvaEvent(lvaEvent: string): Promise<void> {
-        switch (lvaEvent) {
-            case 'Microsoft.Media.Graph.Diagnostics.MediaSessionEstablished':
-                return this.sendMeasurement({
-                    [LvaEdgeOperationsInterface.Event.MediaRecordingStarted]: this.cameraInfo.cameraId
-                });
+    public async sendLvaEvent(lvaEvent: string, messageJson?: any): Promise<void> {
+        let eventField;
+        let eventValue = this.cameraInfo.cameraId;
 
+        switch (lvaEvent) {
+            case 'Microsoft.Media.Graph.Operational.RecordingStarted':
+                eventField = LvaEdgeOperationsInterface.Event.RecordingStarted;
+                eventValue = this.assetName;
+                break;
+
+            case 'Microsoft.Media.Graph.Operational.RecordingStopped':
+                eventField = LvaEdgeOperationsInterface.Event.RecordingStopped;
+                eventValue = messageJson?.outputLocation || this.cameraInfo.cameraId;
+                break;
+
+            case 'Microsoft.Media.Graph.Operational.RecordingAvailable':
+                eventField = LvaEdgeOperationsInterface.Event.RecordingAvailable;
+                eventValue = messageJson?.outputLocation || this.cameraInfo.cameraId;
+                break;
+
+            case 'Microsoft.Media.Edge.Diagnostics.RuntimeError':
+                eventField = LvaEdgeDiagnosticsInterface.Event.RuntimeError;
+                eventValue = messageJson?.code || this.cameraInfo.cameraId;
+                break;
+
+            case 'Microsoft.Media.Graph.Diagnostics.AuthenticationError':
+                eventField = LvaEdgeDiagnosticsInterface.Event.AuthenticationError;
+                eventValue = messageJson?.errorCode || this.cameraInfo.cameraId;
+                break;
+
+            case 'Microsoft.Media.Graph.Diagnostics.AuthorizationError':
+                eventField = LvaEdgeDiagnosticsInterface.Event.AuthorizationError;
+                eventValue = messageJson?.errorCode || this.cameraInfo.cameraId;
+                break;
+
+            case 'Microsoft.Media.Graph.Diagnostics.DataDropped':
+                eventField = LvaEdgeDiagnosticsInterface.Event.DataDropped;
+                eventValue = messageJson?.dataType || this.cameraInfo.cameraId;
+                break;
+
+            case 'Microsoft.Media.Graph.Diagnostics.MediaFormatError':
+                eventField = LvaEdgeDiagnosticsInterface.Event.MediaFormatError;
+                eventValue = messageJson?.code || this.cameraInfo.cameraId;
+                break;
+
+            case 'Microsoft.Media.Graph.Diagnostics.MediaSessionEstablished':
+                eventField = LvaEdgeDiagnosticsInterface.Event.MediaSessionEstablished;
+                eventValue = this.cameraInfo.cameraId;
+                break;
+
+            case 'Microsoft.Media.Graph.Diagnostics.NetworkError':
+                eventField = LvaEdgeDiagnosticsInterface.Event.NetworkError;
+                eventValue = messageJson?.errorCode || this.cameraInfo.cameraId;
+                break;
+
+            case 'Microsoft.Media.Graph.Diagnostics.ProtocolError':
+                eventField = LvaEdgeDiagnosticsInterface.Event.ProtocolError;
+                eventValue = `${messageJson?.protocol}: ${messageJson?.errorCode}` || this.cameraInfo.cameraId;
+                break;
+
+            case 'Microsoft.Media.Graph.Diagnostics.StorageError':
+                eventField = LvaEdgeDiagnosticsInterface.Event.StorageError;
+                eventValue = messageJson?.storageAccountName || this.cameraInfo.cameraId;
                 break;
 
             default:
@@ -240,7 +310,14 @@ export abstract class AmsCameraDevice {
                 break;
         }
 
-        return;
+        if (lvaEvent) {
+            await this.sendMeasurement({
+                [eventField]: eventValue
+            });
+        }
+        else {
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'warning'], `Received Unknown Lva event telemetry: ${lvaEvent}`);
+        }
     }
 
     protected abstract async onHandleDeviceProperties(desiredChangedSettings: any);
@@ -358,11 +435,9 @@ export abstract class AmsCameraDevice {
             this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Graph Topology: ${JSON.stringify(this.amsGraph.getTopology(), null, 4)}`);
         }
 
-        if (startLvaGraphResult) {
-            await this.sendMeasurement({
-                [IoTCameraInterface.State.CameraState]: CameraState.Active
-            });
-        }
+        await this.sendMeasurement({
+            [IoTCameraInterface.State.CameraState]: startLvaGraphResult === true ? CameraState.Active : CameraState.Inactive
+        });
 
         return startLvaGraphResult;
     }

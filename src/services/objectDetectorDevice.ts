@@ -67,9 +67,11 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
     }
 
     public setGraphParameters(): any {
+        this.assetName = `${this.lvaGatewayModule.getScopeId()}-${this.cameraInfo.cameraId}-${moment.utc().format('YYYYMMDD-HHmmss')}`;
+
         return {
             motionSensitivity: this.objectDetectorSettings[ObjectDetectorSettings.MotionDetectorSensitivity],
-            assetName: `${this.lvaGatewayModule.getScopeId()}-${this.cameraInfo.cameraId}-${moment.utc().format('YYYYMMDD-HHmmss')}`
+            assetName: this.assetName
         };
     }
 

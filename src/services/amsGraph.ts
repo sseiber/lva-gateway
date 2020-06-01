@@ -124,13 +124,15 @@ export class AmsGraph {
         let result = false;
 
         try {
-            await this.setTopology();
+            result = await this.setTopology();
 
-            await this.setInstance(graphParameters);
+            if (result === true) {
+                result = await this.setInstance(graphParameters);
+            }
 
-            await this.activateInstance();
-
-            result = true;
+            if (result === true) {
+                result = await this.activateInstance();
+            }
         }
         catch (ex) {
             this.lvaGatewayModule.logger(['AmsGraph', 'error'], `startLvaGraph error: ${ex.message}`);
@@ -181,8 +183,9 @@ export class AmsGraph {
         return `${videoPlaybackHost}/ampplayer?ac=${this.amsAccountName}&an=${this.amsAssetName}&st=${startTime}`;
     }
 
-    private async setTopology() {
-        return this.lvaGatewayModule.invokeLvaModuleMethod(`GraphTopologySet`, this.topology);
+    private async setTopology(): Promise<boolean> {
+        const response = await this.lvaGatewayModule.invokeLvaModuleMethod(`GraphTopologySet`, this.topology);
+        return (response.status || 500) > 299 ? false : true;
     }
 
     // @ts-ignore
@@ -190,7 +193,7 @@ export class AmsGraph {
         return this.lvaGatewayModule.invokeLvaModuleMethod(`GraphTopologyDelete`, this.topologyName);
     }
 
-    private async setInstance(graphParameters: any) {
+    private async setInstance(graphParameters: any): Promise<boolean> {
         this.amsAssetName = graphParameters.assetName;
         this.setParam('assetName', this.amsAssetName);
 
@@ -206,7 +209,8 @@ export class AmsGraph {
             this.setParam(param, graphParameters[param]);
         }
 
-        return this.lvaGatewayModule.invokeLvaModuleMethod(`GraphInstanceSet`, this.instance);
+        const response = await this.lvaGatewayModule.invokeLvaModuleMethod(`GraphInstanceSet`, this.instance);
+        return (response.status || 500) > 299 ? false : true;
     }
 
     // @ts-ignore
@@ -214,8 +218,9 @@ export class AmsGraph {
         return this.lvaGatewayModule.invokeLvaModuleMethod(`GraphInstanceDelete`, this.instanceName);
     }
 
-    private async activateInstance() {
-        return this.lvaGatewayModule.invokeLvaModuleMethod(`GraphInstanceActivate`, this.instanceName);
+    private async activateInstance(): Promise<boolean> {
+        const response = await this.lvaGatewayModule.invokeLvaModuleMethod(`GraphInstanceActivate`, this.instanceName);
+        return (response.status || 500) > 299 ? false : true;
     }
 
     private async deactivateInstance() {

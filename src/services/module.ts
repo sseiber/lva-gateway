@@ -676,8 +676,11 @@ export class ModuleService {
                         this.server.log(['ModuleService', 'error'], `Received Lva Edge telemetry for cameraId: "${cameraId}" but that device does not exist in Lva Gateway`);
                     }
                     else {
-                        if (inputName === LvaGatewayEdgeInputs.LvaDiagnostics || inputName === LvaGatewayEdgeInputs.LvaOperational) {
-                            await amsInferenceDevice.sendLvaEvent(AmsGraph.getLvaMessageProperty(message, 'eventType'));
+                        if (inputName === LvaGatewayEdgeInputs.LvaDiagnostics && this.moduleSettings[LvaGatewaySettings.DebugTelemetry] === true) {
+                            await amsInferenceDevice.sendLvaEvent(AmsGraph.getLvaMessageProperty(message, 'eventType'), messageJson);
+                        }
+                        else if (inputName === LvaGatewayEdgeInputs.LvaOperational) {
+                            await amsInferenceDevice.sendLvaEvent(AmsGraph.getLvaMessageProperty(message, 'eventType'), messageJson);
                         }
                         else {
                             await amsInferenceDevice.processLvaInferences(messageJson.inferences);
