@@ -40,7 +40,7 @@ You will need to collect some information from the application to configure your
 
 ### Get the Application ID
 
-From the Administration pane, select "Your application" and copy into a note editor the `Application URL` and the `Application ID`
+From the Administration pane, select "Your application" and take a note of the `Application URL` and the `Application ID`
 
 :::image type="content" source="../media/Create a Live Video Analytics application in Azure IoT Central/Administration.png" alt-text="Administration":::
 
@@ -51,7 +51,7 @@ Then navigate to API Tokens and generate a new Token for the Operator Role.
 :::image type="content" source="../media/Create a Live Video Analytics application in Azure IoT Central/token.png" alt-text="Generate Token":::
 
 > [!TIP]
-> Once generated, copy the token to a note editor as it will not show again.
+> Once generated, copy the token as it will not show again and you need it to complete the next tutorial.
 
 ### Get the Group Master Key
 
@@ -307,6 +307,7 @@ folder Storage and make a copy. As a good practice is to ignore all the
 Storage folder in GitHub, so you can keep your secrets without checking
 those.
 
+## next steps
 ## Deploy the IoT Edge runtime and the Lva Gateway Modules
 
 Follow this [link](Create%20a%20Linux%20VM%20with%20IoT%20Edge.md) if you are planning to test the Public Safety template using a cloud VM and a simulated stream
