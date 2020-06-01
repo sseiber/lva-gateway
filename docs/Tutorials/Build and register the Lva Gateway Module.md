@@ -52,7 +52,7 @@ Example:
 ## Build the code
 
 > [!NOTE]
-> Follow this step only if you are need to modify the code
+> Follow this step only if you need to modify the code
 
 1. The first time after cloning the repo run the command **npm install** from the VSCode Terminal (this will execute setup scripts and populate the ./configs directory)
 
