@@ -293,8 +293,19 @@ export class ModuleService {
         }
 
         if (response.payload?.error) {
-            throw new Error(`(from invokeMethod) ${response.payload.error?.message}`);
+            // throw new Error(`(from invokeMethod) ${response.payload.error?.message}`);
+            this.server.log(['ModuleService', 'error'], `invokeLvaModuleMethod error: ${response.payload.error?.message}`);
+
+            return {
+                status: response.status,
+                code: response.payload.error.code || 'UnknownError'
+            };
         }
+
+        return {
+            status: response.status,
+            code: 'Success'
+        };
     }
 
     public async createCamera(cameraInfo: ICameraDeviceProvisionInfo): Promise<IProvisionResult> {

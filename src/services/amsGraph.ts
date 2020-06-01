@@ -180,6 +180,10 @@ export class AmsGraph {
     public createInferenceVideoLink(videoPlaybackHost: string): string {
         const startTime = moment.utc().subtract(5, 'seconds').format('YYYY-MM-DDTHH:mm:ss[Z]');
 
+        if (videoPlaybackHost.slice(-1) === '/') {
+            videoPlaybackHost = videoPlaybackHost.slice(0, -1);
+        }
+
         return `${videoPlaybackHost}/ampplayer?ac=${this.amsAccountName}&an=${this.amsAssetName}&st=${startTime}`;
     }
 

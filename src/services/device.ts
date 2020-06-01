@@ -145,7 +145,6 @@ export abstract class AmsCameraDevice {
     protected lvaGatewayModule: ModuleService;
     protected amsGraph: AmsGraph;
     protected cameraInfo: ICameraDeviceProvisionInfo;
-    protected assetName: string;
     protected deviceClient: IoTDeviceClient;
     protected deviceTwin: Twin;
 
@@ -247,7 +246,7 @@ export abstract class AmsCameraDevice {
         switch (lvaEvent) {
             case 'Microsoft.Media.Graph.Operational.RecordingStarted':
                 eventField = LvaEdgeOperationsInterface.Event.RecordingStarted;
-                eventValue = this.assetName;
+                eventValue = messageJson?.outputLocation || this.cameraInfo.cameraId;
                 break;
 
             case 'Microsoft.Media.Graph.Operational.RecordingStopped':
