@@ -155,7 +155,7 @@ providing your own registry.
 |-|-|
 |LvaEdgeGatewayModule|   meshams.azurecr.io/lva-edge-gateway:1.0.37-amd64|
 |lvaYolov3|              meshams.azurecr.io/yolov3-onnx:latest|
-|lvaEdge|                meshams.azurecr.io/lvaedge:rc3|
+|lvaEdge|                mcr.microsoft.com/media/live-video-analytics:1.0.0|
 
 You will need to set the name of your AMS resource in the `LvaEdgeGatewayModule` node under the `modules` node. It's a setting on the `env` node.
 
@@ -214,6 +214,38 @@ therefore you will need to add the AMS values to the file before you deploy.
 * For the aadServicePrincipal appId and secret, these are the app id and secret for the Azure Media Services resource we setup earlier. The app id can be found by navigating to Azure Active Directory on the Azure portal and searching for the app under `App Registrations`.
 
 :::image type="content" source="../media/Create a Live Video Analytics application in Azure IoT Central/AAD_applicationId.png" alt-text="AAD app id":::
+
+## Edit the state.json file
+
+1. Make a copy of ./setup/state.json and paste it to ./storage, this is your working file and it is not checked to GitHub
+1. Enter your application instance and secretes
+
+```json
+{
+    "appKeys": {
+        "iotCentralAppHost": "<IOT_CENTRAL_HOST>",
+        "iotCentralAppApiToken": "<IOT_CENTRAL_API_ACCESS_TOKEN>",
+        "iotCentralDeviceProvisioningKey": "<IOT_CENTRAL_DEVICE_PROVISIONING_KEY>",
+        "iotCentralScopeId": "<IOT_CENTRAL_SCOPE_ID>"
+    }
+}
+```
+
+## Copy the state.json file to the Edge device
+
+On the Edge gateway, Create 2 directories from root (you need elevated privileges) and give Read nd and Write permissions to these directories
+
+```bash
+mkdir data/storage
+mkdir data/media
+chmod -R 777 /data
+```
+
+Copy you local state.json file into the newly created storage directory
+PuTTY has the utility [pscp](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) to transfer files securely
+
+Usage
+`pscp [options] source [source...] [user@]host:target`
 
 ## Create and associate the Edge Gateway with the downstream devices in IoT Central
 

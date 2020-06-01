@@ -1,42 +1,10 @@
-# Build the Lva Gateway Modules
+# Build and Register the Lva Gateway Modules
 
 ## Clone the repo
 
 [lva-gateway](https://github.com/sseiber/lva-gateway)
 
 Open the repo folder with VSCode
-
-## Edit the state.json file
-
-1. Make a copy of ./setup/state.json and paste it to ./storage, this is your working file and it is not checked to GitHub
-1. Enter your application instance and secretes
-
-```json
-{
-    "appKeys": {
-        "iotCentralAppHost": "<IOT_CENTRAL_HOST>",
-        "iotCentralAppApiToken": "<IOT_CENTRAL_API_ACCESS_TOKEN>",
-        "iotCentralDeviceProvisioningKey": "<IOT_CENTRAL_DEVICE_PROVISIONING_KEY>",
-        "iotCentralScopeId": "<IOT_CENTRAL_SCOPE_ID>"
-    }
-}
-```
-
-## Copy the state.json file to the Edge device
-
-On the Edge gateway, Create 2 directories from root (you need elevated privileges) and give Read nd and Write permissions to these directories
-
-```bash
-mkdir data/storage
-mkdir data/media
-chmod -R 777 /data
-```
-
-Copy you local state.json file into the newly created storage directory
-PuTTY has the utility pscp to move files
-Example:
-
-`pscp.exe state.json iot@40.121.209.246:/data/storage/state.json`
 
 ## Edit the deployment.amd64.json file
 
