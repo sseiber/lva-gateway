@@ -154,7 +154,7 @@ providing your own registry.
 |Module|                 Image (We need to replace with the public github)|
 |-|-|
 |LvaEdgeGatewayModule|   meshams.azurecr.io/lva-edge-gateway:2.0.33-amd64|
-|lvaYolov3|              meshams.azurecr.io/yolov3-onnx:latest|
+|lvaYolov3|              mcr.microsoft.com/lva-utilities/yolov3-onnx:1.0|
 |lvaEdge|                mcr.microsoft.com/media/live-video-analytics:1|
 
 You will need to set the name of your AMS resource in the `LvaEdgeGatewayModule` node under the `modules` node. It's a setting on the `env` node.

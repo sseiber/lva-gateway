@@ -169,7 +169,7 @@ the deployed IoT Edge Gateway
 
 \[Detail here\] docker and iotedge commands
 
-## Use the RTSP Simulator using Live555 Media Server instead of a real camera
+## Use the RTSP Simulator
 
 As this template and code project is a reference design, we assume that
 connecting a real network camera might not be feasible. The Public
@@ -181,14 +181,8 @@ The following instructions enable using [Live555 Media Server](http://www.live55
 > [!NOTE]
 > References to third-party software in this repo are for informational and convenience purposes only. Microsoft does not endorse nor provide rights for the third-party software. For more information on third-party software please see [Live555 Media Server](http://www.live555.com/mediaServer/).
 
-Run the following command in the terminal:
-
-[TODO: I get a permission denied error when trying to pull this image. Need to make sure this image is either public or indicate to user they need to be logged into the container registry]
-
-`docker pull meshams.azurecr.io/rtspvideo`
-
-Run the rtspvideo in a docker container in the background to stream rstp
-`docker run -d --name live555 --rm -p 554:554 meshams.azurecr.io/rtspvideo`
+Run the **rtspvideo** in a docker container in the background to stream rstp
+`docker run -d --name live555 --rm -p 554:554 mcr.microsoft.com/lva-utilities/rtspsim-live555:1.2`
 
 Enumerate the docker containers
 
