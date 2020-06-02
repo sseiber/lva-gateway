@@ -1,6 +1,11 @@
-# Build and Register the Lva Gateway Modules
+# Build the Lva Gateway Modules
+
+> [!NOTE]
+> Follow these steps only if you need to modify the code, it is recommended to start with the provided images.
 
 ## Clone the repo
+
+TODO: We need a public repo with the source
 
 [lva-gateway](https://github.com/sseiber/lva-gateway)
 
@@ -18,9 +23,6 @@ Open the repo folder with VSCode
 1. use the `API access` tab and copy the information there to the deployment file in the `lvaEdge:properties.desired` section
 
 ## Build the code
-
-> [!NOTE]
-> Follow this step only if you need to modify the code
 
 1. The first time after cloning the repo run the command **npm install** from the VSCode Terminal (this will execute setup scripts and populate the ./configs directory)
 

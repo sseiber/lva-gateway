@@ -16,7 +16,7 @@ The sample application that you build includes two simulated devices and one IoT
 
 &#x2611; Create the Edge Gateway on prem using a computer such as the Intel NUC and connect a Camera to it
 
-## Create the IoT Central Application from the Public Safety Template
+## Create the Application from the Public Safety Template
 
 Navigate to the [Azure IoT Central build site](https://apps.azureiotcentral.com/build) then sign in with a Microsoft personal, work, or school account.
 Select Build from the left navigation pane then click on Retail.  From the featured templates select Public Safety and click on the Create App button.
@@ -80,7 +80,7 @@ Next, you will need to configure an Active Directory service principal for this 
 > [!TIP]
 > Once generated, copy the secret as it will not show again.
 
-## Clone the LvaGateway Repository and personalize it to your resources
+## Clone and personalize the LvaGateway Repository
 
 [Lva-gateway Open source GitHub project](https://hyperlink_to_the_public_facing_repo) is reference implementation for Video Analytics. You will find
 in this project source code for the `LvaEdgeGatewayModule` and `lvaYolov3`.
@@ -231,7 +231,7 @@ therefore you will need to add the AMS values to the file before you deploy.
 }
 ```
 
-## Copy the state.json file to the Edge device and prepate the data directory
+## Prepare the Edge device's data directory
 
 In this reference implementation, we are keeping some configuration under the directory
 /data/storage
@@ -244,13 +244,17 @@ mkdir -p data/media
 chmod -R 777 /data
 ```
 
-Copy you local state.json file into the newly created storage directory
+Copy you local state.json file into the newly created storage directory.
 PuTTY has the utility [pscp](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) to transfer files securely
 
-Usage
-`pscp [options] source [source...] [user@]host:target`
+You need to start a Command shell from your development machine, locate the file and transfer to the unix machine
 
-## Create and associate the Edge Gateway with the downstream devices in IoT Central
+Usage
+`pscp [options] source user@host:target`
+
+## Create the Edge Gateway and downstream devices
+
+This step will guide you on how to add the LvaEdge gateway template to IoT Central and associate it with the downstream devices using relationships.
 
 ### Create a Device Template for the Lva Edge Gateway
 
@@ -263,7 +267,7 @@ Click Next: Customize.
 
 Enter `Lva Edge Gateway` for the name.
 
-Check the box for Gateway Device with downstream devices
+Check the box for **Gateway Device with downstream devices**
 
 Do not browse for the deployment manifest yet! If you do, the deployment wizard
 expects interfaces for each module, but we only need to expose the
@@ -272,9 +276,9 @@ enter the manifest in a different step.
 
 :::image type="content" source="../media/Create a Live Video Analytics application in Azure IoT Central/Upload_Deployment_Manifest.png" alt-text="Do not upload deployment manifest":::
 
-Click Next: Review button.
+**Click Next: Review button.**
 
-Click Create button.
+**Click Create button.**
 
 #### Add Interface
 
@@ -320,18 +324,18 @@ Add the Device Information properties to the view. Make sure to click the "Add T
 After adding the interface, replacing the manifest, adding
 **Relationships** and the **Views** click Publish.
 
-## Instantiate a Lva Edge Gateway and grab the secrets for IoT Edge Provision
+## Instantiate a Lva Edge Gateway
 
 Navigate to the Devices pane and select `Lva Edge Gateway`. We are going to create an instance of this type.
 
-Select + New
+**Select + New**
 
 In the popup modal window assign a name under the Device name section
 (example LEG-LinuxVM). We recommend keeping the generated Device ID as
 it has to be unique, but you can change it if you have a naming
 strategy.
 
-Click the Create button.
+**Click the Create button.**
 
 Next, it will be necessary to copy the Scope ID, Device ID and Symmetric
 Key and update the Edge Provisioning with these values (this will be
@@ -374,9 +378,9 @@ Follow this [link](Create%20a%20Linux%20VM%20with%20IoT%20Edge.md) if you are pl
 
 Follow this [link](Deploy_IoT_Edge_Lva_Gateway_modules_NUC.md) if you have a real computer such as an Intel NUC and a `ONVIF` Camera to run the edge analytics modules
 
-## Configure the desire properties and instantiate the Cameras in IoT Central
+## Instantiate the Cameras in IoT Central
 
-The LvaEdgeGatewayModule instantiates Cameras on the edge. They appear
+The **LvaEdgeGatewayModule** instantiates Cameras on the edge. They appear
 in IoT Central as first-class citizens and support the twin programing
 model.
 
@@ -427,3 +431,8 @@ Save the desire properties
 For the same camera navigate to the Commands Tab
 
 Run the Start LVA processing command
+
+## Next steps
+
+Manage and Monitor the cameras
+Modify the code and build it
