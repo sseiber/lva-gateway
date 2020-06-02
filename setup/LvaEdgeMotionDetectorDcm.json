@@ -304,9 +304,31 @@
                             "SemanticType/Event"
                         ],
                         "displayName": {
-                            "en": "Media Recording Started"
+                            "en": "Recording Started"
                         },
-                        "name": "evMediaRecordingStarted",
+                        "name": "evRecordingStarted",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Recording Stopped"
+                        },
+                        "name": "evRecordingStopped",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Recording Available"
+                        },
+                        "name": "evRecordingAvailable",
                         "schema": "string"
                     },
                     {
@@ -388,6 +410,105 @@
                     "en": "Lva Edge Diagnostics Interface"
                 },
                 "contents": [
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Runtime Error"
+                        },
+                        "name": "evRuntimeError",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Authentication Error"
+                        },
+                        "name": "evAuthenticationError",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Authorization Error"
+                        },
+                        "name": "evAuthorizationError",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Data Dropped"
+                        },
+                        "name": "evDataDropped",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Media Format Error"
+                        },
+                        "name": "evMediaFormatError",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Media Session Established"
+                        },
+                        "name": "evMediaSessionEstablished",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Network Error"
+                        },
+                        "name": "evNetworkError",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Protocol Error"
+                        },
+                        "name": "evProtocolError",
+                        "schema": "string"
+                    },
+                    {
+                        "@type": [
+                            "Telemetry",
+                            "SemanticType/Event"
+                        ],
+                        "displayName": {
+                            "en": "Storage Error"
+                        },
+                        "name": "evStorageError",
+                        "schema": "string"
+                    },
                     {
                         "@type": "Property",
                         "displayName": {
