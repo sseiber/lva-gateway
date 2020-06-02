@@ -289,7 +289,7 @@ export class ModuleService {
 
         const response = await this.moduleClient.invokeMethod(this.iotcGatewayInstanceId, this.moduleDeploymentProperties.lvaEdgeModuleId, methodParams);
         if (this.moduleSettings[LvaGatewaySettings.DebugTelemetry] === true) {
-            this.server.log(['ModuleService', 'error'], `invokeLvaModuleMethod response: ${JSON.stringify(response, null, 4)}`);
+            this.server.log(['ModuleService', 'info'], `invokeLvaModuleMethod response: ${JSON.stringify(response, null, 4)}`);
         }
 
         if (response.payload?.error) {
@@ -329,13 +329,12 @@ export class ModuleService {
         let healthState = HealthState.Good;
 
         try {
+            const healthTelemetry = {};
             const systemProperties = await this.getSystemProperties();
             const freeMemory = systemProperties?.freeMemory || 0;
 
-            await this.sendMeasurement({
-                [LvaGatewayInterface.Telemetry.FreeMemory]: freeMemory,
-                [LvaGatewayInterface.Telemetry.ConnectedCameras]: this.amsInferenceDeviceMap.size
-            });
+            healthTelemetry[LvaGatewayInterface.Telemetry.FreeMemory] = freeMemory;
+            healthTelemetry[LvaGatewayInterface.Telemetry.ConnectedCameras] = this.amsInferenceDeviceMap.size;
 
             // TODO:
             // Find the right threshold for this metric
@@ -343,7 +342,9 @@ export class ModuleService {
                 healthState = HealthState.Critical;
             }
 
-            await this.sendMeasurement({ [LvaGatewayInterface.Telemetry.SystemHeartbeat]: healthState });
+            healthTelemetry[LvaGatewayInterface.Telemetry.SystemHeartbeat] = healthState;
+
+            await this.sendMeasurement(healthTelemetry);
 
             if (healthState < HealthState.Good) {
                 this.server.log(['HealthService', 'warning'], `Health check watch: ${healthState}`);
@@ -619,6 +620,10 @@ export class ModuleService {
         try {
             await this.moduleClient.complete(message);
 
+            if (inputName === LvaGatewayEdgeInputs.LvaDiagnostics && this.moduleSettings[LvaGatewaySettings.DebugTelemetry] === false) {
+                return;
+            }
+
             const messageData = message.getBytes().toString('utf8');
             if (!messageData) {
                 return;
@@ -687,10 +692,7 @@ export class ModuleService {
                         this.server.log(['ModuleService', 'error'], `Received Lva Edge telemetry for cameraId: "${cameraId}" but that device does not exist in Lva Gateway`);
                     }
                     else {
-                        if (inputName === LvaGatewayEdgeInputs.LvaDiagnostics && this.moduleSettings[LvaGatewaySettings.DebugTelemetry] === true) {
-                            await amsInferenceDevice.sendLvaEvent(AmsGraph.getLvaMessageProperty(message, 'eventType'), messageJson);
-                        }
-                        else if (inputName === LvaGatewayEdgeInputs.LvaOperational) {
+                        if (inputName === LvaGatewayEdgeInputs.LvaOperational || inputName === LvaGatewayEdgeInputs.LvaDiagnostics) {
                             await amsInferenceDevice.sendLvaEvent(AmsGraph.getLvaMessageProperty(message, 'eventType'), messageJson);
                         }
                         else {
