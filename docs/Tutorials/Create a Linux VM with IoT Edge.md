@@ -1,3 +1,21 @@
+---
+# A suggestion about deploying the VM - I think the instructions could be streamlined if you took the approach that's shown in the IoT Edge docs: https://docs.microsoft.com/en-us/azure/iot-edge/how-to-install-iot-edge-ubuntuvm#deploy-using-deploy-to-azure-button
+# You can embed the deploy button in your article using the following markup: 
+#   [![Deploy to Azure Button for iotedge-vm-deploy](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fazure%2Fiotedge-vm-deploy%2Fmaster%2FedgeDeploy.json)
+# I wouldn't bother mentioning nano - in tutorials we try to show one way of doing things - thi helps users focus on the task they're completing. So either use nano or vi, but just use one and stick to it.
+# Prerequisites are needed as the first level 2 heading:
+# - Azure subscription
+# - Completed previous tutorial and know device connection string, scope id, app id, symmetric key, etc.
+# Add a Next Steps section to point to the next tutorial in the sequence.
+# The preferred to add command line instructions is fenced code blocks:
+# ```bash
+# apt-get update
+# apt-get install libiothsm iotedge
+# iotedge version
+# ```
+# I was prompted for credentials when I tried `docker pull meshams.azurecr.io/rtspvideo` - is this expected?
+---
+
 # Create a Linux VM with IoT Edge from the marketplace
 
 ## Overview
@@ -18,21 +36,13 @@ Use a preconfigured virtual machine to get started quickly, and easily automate 
 
 This **Ubuntu Server 16.04 LTS** based virtual machine will install the latest Azure IoT Edge runtime and its dependencies on startup, and makes it easy to connect to your IoT Hub.
 
-## Steps to Create VM
+## Deploy using Deploy to Azure Button
 
-1. Click <a href="https://azuremarketplace.microsoft.com/en-us/marketplace/apps/microsoft_iot_edge.iot_edge_vm_ubuntu?tab=Overview" target="_blank">here</a> to deploy an Azure IoT Edge enabled Linux VM.
+The Deploy to Azure Button allows for streamlined deployment of Azure Resource Manager templates maintained on GitHub. This section will demonstrate usage of the Deploy to Azure Button contained in the iotedge-vm-deploy project repository.
 
-    :::image type="content" source="../media/Create a Linux VM with IoT Edge/01_marketplace_offering.png" alt-text="Azure IoT Edge VM":::
+[![Deploy to Azure Button for iotedge-vm-deploy](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fazure%2Fiotedge-vm-deploy%2Fmaster%2FedgeDeploy.json)
 
-2. Click **Get It Now** button and click **Continue** on the browser
-
-    :::image type="content" source="../media/Create a Linux VM with IoT Edge/02_get_it_now_continue.png" alt-text="Azure IoT Edge VM":::
-
-3. Logs your into Azure portal. Click **Create** button
-
-    :::image type="content" source="../media/Create a Linux VM with IoT Edge/03_create_vm.png" alt-text="Azure IoT Edge VM":::
-
-4. Provide Subscription details, resource group, password and SSH ports.
+1. Provide Subscription details, resource group, password and SSH ports.
 
     Following are some sample values when creating the VM box.
 
@@ -70,17 +80,17 @@ This **Ubuntu Server 16.04 LTS** based virtual machine will install the latest A
     |Cloud init                  |No
     |Proximity placement group   |None
 
-5. Validation process happens and a web page is presented. Click **Create** button.
+1. Validation process happens and a web page is presented. Click **Create** button.
 
-6. Deployment completes in around 3 minutes.
+1. Deployment completes in around 3 minutes.
 
-7. Click on **Go To Resource** button
+1. Click on **Go To Resource** button
 
-8. Click on **Serial Console**
+1. Click on **Serial Console**
 
     :::image type="content" source="../media/Create a Linux VM with IoT Edge/07_connect_ssh.png" alt-text="Azure IoT Edge VM":::
 
-9. A serial console on the portal browser will open. Press **Enter**. You will be prompted to enter User and Password. This is the username and password you setup during the Virtual Machine creation.
+1. A serial console on the portal browser will open. Press **Enter**. You will be prompted to enter User and Password. Enter **sudo su -** and press **enter**. You will be prompted to enter password.
 
 Connect this VM to your IoT Hub by setting the connection string with the run command feature (via Azure portal or command line interface) to execute:
 
@@ -93,23 +103,19 @@ Update the IoT Edge security daemon and runtime to the latest.
 Next, you will need to run the following commands as an administrator
 (sudo):
 
-`apt-get update`
-
-`apt-get install libiothsm iotedge`
+```bash
+apt-get update
+apt-get install libiothsm iotedge`
+iotedge version
+```
 
 Verify the version on your device by using the command `iotedge version`.
 
 The Lva Edge Gateway has been developed using version 1.0.9.
 
-[TODO: When I installed the iotedge package, it's version is 1.0.8-2 and says it is the latest. Not sure how to get 1.0.9.]
-
 ## Update the IoT Edge Agent's configuration
 
-Install the vim editor or use nano if preferred.
-
-`apt-get install vim`
-
-Edit the IoT Edge config.yaml file by entering the provisioning detail
+Edit the IoT Edge **config.yaml** file by entering the provisioning detail
 collected during the device instantiation step.
 
 `sudo vi /etc/iotedge/config.yaml`

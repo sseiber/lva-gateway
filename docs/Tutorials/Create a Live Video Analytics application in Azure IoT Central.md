@@ -153,9 +153,9 @@ providing your own registry.
 
 |Module|                 Image (We need to replace with the public github)|
 |-|-|
-|LvaEdgeGatewayModule|   meshams.azurecr.io/lva-edge-gateway:1.0.37-amd64|
+|LvaEdgeGatewayModule|   meshams.azurecr.io/lva-edge-gateway:2.0.33-amd64|
 |lvaYolov3|              meshams.azurecr.io/yolov3-onnx:latest|
-|lvaEdge|                mcr.microsoft.com/media/live-video-analytics:1.0.0|
+|lvaEdge|                mcr.microsoft.com/media/live-video-analytics:1|
 
 You will need to set the name of your AMS resource in the `LvaEdgeGatewayModule` node under the `modules` node. It's a setting on the `env` node.
 
@@ -172,12 +172,6 @@ You will need to set the name of your AMS resource in the `LvaEdgeGatewayModule`
 
 There are sections for the module's desired properties outside of the `modules` node. You will need to update the JSON file with your AMS and IoT Central instance data
 as follows:
-
-You can opt to leave all the named values empty as
-defaulted and then update the desired properties as described later in
-the Configure the Desired Properties section.
-
-\[TODO: Validate\]
 
 Locate the `lvaEdge` node, this will be outside of the `modules` node.
 
@@ -217,7 +211,7 @@ therefore you will need to add the AMS values to the file before you deploy.
 
 ## Edit the state.json file
 
-1. Make a copy of ./setup/state.json and paste it to ./storage, this is your working file and it is not checked to GitHub
+1. Make a copy of **./setup/state.json** and paste it to **./storage**, this is your working file and it is not checked to GitHub
 1. Enter your application instance and secretes
 
 ```json

@@ -3,6 +3,14 @@
 > [!NOTE]
 > Follow these steps only if you need to modify the code, it is recommended to start with the provided images.
 
+## Prerequisites
+
+* NodeJS >= v10
+* NPM
+* VS Code with TSLint plugin installed
+* Docker Engine
+* IoT Central
+
 ## Clone the repo
 
 TODO: We need a public repo with the source
