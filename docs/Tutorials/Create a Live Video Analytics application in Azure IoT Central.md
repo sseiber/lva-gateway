@@ -252,6 +252,9 @@ You need to start a Command shell from your development machine, locate the file
 Usage
 `pscp [options] source user@host:target`
 
+Example
+`pscp state.json iot@40.121.209.246:/data/storage/state.json`
+
 ## Create the Edge Gateway and downstream devices
 
 This step will guide you on how to add the LvaEdge gateway template to IoT Central and associate it with the downstream devices using relationships.
