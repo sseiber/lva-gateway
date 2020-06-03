@@ -145,12 +145,12 @@ This **Ubuntu Server 18.04 LTS** based virtual machine will install the latest A
         symmetric_key: "{symmetric_key}"
     ```
 
-> [!TIP]
-> In the editor, ensure you don't leave a space before the word provisioning.
+    > [!TIP]
+    > In the editor, ensure you don't leave a space before the word provisioning.
 
-* `registration_id` is the same as the Device ID.
-* `scope_id` is the scope from Azure IoT Central device connection.
-* `symmetric_key` is the Primary Key from Azure IoT Central device connection.
+    * `registration_id` is the same as the Device ID.
+    * `scope_id` is the scope from Azure IoT Central device connection.
+    * `symmetric_key` is the Primary Key from Azure IoT Central device connection.
 
     If you don't have these values handy, you can get them
     from IoT Central.
