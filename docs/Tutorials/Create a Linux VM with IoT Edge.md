@@ -28,19 +28,25 @@ Azure IoT Edge is a fully managed service that delivers cloud intelligence local
 
 directly on cross-platform IoT devices. Run your IoT solution securely and at scale—whether in the cloud or offline.
 
-This tutorial demonstrates what is involved in standing up an Azure IoT Edge enabled Linux VM on Azure Marketplace.
+This article lists the steps to deploy an Ubuntu 18.04 LTS virtual machine with the Azure IoT Edge runtime installed. The deployment is accomplished using a [cloud-init](https://github.com/Azure/iotedge-vm-deploy/blob/master/cloud-init.txt) based [Azure Resource Manager template](https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/overview) maintained in the [iotedge-vm-deploy](https://github.com/Azure/iotedge-vm-deploy) project repository.
 
 ## Azure Market Place Offering
 
 Use a preconfigured virtual machine to get started quickly, and easily automate and scale your IoT Edge testing.
 
-This **Ubuntu Server 16.04 LTS** based virtual machine will install the latest Azure IoT Edge runtime and its dependencies on startup, and makes it easy to connect to your IoT Hub.
+This **Ubuntu Server 18.04 LTS** based virtual machine will install the latest Azure IoT Edge runtime and its dependencies on startup, and makes it easy to connect to your IoT Hub.
 
-## Deploy using Deploy to Azure Button
+## Steps to Create VM
 
-The Deploy to Azure Button allows for streamlined deployment of Azure Resource Manager templates maintained on GitHub. This section will demonstrate usage of the Deploy to Azure Button contained in the iotedge-vm-deploy project repository.
+1. Click <a href="https://azuremarketplace.microsoft.com/en-us/marketplace/apps/microsoft_iot_edge.iot_edge_vm_ubuntu?tab=Overview" target="_blank">here</a> to deploy an Azure IoT Edge enabled Linux VM.
 
-[![Deploy to Azure Button for iotedge-vm-deploy](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fazure%2Fiotedge-vm-deploy%2Fmaster%2FedgeDeploy.json)
+    :::image type="content" source="../media/Create a Linux VM with IoT Edge/01_marketplace_offering.png" alt-text="Azure IoT Edge VM":::
+
+1. Click **Get It Now** button and click **Continue** on the browser
+
+1. Log your into Azure portal. Click **Create** button
+
+    :::image type="content" source="../media/Create a Linux VM with IoT Edge/03_create_vm.png" alt-text="Azure IoT Edge VM":::
 
 1. Provide Subscription details, resource group, password and SSH ports.
 
@@ -90,28 +96,24 @@ The Deploy to Azure Button allows for streamlined deployment of Azure Resource M
 
     :::image type="content" source="../media/Create a Linux VM with IoT Edge/07_connect_ssh.png" alt-text="Azure IoT Edge VM":::
 
-1. A serial console on the portal browser will open. Press **Enter**. You will be prompted to enter User and Password. Enter **sudo su -** and press **enter**. You will be prompted to enter password.
+1. A serial console on the portal browser will open. Press **Enter**. You will be prompted to enter User and Password. 
 
-Connect this VM to your IoT Hub by setting the connection string with the run command feature (via Azure portal or command line interface) to execute:
+1. Enter **sudo su -** and press **enter**. You will be prompted to enter your password.
 
-[TODO: What command to execute?]
+1. Update the IoT Edge security daemon and runtime to the latest.
 
-Update the IoT Edge security daemon and runtime to the latest.
+    You will need to run the following commands as an administrator
+    (sudo):
 
-[TODO: How to do this?]
+    ```bash
+    apt-get update
+    apt-get install libiothsm iotedge`
+    iotedge version
+    ```
 
-Next, you will need to run the following commands as an administrator
-(sudo):
+    Verify the version on your device by using the command `iotedge version`.
 
-```bash
-apt-get update
-apt-get install libiothsm iotedge`
-iotedge version
-```
-
-Verify the version on your device by using the command `iotedge version`.
-
-The Lva Edge Gateway has been developed using version 1.0.9.
+    The Lva Edge Gateway has been developed using version 1.0.9.
 
 ## Update the IoT Edge Agent's configuration
 
