@@ -117,10 +117,10 @@ This **Ubuntu Server 18.04 LTS** based virtual machine will install the latest A
 
 ## Update the IoT Edge Agent's configuration
 
-Edit the IoT Edge **config.yaml** file by entering the provisioning detail
-collected during the device instantiation step.
+1. Edit the IoT Edge **config.yaml** file by entering the provisioning detail
+    collected during the device instantiation step.
 
-`sudo vi /etc/iotedge/config.yaml`
+    `sudo vi /etc/iotedge/config.yaml`
 
 1. Scroll down until you see `# Manual provisioning configuration`. Comment out the next three lines as shown in the following snippet:
 
@@ -152,19 +152,21 @@ collected during the device instantiation step.
 * `scope_id` is the scope from Azure IoT Central device connection.
 * `symmetric_key` is the Primary Key from Azure IoT Central device connection.
 
-If you don't have these values in your note editor, you can get them
-from IoT Central.
+    If you don't have these values handy, you can get them
+    from IoT Central.
 
-To save and quit the config.yaml file, Press Esc, and type :wq!
+    Save and quit the config.yaml file, Press Esc, and type **:wq!**
 
-Restart IoT Edge to process your changes.
+1. Restart IoT Edge to process your changes.
 
-`systemctl restart iotedge`
+    ```bash
+    systemctl restart iotedge
+    ```
 
-Type iotedge list. After a few minutes, you\'ll see five modules
+1. Type `iotedge list`. After a few minutes, you\'ll see five modules
 deployed. You can keep running this command to check on status.
 
-Additionally, you can see the status for your modules in IoT Central for
+    Additionally, you can see the status for your modules in IoT Central for
 the deployed IoT Edge Gateway
 
 ## Run the IoT Edge device and Monitor the deployment process
