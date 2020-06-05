@@ -53,10 +53,13 @@ Example
 
 ## Update the IoT Edge Agent's configuration
 
-Edit the IoT Edge **config.yaml** file by entering the provisioning detail
-collected during the device instantiation step.
+1. Edit the IoT Edge **config.yaml** file by entering the provisioning detail
+    collected during the device instantiation step.
 
-`sudo vi /etc/iotedge/config.yaml`
+    `sudo vi /etc/iotedge/config.yaml`
+
+    > [!WARNING]
+    >YAML files cannot contain tabs as indentation. Use 2 spaces instead. Top-level items cannot have leading whitespace.
 
 1. Scroll down until you see `# Manual provisioning configuration`. Comment out the next three lines as shown in the following snippet:
 
@@ -81,9 +84,6 @@ collected during the device instantiation step.
         symmetric_key: "{symmetric_key}"
     ```
 
-> [!TIP]
-> In the editor, ensure you don't leave a space before the word provisioning.
-
 - `registration_id` is the same as the Device ID.
 - `scope_id` is the scope from Azure IoT Central device connection.
 - `symmetric_key` is the Primary Key from Azure IoT Central device connection.
@@ -99,7 +99,7 @@ Restart IoT Edge to process your changes.
 
 `systemctl restart iotedge`
 
-Type `iotedge list`. After a few minutes, you\'ll see five modules
+Type `iotedge list`. After a few minutes, you'll see five modules
 deployed. You can keep running this command to check on status.
 
 Additionally, you can see the status for your modules in IoT Central for

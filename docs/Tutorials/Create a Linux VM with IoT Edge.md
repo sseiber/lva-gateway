@@ -150,6 +150,9 @@ Example
 
     `sudo vi /etc/iotedge/config.yaml`
 
+    > [!WARNING]
+    >YAML files cannot contain tabs as indentation. Use 2 spaces instead. Top-level items cannot have leading whitespace.
+
 1. Scroll down until you see `# Manual provisioning configuration`. Comment out the next three lines as shown in the following snippet:
 
     ```yaml
@@ -172,9 +175,6 @@ Example
         registration_id: "{registration_id}"
         symmetric_key: "{symmetric_key}"
     ```
-
-    > [!TIP]
-    > In the editor, ensure you don't leave a space before the word provisioning.
 
     - `registration_id` is the same as the Device ID.
     - `scope_id` is the scope from Azure IoT Central device connection.
