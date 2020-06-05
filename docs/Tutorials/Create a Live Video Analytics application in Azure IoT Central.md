@@ -211,7 +211,7 @@ therefore you will need to add the AMS values to the file before you deploy.
 
 ## Edit the state.json file
 
-1. Make a copy of **./setup/state.json** and paste it to **./storage**, this is your working file and it is not checked to GitHub
+1. On your development environment, make a copy of **./setup/state.json** and paste it to **./storage**, this is your working file and it is not checked to GitHub
 1. Enter your application instance and secretes
 
 ```json
@@ -224,30 +224,6 @@ therefore you will need to add the AMS values to the file before you deploy.
     }
 }
 ```
-
-## Prepare the Edge device's data directory
-
-In this reference implementation, we are keeping some configuration under the directory
-/data/storage
-
-On the Edge gateway, Create 2 directories from root (you need elevated privileges) and give Read and and Write permissions to these directories
-
-```bash
-mkdir -p data/storage
-mkdir -p data/media
-chmod -R 777 /data
-```
-
-Copy you local state.json file into the newly created storage directory.
-PuTTY has the utility [pscp](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) to transfer files securely
-
-You need to start a Command shell from your development machine, locate the file and transfer to the unix machine
-
-Usage
-`pscp [options] source user@host:target`
-
-Example
-`pscp state.json iot@40.121.209.246:/data/storage/state.json`
 
 ## Create the Edge Gateway and downstream devices
 

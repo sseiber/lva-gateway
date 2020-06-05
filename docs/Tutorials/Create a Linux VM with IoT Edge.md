@@ -1,8 +1,4 @@
 ---
-# A suggestion about deploying the VM - I think the instructions could be streamlined if you took the approach that's shown in the IoT Edge docs: https://docs.microsoft.com/en-us/azure/iot-edge/how-to-install-iot-edge-ubuntuvm#deploy-using-deploy-to-azure-button
-# You can embed the deploy button in your article using the following markup: 
-#   [![Deploy to Azure Button for iotedge-vm-deploy](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fazure%2Fiotedge-vm-deploy%2Fmaster%2FedgeDeploy.json)
-# I wouldn't bother mentioning nano - in tutorials we try to show one way of doing things - thi helps users focus on the task they're completing. So either use nano or vi, but just use one and stick to it.
 # Prerequisites are needed as the first level 2 heading:
 # - Azure subscription
 # - Completed previous tutorial and know device connection string, scope id, app id, symmetric key, etc.
@@ -18,23 +14,29 @@
 
 # Create a Linux VM with IoT Edge from the marketplace
 
+## Prerequisites
+
+- Azure subscription
+- Complete [previous tutorial](Create%20a%20Live%20Video%20Analytics%20application%20in%20Azure%20IoT%20Central.md) edit state.json and collect scope id, app id, group symmetric key
+- PuTTY SSH Client
+
 ## Overview
 
 Azure IoT Edge is a fully managed service that delivers cloud intelligence locally by deploying and running
 
-* Custom Logic
-* Azure Services
-* Artificial Intelligence (AI)
+- Custom Logic
+- Azure Services
+- Artificial Intelligence (AI)
 
 directly on cross-platform IoT devices. Run your IoT solution securely and at scale—whether in the cloud or offline.
 
-This article lists the steps to deploy an Ubuntu 18.04 LTS virtual machine with the Azure IoT Edge runtime installed. The deployment is accomplished using a [cloud-init](https://github.com/Azure/iotedge-vm-deploy/blob/master/cloud-init.txt) based [Azure Resource Manager template](https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/overview) maintained in the [iotedge-vm-deploy](https://github.com/Azure/iotedge-vm-deploy) project repository.
+This article lists the steps to deploy an Ubuntu **16.04 LTS** virtual machine with the Azure IoT Edge runtime installed.
 
 ## Azure Market Place Offering
 
 Use a preconfigured virtual machine to get started quickly, and easily automate and scale your IoT Edge testing.
 
-This **Ubuntu Server 18.04 LTS** based virtual machine will install the latest Azure IoT Edge runtime and its dependencies on startup, and makes it easy to connect to your IoT Hub.
+This **Ubuntu Server 16.04 LTS** based virtual machine will install the latest Azure IoT Edge runtime and its dependencies on startup, and makes it easy to connect to your IoT Hub.
 
 ## Steps to Create VM
 
@@ -92,13 +94,11 @@ This **Ubuntu Server 18.04 LTS** based virtual machine will install the latest A
 
 1. Click on **Go To Resource** button
 
-1. Click on **Serial Console**
+1. Note the Private IP address, you will need it to setup the **rtsp** stream URL
 
-    :::image type="content" source="../media/Create a Linux VM with IoT Edge/07_connect_ssh.png" alt-text="Azure IoT Edge VM":::
+1. Use PuTTY to connect to the Linux machine using SSH, you will be prompted for username and password
 
-1. A serial console on the portal browser will open. Press **Enter**. You will be prompted to enter User and Password. 
-
-1. Enter **sudo su -** and press **enter**. You will be prompted to enter your password.
+1. Run with elevated privilege, enter **sudo su -** and press **enter**. You will be prompted to enter your password.
 
 1. Update the IoT Edge security daemon and runtime to the latest.
 
@@ -114,6 +114,34 @@ This **Ubuntu Server 18.04 LTS** based virtual machine will install the latest A
     Verify the version on your device by using the command `iotedge version`.
 
     The Lva Edge Gateway has been developed using version 1.0.9.
+
+## Prepare the Edge device's data directory
+
+> [!NOTE]
+> This step needs to precede connecting the Edge to IoT Central, because the modules depend on the data directory and on startup they load the state from state.json
+>
+
+In this reference implementation, we are keeping some configuration under the directory
+/data/storage
+
+On the Edge gateway, Create 2 directories from root (you need elevated privileges) and give Read and and Write permissions to these directories
+
+```bash
+mkdir -p data/storage
+mkdir -p data/media
+chmod -R 777 /data
+```
+
+Copy you development state.json file into the newly created storage directory.
+PuTTY has the utility [pscp](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) to transfer files securely
+
+You need to start a Command shell from your development machine, locate the file and transfer to the unix machine
+
+Usage
+`pscp [options] source user@host:target`
+
+Example
+`pscp state.json iot@40.121.209.246:/data/storage/state.json`
 
 ## Update the IoT Edge Agent's configuration
 
@@ -148,9 +176,9 @@ This **Ubuntu Server 18.04 LTS** based virtual machine will install the latest A
     > [!TIP]
     > In the editor, ensure you don't leave a space before the word provisioning.
 
-    * `registration_id` is the same as the Device ID.
-    * `scope_id` is the scope from Azure IoT Central device connection.
-    * `symmetric_key` is the Primary Key from Azure IoT Central device connection.
+    - `registration_id` is the same as the Device ID.
+    - `scope_id` is the scope from Azure IoT Central device connection.
+    - `symmetric_key` is the Primary Key from Azure IoT Central device connection.
 
     If you don't have these values handy, you can get them
     from IoT Central.
@@ -171,7 +199,15 @@ the deployed IoT Edge Gateway
 
 ## Run the IoT Edge device and Monitor the deployment process
 
-\[Detail here\] docker and iotedge commands
+`systemctl restart iotedge`
+
+Type `iotedge list`. After a few minutes, you\'ll see five modules
+deployed. You can keep running this command to check on status.
+
+Additionally, you can see the status for your modules in IoT Central for
+the deployed IoT Edge Gateway
+
+This [document](https://docs.microsoft.com/en-us/azure/iot-edge/troubleshoot) has a guide to troubleshooting and diagnostics.
 
 ## Use the RTSP Simulator
 
@@ -193,3 +229,7 @@ Enumerate the docker containers
 `docker ps`
 
 Expect to see a container named live555
+
+## Next Steps
+
+[Manage and Monitor the public Safety Solution](Manage%20and%20monitor%20the%20Public%20Safety%20solution.md)

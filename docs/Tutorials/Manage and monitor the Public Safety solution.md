@@ -49,32 +49,36 @@ IoT Edge Running on an Intel NUC and Camera running on-prem
 Steps
 -----
 
-1.  Create the Azure Media Services needed for this application
+1. Create the Azure Media Services needed for this application
 
-2.  Create an IoT Central Application from the template (it will not
+1. Create an IoT Central Application from the template (it will not
     include the Edge Gateway)
 
-3.  Follow the steps to create and associate the Edge Gateway with the
+1. Follow the steps to create and associate the Edge Gateway with the
     downstream devices
 
-4.  Grab the secrets for IoT Edge Provision
+1. Grab the secrets for IoT Edge Provision
 
-5.  Create a Linux IoT Edge on the Intel NUC
+1. Create a Linux IoT Edge on the Intel NUC
 
-6.  Update the IoT Edge Agent's configuration to connect to the IoT
+1. Update the IoT Edge Agent's configuration to connect to the IoT
     Central App
 
-7.  Run the IoT Edge device and monitor the deployment process and
+1. Run the IoT Edge device and monitor the deployment process and
     ensure all the modules are loaded
 
-8.  Set up the desire properties and instantiate the Cameras, point the
+1. Set up the desire properties and instantiate the Cameras, point the
     RTSP stream from the real camera
 
-9.  Monitor the solution
+1. Monitor the solution
 
-[^1]: The LvaGatewayModule creates new direct connected Devices
+1. The LvaGatewayModule creates new direct connected Devices
     therefore select "Devices" instead of Azure Edge Devices
 
-[^2]: The LvaGatewayModule generates symmetric device keys from the
+1. The LvaGatewayModule generates symmetric device keys from the
     Group Master Key. This is a reference implementation, but for
     production environments you should build a provisioning strategy
+
+## Next Steps
+
+[Change the code and build the Gateway module](Build%20and%20register%20the%20Lva%20Gateway%20Module.md)
