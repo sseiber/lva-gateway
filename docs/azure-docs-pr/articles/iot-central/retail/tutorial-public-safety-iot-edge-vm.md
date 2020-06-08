@@ -32,6 +32,8 @@ Before you start, you should complete the previous [Create a live video analytic
 
 You also need an Azure subscription. If you don't have an Azure subscription, you can create one for free on the [Azure sign-up page](https://aka.ms/createazuresubscription).
 
+To copy files to the VM you create you need the [PuTTY SSH client](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) or an equivalent utility.
+
 ## Deploy Azure IoT Edge
 
 To create an Azure VM with the latest IoT Edge runtime preinstalled:
@@ -64,17 +66,17 @@ To create an Azure VM with the latest IoT Edge runtime preinstalled:
 
 1. Select **Review + create**. When the validation is complete, select **Create**. It typically takes about three minutes for the deployment to complete. When the deployment is complete, navigate to the **lva-rg** resource group in the Azure portal.
 
+1. Make a note of the VM's private IP address, you use it later in this tutorial when you configure the RTSP stream URL.
+
 ### Configure the IoT Edge VM
 
-To configure IoT Edge in the VM to use DPS to register and connect to your IoT Central application:
+To update the IoT Edge runtime:
 
 1. In the *lva-rg* resource group, select the **dvIoTEdgeLinux** virtual machine instance.
 
-1. In the **Support + troubleshooting** section, select **Serial console**.
+1. Use the PuTTY utility to connect to the VM. Use **AzureUser** as the username and the password you chose when you created the VM.
 
-1. Press **Enter** to see the `login:` prompt. Enter *AzureUSer* as your username and password to sign in.
-
-1. Run the following command to update and check the version of the IoT Edge runtime. At the time of writing, the version is 1.0.9:
+1. Run the following commands to update and check the version of the IoT Edge runtime. At the time of writing, the version is 1.0.9:
 
     ```bash
     sudo apt-get update
@@ -82,11 +84,32 @@ To configure IoT Edge in the VM to use DPS to register and connect to your IoT C
     sudo iotedge --version
     ```
 
+To add the *state.json* configuration file to the *data/storage* folder:
+
+1. Use the following commands to create the folders with the necessary permissions:
+
+    ```bash
+    sudo mkdir -p data/storage
+    sudo mkdir -p data/media
+    sudo chmod -R 777 /data
+    ```
+
+1. Use the PuTTY `pscp` utility in a command prompt to copy the *state.json* file you created in the previous tutorial into the VM. This example uses `40.121.209.246` as an example IP address, replace it with the public IP address of your VM:
+
+    ```cmd
+    pscp state.json AzureUser@40.121.209.246:/data/storage/state.json`
+    ```
+
+To configure IoT Edge in the VM to use DPS to register and connect to your IoT Central application:
+
 1. Use the `nano` editor to open the IoT Edge config.yaml file:
 
     ```bash
     sudo nano /etc/iotedge/config.yaml
     ```
+
+    > [!WARNING]
+    > YAML files can't use tabs for indentation, use two spaces instead. Top-level items can't have leading whitespace.
 
 1. Scroll down until you see `# Manual provisioning configuration`. Comment out the next three lines as shown in the following snippet:
 
@@ -134,118 +157,37 @@ To configure IoT Edge in the VM to use DPS to register and connect to your IoT C
     iotedge list
     ```
 
-    The following sample output shows the running modules:
-
-    ```bash
-    TODO
-    ```
+    The output from the pervious command shows five running modules. You can also view the status of the running modules in your IoT Central application.
 
     > [!TIP]
-    > You may need to wait for all the modules to start running.
+    > You can rerun this command to check on the status. You may need to wait for all the modules to start running.
 
-<!-- What needed to go in this section to configure Edge?
-[TODO: What command to execute?]
+If the IoT Edge modules don't start correctly, see [Troubleshoot your IoT Edge device](../../iot-edge/troubleshoot.md).
 
-Update the IoT Edge security daemon and runtime to the latest.
+## Use the RTSP simulator
 
-[TODO: How to do this?]
+If you don't have real camera devices to connect to your IoT Edge device, you can use the two simulated camera devices in the public safety application template. This section shows you how to use a simulated video stream in your IoT Edge device.
 
-Next, you will need to run the following commands as an administrator
-(sudo):
-
-```bash
-apt-get update
-apt-get install libiothsm iotedge`
-iotedge version
-```
-
-Verify the version on your device by using the command `iotedge version`.
-
-The Lva Edge Gateway has been developed using version 1.0.9.
-
-## Update the IoT Edge Agent's configuration
-
-Edit the IoT Edge **config.yaml** file by entering the provisioning detail
-collected during the device instantiation step.
-
-`sudo vi /etc/iotedge/config.yaml`
-
-1. Scroll down until you see `# Manual provisioning configuration`. Comment out the next three lines as shown in the following snippet:
-
-    ```yaml
-    # Manual provisioning configuration
-    #provisioning:
-    #  source: "manual"
-    #  device_connection_string: "<ADD DEVICE CONNECTION STRING HERE>"
-    ```
-
-1. Scroll down until you see `# DPS symmetric key provisioning configuration`. Uncomment the next eight lines as shown in the following snippet:
-
-    ```yaml
-    # DPS symmetric key provisioning configuration
-    provisioning:
-      source: "dps"
-      global_endpoint: "https://global.azure-devices-provisioning.net"
-      scope_id: "{scope_id}"
-      attestation:
-        method: "symmetric_key"
-        registration_id: "{registration_id}"
-        symmetric_key: "{symmetric_key}"
-    ```
-
-> [!TIP]
-> In the editor, ensure you don't leave a space before the word provisioning.
-
-* `registration_id` is the same as the Device ID.
-* `scope_id` is the scope from Azure IoT Central device connection.
-* `symmetric_key` is the Primary Key from Azure IoT Central device connection.
-
-If you don't have these values in your note editor, you can get them
-from IoT Central.
-
-To save and quit the config.yaml file, Press Esc, and type :wq!
-
-Restart IoT Edge to process your changes.
-
-`systemctl restart iotedge`
-
-Type iotedge list. After a few minutes, you\'ll see five modules
-deployed. You can keep running this command to check on status.
-
-Additionally, you can see the status for your modules in IoT Central for
-the deployed IoT Edge Gateway
-
--->
-
-[!INCLUDE [iot-central-public-safety-edge-config](../../../includes/iot-central-public-safety-edge-config.md)]
-
-## Run the IoT Edge device and Monitor the deployment process
-
-<!-- TODO
-\[Detail here\] docker and iotedge commands
-
--->
-
-## Use the RTSP Simulator
-
-As this template and code project is a reference design, we assume that
-connecting a real network camera might not be feasible. The Public
-Safety Template is instantiated with 2 simulated devices and follow
-these instructions if you want to load a stream to your edge VM.
-
-The following instructions enable using [Live555 Media Server](http://www.live555.com/mediaServer/) as a RTSP simulator in a docker container.
+These instructions show you how to use the [Live555 Media Server](http://www.live555.com/mediaServer/) as a RTSP simulator in a docker container.
 
 > [!NOTE]
 > References to third-party software in this repo are for informational and convenience purposes only. Microsoft does not endorse nor provide rights for the third-party software. For more information on third-party software please see [Live555 Media Server](http://www.live555.com/mediaServer/).
 
-Run the **rtspvideo** in a docker container in the background to stream rstp
-`docker run -d --name live555 --rm -p 554:554 mcr.microsoft.com/lva-utilities/rtspsim-live555:1.2`
+Use the PuTTY utility to connect to the VM. Use **AzureUser** as the username and the password you chose when you created the VM.
 
-Enumerate the docker containers
+Use the following command to run the **rtspvideo** utility in a docker container on your IoT Edge VM. The docker container creates a background RTSP stream.
 
-`docker ps`
+```bash
+docker run -d --name live555 --rm -p 554:554 mcr.microsoft.com/lva-utilities/rtspsim-live555:1.2
+```
 
-Expect to see a container named live555
+Use the following command to list the docker containers:
+
+```bash
+docker ps
+```
+
+The list includes a container called **live555**.
 
 ## Next steps
 

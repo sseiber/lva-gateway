@@ -28,37 +28,50 @@ In this tutorial, you learn how to:
 
 ## Prerequisites
 
-Before you start, you should complete the previous [Create a live video analytics application in Azure IoT Central](./tutorial-public-safety-create-app.md) tutorial.
+* A device running Linux, capable of running Docker containers, and enough processing power to run video analysis.
+* The IoT Edge runtime installed and running on the device.
+* To connect to the IoT Edge device from your Windows machine, you need the [PuTTY SSH client](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) or an equivalent utility.
 
-Hardware
+## Configure the IoT Edge device
 
-## Deploy Azure IoT Edge
+To update the IoT Edge runtime:
 
-TODO
+1. Use the PuTTY utility to connect to the IoT Edge device.
 
-### Configure the IoT Edge
-
-TODO
-
-To configure IoT Edge in the VM to use DPS to register and connect to your IoT Central application:
-
-1. In the *lva-rg* resource group, select the virtual machine instance.
-
-1. In the **Support + troubleshooting** section, select **Serial console**. If you're prompted to configure boot diagnostics, follow the instructions in the portal.
-
-1. Press **Enter** to see the `login:` prompt. Enter your username and password to sign in.
-
-1. Run the following command to check the IoT Edge runtime version. At the time of writing, the version is 1.0.9.1:
+1. Run the following commands to update and check the version of the IoT Edge runtime. At the time of writing, the version is 1.0.9:
 
     ```bash
+    sudo apt-get update
+    sudo apt-get install libiothsm iotedge
     sudo iotedge --version
     ```
 
-1. Use the `nano` editor to open the IoT Edge config.yaml file:
+To add the *state.json* configuration file to the *data/storage* folder:
+
+1. Use the following commands to create the folders with the necessary permissions:
+
+    ```bash
+    sudo mkdir -p data/storage
+    sudo mkdir -p data/media
+    sudo chmod -R 777 /data
+    ```
+
+1. Use the PuTTY `pscp` utility in a command prompt to copy the *state.json* file you created in the previous tutorial into the IoT Edge device. This example uses `40.121.209.246` as an example IP address, replace it with the IP address of your IoT Edge device:
+
+    ```cmd
+    pscp state.json YourUserName@40.121.209.246:/data/storage/state.json`
+    ```
+
+To configure IoT Edge in the VM to use DPS to register and connect to your IoT Central application:
+
+1. Use a text editor, such as `nano`, to open the IoT Edge config.yaml file.
 
     ```bash
     sudo nano /etc/iotedge/config.yaml
     ```
+
+    > [!WARNING]
+    > YAML files can't use tabs for indentation, use two spaces instead. Top-level items can't have leading whitespace.
 
 1. Scroll down until you see `# Manual provisioning configuration`. Comment out the next three lines as shown in the following snippet:
 
@@ -86,13 +99,11 @@ To configure IoT Edge in the VM to use DPS to register and connect to your IoT C
     > [!TIP]
     > Make sure there's no space left in front of `provisioning:`
 
-1. Replace `{scope_id}` with the **ID Scope** you made a note of previously.
+1. Replace `{scope_id}` with the **ID Scope** you made a note of in the previous tutorial.
 
-1. Replace `{registration_id}` with the **Device ID** you made a note of previously.
+1. Replace `{registration_id}` with *lva-gateway-001*, the device you created in the previous tutorial.
 
-1. Replace `{symmetric_key}` with the **Primary key** you made a note of previously.
-
-1. Save the changes (**Ctrl-O**) and exit (**Ctrl-X**) the `nano` editor.
+1. Replace `{symmetric_key}` with the **Primary key** you made a note of in the previous tutorial.
 
 1. Run the following command to restart the IoT Edge daemon:
 
@@ -106,97 +117,22 @@ To configure IoT Edge in the VM to use DPS to register and connect to your IoT C
     iotedge list
     ```
 
-    The following sample output shows the running modules:
-
-    ```bash
-    TODO
-    ```
+    The output from the pervious command shows five running modules. You can also view the status of the running modules in your IoT Central application.
 
     > [!TIP]
-    > You may need to wait for all the modules to start running.
+    > You can rerun this command to check on the status. You may need to wait for all the modules to start running.
 
-<!-- What needed to go in this section to configure Edge?
-[TODO: What command to execute?]
+If the IoT Edge modules don't start correctly, see [Troubleshoot your IoT Edge device](../../iot-edge/troubleshoot.md).
 
-Update the IoT Edge security daemon and runtime to the latest.
+## Collect the RSTP stream from your camera
 
-[TODO: How to do this?]
+Locate from your camera manufacturer, the RTSP Stream URL.
 
-Next, you will need to run the following commands as an administrator
-(sudo):
+Example: HiKvision
+`rtsp://<address>:<port>/Streaming/Channels/<id>/`
 
-```bash
-apt-get update
-apt-get install libiothsm iotedge`
-iotedge version
-```
-
-Verify the version on your device by using the command `iotedge version`.
-
-The Lva Edge Gateway has been developed using version 1.0.9.
-
-## Update the IoT Edge Agent's configuration
-
-Edit the IoT Edge **config.yaml** file by entering the provisioning detail
-collected during the device instantiation step.
-
-`sudo vi /etc/iotedge/config.yaml`
-
-1. Scroll down until you see `# Manual provisioning configuration`. Comment out the next three lines as shown in the following snippet:
-
-    ```yaml
-    # Manual provisioning configuration
-    #provisioning:
-    #  source: "manual"
-    #  device_connection_string: "<ADD DEVICE CONNECTION STRING HERE>"
-    ```
-
-1. Scroll down until you see `# DPS symmetric key provisioning configuration`. Uncomment the next eight lines as shown in the following snippet:
-
-    ```yaml
-    # DPS symmetric key provisioning configuration
-    provisioning:
-      source: "dps"
-      global_endpoint: "https://global.azure-devices-provisioning.net"
-      scope_id: "{scope_id}"
-      attestation:
-        method: "symmetric_key"
-        registration_id: "{registration_id}"
-        symmetric_key: "{symmetric_key}"
-    ```
-
-> [!TIP]
-> In the editor, ensure you don't leave a space before the word provisioning.
-
-* `registration_id` is the same as the Device ID.
-* `scope_id` is the scope from Azure IoT Central device connection.
-* `symmetric_key` is the Primary Key from Azure IoT Central device connection.
-
-If you don't have these values in your note editor, you can get them
-from IoT Central.
-
-To save and quit the config.yaml file, Press Esc, and type :wq!
-
-Restart IoT Edge to process your changes.
-
-`systemctl restart iotedge`
-
-Type iotedge list. After a few minutes, you\'ll see five modules
-deployed. You can keep running this command to check on status.
-
-Additionally, you can see the status for your modules in IoT Central for
-the deployed IoT Edge Gateway
-
--->
-
-[!INCLUDE [iot-central-public-safety-edge-config](../../../includes/iot-central-public-safety-edge-config.md)]
-
-## Run the IoT Edge device and Monitor the deployment process
-
-<!-- TODO
-\[Detail here\] docker and iotedge commands
-
--->
+Main Stream
+`rtsp://192.168.1.100:554/Streaming/Channels/101/`
 
 ## Next steps
 
