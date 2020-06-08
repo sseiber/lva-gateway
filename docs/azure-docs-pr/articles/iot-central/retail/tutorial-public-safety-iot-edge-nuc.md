@@ -31,6 +31,7 @@ In this tutorial, you learn how to:
 * A device running Linux, capable of running Docker containers, and enough processing power to run video analysis.
 * The IoT Edge runtime installed and running on the device.
 * To connect to the IoT Edge device from your Windows machine, you need the [PuTTY SSH client](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) or an equivalent utility.
+* Completed the **Tutorial Create a live video analytics application in Azure IoT Central** and have the state.json file ready
 
 ## Configure the IoT Edge device
 
@@ -133,6 +134,8 @@ Example: HiKvision
 
 Main Stream
 `rtsp://192.168.1.100:554/Streaming/Channels/101/`
+
+It is recommended to ensure you can see the camera stream on the Edge computer using some media player such as VLC
 
 ## Next steps
 

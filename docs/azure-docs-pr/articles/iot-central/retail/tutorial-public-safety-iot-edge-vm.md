@@ -66,7 +66,7 @@ To create an Azure VM with the latest IoT Edge runtime preinstalled:
 
 1. Select **Review + create**. When the validation is complete, select **Create**. It typically takes about three minutes for the deployment to complete. When the deployment is complete, navigate to the **lva-rg** resource group in the Azure portal.
 
-1. Make a note of the VM's private IP address, you use it later in this tutorial when you configure the RTSP stream URL.
+1. Navigate to Connect section in the Azure Portal and click Test your connection to ensure SSH port 22 is open.
 
 ### Configure the IoT Edge VM
 

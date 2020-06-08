@@ -34,6 +34,7 @@ In this tutorial, you learn how to:
 To complete this tutorial series, you need:
 
 * An Azure subscription. If you don't have an Azure subscription, you can create one on the [Azure sign-up page](https://aka.ms/createazuresubscription).
+* If you are using a real camera, you need connectivity between the Edge and Camera, and you need the streaming channel (RTPS)
 
 ## Create an application
 
