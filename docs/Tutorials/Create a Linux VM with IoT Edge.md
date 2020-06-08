@@ -107,7 +107,7 @@ This **Ubuntu Server 16.04 LTS** based virtual machine will install the latest A
 
     ```bash
     apt-get update
-    apt-get install libiothsm iotedge`
+    apt-get install libiothsm iotedge
     iotedge version
     ```
 
@@ -229,6 +229,12 @@ Enumerate the docker containers
 `docker ps`
 
 Expect to see a container named live555
+
+This utility plays a non licensed media named **camera-300s.mkv**, you will use this as part of the `rtsp` stream URL.
+
+Here is a snapshot:
+
+:::image type="content" source="../media/Create a Linux VM with IoT Edge/VLC_movie.png" alt-text="Movie":::
 
 ## Next Steps
 
