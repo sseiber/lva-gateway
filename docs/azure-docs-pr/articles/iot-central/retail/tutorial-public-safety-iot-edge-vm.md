@@ -81,7 +81,7 @@ To update the IoT Edge runtime:
     ```bash
     sudo apt-get update
     sudo apt-get install libiothsm iotedge
-    sudo iotedge --version
+    iotedge --version
     ```
 
 To add the *state.json* configuration file to the *data/storage* folder:
@@ -89,8 +89,8 @@ To add the *state.json* configuration file to the *data/storage* folder:
 1. Use the following commands to create the folders with the necessary permissions:
 
     ```bash
-    sudo mkdir -p data/storage
-    sudo mkdir -p data/media
+    sudo mkdir -p /data/storage
+    sudo mkdir -p /data/media
     sudo chmod -R 777 /data
     ```
 
@@ -178,13 +178,13 @@ Use the PuTTY utility to connect to the VM. Use **AzureUser** as the username an
 Use the following command to run the **rtspvideo** utility in a docker container on your IoT Edge VM. The docker container creates a background RTSP stream.
 
 ```bash
-docker run -d --name live555 --rm -p 554:554 mcr.microsoft.com/lva-utilities/rtspsim-live555:1.2
+sudo docker run -d --name live555 --rm -p 554:554 mcr.microsoft.com/lva-utilities/rtspsim-live555:1.2
 ```
 
 Use the following command to list the docker containers:
 
 ```bash
-docker ps
+sudo docker ps
 ```
 
 The list includes a container called **live555**.

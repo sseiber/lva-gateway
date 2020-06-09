@@ -34,7 +34,7 @@ In this tutorial, you learn how to:
 To complete this tutorial series, you need:
 
 * An Azure subscription. If you don't have an Azure subscription, you can create one on the [Azure sign-up page](https://aka.ms/createazuresubscription).
-* If you are using a real camera, you need connectivity between the Edge and Camera, and you need the streaming channel (RTPS)
+* If you're using a real camera, you need connectivity between the IoT Edge device and the camera, and you need the Real Time Streaming Protocol channel.
 
 ## Create an application
 
@@ -64,9 +64,9 @@ To create a new live video analytics application:
     > If you use a friendly **Application name**, you still must use a unique value for the application **URL**.
 
     <!-- Given that you need a subscription for AMS, is it worth mentioning the free trial? -->
-1. If you have an Azure subscription, enter your *Directory, Azure subscription, and Region*. If you don't have a subscription, you can enable **7-day free trial** and complete the required contact information. This tutorial uses three devices - two cameras and an IoT Edge device - so if you don't use the free trial you will be billed for usage.
+1. If you have an Azure subscription, enter your **Directory**, **Azure subscription**, and **Location**. If you don't have a subscription, you can enable **7-day free trial** and complete the required contact information. This tutorial uses three devices - two cameras and an IoT Edge device - so if you don't use the free trial you will be billed for usage.
 
-    For more information about directories and subscriptions, see the [create an application quickstart](../core/quick-deploy-iot-central.md).
+    For more information about directories, subscriptions, and locations, see the [create an application quickstart](../core/quick-deploy-iot-central.md).
 
 1. Select **Create**.
 
@@ -74,7 +74,7 @@ To create a new live video analytics application:
 
 ### Retrieve the configuration data
 
-Later in this tutorial when you configure the IoT Edge gateway, you need some configuration data from the IoT Central application. The IoT Edge device needs this information to register with, and connect to, the application:
+Later in this tutorial when you configure the IoT Edge gateway, you need some configuration data from the IoT Central application. The IoT Edge device needs this information to register with, and connect to, the application.
 
 In the **Administration** section, select **Your application** and make a note of the **Application URL** and the **Application ID**:
 
@@ -85,7 +85,7 @@ Select **API Tokens** and generate a new token for the **Operator** role:
 :::image type="content" source="./media/tutorial-public-safety-create-app/token.png" alt-text="Generate Token":::
 
 > [!TIP]
-> Once the token is generated, make a note of it for later. After the dialog closes you can't view the token again.
+> When the token is generated, make a note of it for later. After the dialog closes you can't view the token again.
 
 In the **Administration** section, select **Device connection**, and then select **View Keys**.
 
@@ -199,7 +199,7 @@ To prepare the deployment manifest:
 
 1. Locate the `lvaEdge` module.
 
-1. The template doesn't expose these properties in IoT Central,therefore you need to add the Media Services configuration values to the deployment manifest. Replace the placeholders with the values you made a note of when you created your Media Services account. The `azureMediaServicesArmId` value is the **Resource Id** from the Media Services properties page. You made a note of the `aadTenantId`, `aadServicePrincipalAppId`, and `aadServicePrincipalSecret` when you set up the service principal for your Media Services account:
+1. The template doesn't expose these properties in IoT Central, therefore you need to add the Media Services configuration values to the deployment manifest. Replace the placeholders with the values you made a note of when you created your Media Services account. The `azureMediaServicesArmId` value is the **Resource Id** from the Media Services properties page. You made a note of the `aadTenantId`, `aadServicePrincipalAppId`, and `aadServicePrincipalSecret` when you set up the service principal for your Media Services account:
 
     ```json
     {
@@ -223,8 +223,6 @@ To prepare the deployment manifest:
 1. Save the changes.
 
 ### Edit the state.json file
-
-1. Copy the file *state.json* from the *setup* folder to the *storage* folder. This file is your deployment manifest and it's part of the device template you set up in the IoT Central application.
 
 1. Edit the *state.json* file in the *storage* folder to add your IoT Central connection information. You made a note of these values when you created your IoT Central application:
 
