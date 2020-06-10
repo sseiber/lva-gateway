@@ -58,13 +58,13 @@ To create a new live video analytics application:
 
 1. Select the **Public Safety** application template. This template includes device templates for all devices used in the tutorial. The template also provides an operator dashboard for monitoring the video.
 
-1. Optionally, choose a friendly **Application name**. This application is based on a fictional retail store named Contoso. The tutorial uses the **Application name** *Contoso video analytics*.
+1. Optionally, choose a friendly **Application name**. This application is based on a fictional retail store named Northwind Traders. The tutorial uses the **Application name** *Northwind Traders video analytics*.
 
     > [!NOTE]
     > If you use a friendly **Application name**, you still must use a unique value for the application **URL**.
 
     <!-- Given that you need a subscription for AMS, is it worth mentioning the free trial? -->
-1. If you have an Azure subscription, enter your **Directory**, **Azure subscription**, and **Location**. If you don't have a subscription, you can enable **7-day free trial** and complete the required contact information. This tutorial uses three devices - two cameras and an IoT Edge device - so if you don't use the free trial you will be billed for usage.
+1. If you have an Azure subscription, select your **Directory**, **Azure subscription**, and **United States** as the **Location**. If you don't have a subscription, you can enable **7-day free trial** and complete the required contact information. This tutorial uses three devices - two cameras and an IoT Edge device - so if you don't use the free trial you will be billed for usage.
 
     For more information about directories, subscriptions, and locations, see the [create an application quickstart](../core/quick-deploy-iot-central.md).
 
@@ -91,7 +91,7 @@ In the **Administration** section, select **Device connection**, and then select
 
 <!-- Should we make a note of the Scope ID here as well? -->
 <!-- Should we specify Devices or IoT Edge devices? -->
-Make a note of the **Primary key**. You use this value later when you configure the IoT Edge device to connect to the solution.
+Make a note of this **Primary key**. You use this *primary group shared access signature token* later when you configure the IoT Edge device.
 
 ## Configure Azure Media Services
 
@@ -102,6 +102,9 @@ You can create a [Media Services account in the Azure portal](https://portal.azu
 When you create the Media Services account, you need to provide an account name, an Azure subscription, a location, a resource group, and a storage account. Choose the **East US** region for the location.
 
 Create a new resource group called *lva-rg*  in the **East US** region for the Media Services and storage accounts. When you finish the tutorials it's easy to remove all the resources by deleting the *lva-rg* resource group.
+
+> [!TIP]
+> These tutorials use the **East US** region in all the examples. You can use your closest region if you prefer.
 
 When the deployment is complete, navigate to the **Properties** page for your **Media Services** account. Make a note of the **Resource Id**, you use this value later when you configure the IoT Edge module.
 
@@ -131,11 +134,11 @@ git clone https://github.com/SOMEWHERE/lva-gateway
 
 ## Create the configuration files
 
-You need to edit two configuration files for the IoT Edge deployment: *deployment.amd64.json* and *state.json*. Copy these files to the *storage* folder before you make any changes:
+You need to edit the IoT Edge deployment manifest file called *deployment.amd64.json*. Copy this file to the *storage* folder before you make any changes:
 
 1. Create a folder called *storage* in the local copy of the **lva-gateway** repository. This folder is ignored by Git so as to prevent you accidentally checking in any confidential information.
 
-1. Copy the files *deployment.amd64.json* and *state.json* from the *setup* folder to the *storage* folder.
+1. Copy the file *deployment.amd64.json* from the *setup* folder to the *storage* folder.
 
 ### Edit the deployment manifest
 
@@ -180,7 +183,7 @@ To prepare the deployment manifest:
 
 1. For each of the modules listed under `modules` update the image element with the desired version:
 
-    |LvaEdgeGatewayModule|   meshams.azurecr.io/lva-edge-gateway:2.0.33-amd64|
+    |LvaEdgeGatewayModule|   meshams.azurecr.io/scotts/lva-edge-gateway:2.0.42-amd64|
     |lvaYolov3|              mcr.microsoft.com/lva-utilities/yolov3-onnx:1.0|
     |lvaEdge|                mcr.microsoft.com/media/live-video-analytics:1|
 
@@ -222,23 +225,6 @@ To prepare the deployment manifest:
 
 1. Save the changes.
 
-### Edit the state.json file
-
-1. Edit the *state.json* file in the *storage* folder to add your IoT Central connection information. You made a note of these values when you created your IoT Central application:
-
-    ```json
-    {
-      "appKeys": {
-        "iotCentralAppHost": "<IOT_CENTRAL_HOST>",
-        "iotCentralAppApiToken": "<IOT_CENTRAL_API_ACCESS_TOKEN>",
-        "iotCentralDeviceProvisioningKey": "<IOT_CENTRAL_DEVICE_PROVISIONING_KEY>",
-        "iotCentralScopeId": "<IOT_CENTRAL_SCOPE_ID>"
-      }
-    }
-    ```
-
-1. Save the changes.
-
 ## Create the gateway device
 
 The **Public Safety** application includes an **Lva Edge Motion Detector** device template and an **Lva Edge Motion Detector** device template. In this section you create a gateway device template using the deployment manifest, and add devices to your IoT Central application.
@@ -269,7 +255,7 @@ The **Lva Edge Gateway** device template now includes the **LVA Edge Gateway Mod
 
 ### Replace the manifest
 
-On the **Lva Edge Gateway** page, select **+ Replace manifest**. 
+On the **Lva Edge Gateway** page, select **+ Replace manifest**.
 
 :::image type="content" source="./media/tutorial-public-safety-create-app/replace-manifest.png" alt-text="Replace Manifest":::
 
@@ -332,14 +318,13 @@ The device status is now **Registered**.
 
 ### Get the device credentials
 
-<!-- Is this needed? We have the group primary key in the state.json already -->
 You need the credentials that allow the device to connect to your IoT Central application. The get the device credentials:
 
-1. On the **Devices** page, select the `Lva Edge Gateway` you created.
+1. On the **Devices** page, select the **lva-gateway-001** device you created.
 
 1. Select **Connect**.
 
-1. On the **Device connection** page, make a note of the **ID Scope**, the **Device ID**, and the **Primary Key**. You use these values later.
+1. On the **Device connection** page, make a note of the **ID Scope**, the **Device ID**, and the device **Primary Key**. You use these values later.
 
 1. Make sure the connection method is set to **Shared access signature**.
 
