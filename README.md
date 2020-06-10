@@ -56,6 +56,7 @@ Description TBD.
 
 
 ### To do
+* Report high level device health in gateway telemetry (in addition to device telemetry)
 * Use intermediate certificate instead of master enrollment key
 * Device lifecycle
     * Manage the delete device flow
