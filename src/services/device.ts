@@ -1,9 +1,4 @@
-import { LoggingService } from './logging';
 import { HealthState } from './health';
-import {
-    IDpsInfo,
-    IProvisionResult
-} from './module';
 import { Mqtt as IoTHubTransport } from 'azure-iot-device-mqtt';
 import {
     DeviceMethodRequest,
@@ -12,40 +7,41 @@ import {
     Twin,
     Message as IoTMessage
 } from 'azure-iot-device';
-import { SymmetricKeySecurityClient } from 'azure-iot-security-symmetric-key';
-import { ProvisioningDeviceClient } from 'azure-iot-provisioning-device';
-import { Mqtt as ProvisioningTransport } from 'azure-iot-provisioning-device-mqtt';
-import * as _get from 'lodash.get';
-import { bind, emptyObj } from '../utils';
+import {
+    ICameraDeviceProvisionInfo,
+    ModuleService
+} from './module';
+import { AmsGraph } from './amsGraph';
+import { bind, defer, emptyObj } from '../utils';
 
-export interface IDeviceProps {
-    deviceId: string;
-    ipAddress: string;
-    rtspUrl: string;
+export type DevicePropertiesHandler = (desiredChangedSettings: any) => Promise<void>;
+
+export interface IClientConnectResult {
+    clientConnectionStatus: boolean;
+    clientConnectionMessage: string;
+}
+
+interface IoTDeviceInformation {
     manufacturer: string;
     model: string;
     swVersion: string;
     osName: string;
     processorArchitecture: string;
     processorManufacturer: string;
-    totalStorage: string;
-    totalMemory: string;
+    totalStorage: number;
+    totalMemory: number;
 }
 
-const AxisDeviceProperties = {
-    Manufacturer: 'manufacturer',
-    Model: 'model',
-    SwVersion: 'swVersion',
-    OsName: 'osName',
-    ProcessorArchitecture: 'processorArchitecture',
-    ProcessorManufacturer: 'processorManufacturer',
-    TotalStorage: 'totalStorage',
-    TotalMemory: 'totalMemory'
-};
-
-interface IDeviceSettings {
-    wpDetectionClass: string;
+export enum IoTCameraSettings {
+    VideoPlaybackHost = 'wpVideoPlaybackHost'
 }
+
+interface IoTCameraSettingsInterface {
+    [IoTCameraSettings.VideoPlaybackHost]: string;
+}
+
+export const AmsDeviceTag = 'rpAmsDeviceTag';
+export const AmsDeviceTagValue = 'AmsInferenceDevice.v1';
 
 enum IoTCentralClientState {
     Disconnected = 'disconnected',
@@ -57,236 +53,318 @@ enum CameraState {
     Active = 'active'
 }
 
-enum RestartCameraCommandParams {
-    Timeout = 'cmpRestartCameraTimeout'
-}
-
-const DeviceInterface = {
+const IoTCameraInterface = {
     Telemetry: {
-        SystemHeartbeat: 'tlSystemHeartbeat',
-        InferenceCount: 'tlInferenceCount',
-        Inference: 'tlInference'
+        SystemHeartbeat: 'tlSystemHeartbeat'
     },
     State: {
         IoTCentralClientState: 'stIoTCentralClientState',
         CameraState: 'stCameraState'
     },
-    Event: {
-        CameraProvision: 'evCameraProvision',
-        CameraProcessingStarted: 'evCameraProcessingStarted',
-        CameraProcessingStopped: 'evCameraProcessingStopped',
-        CameraRestart: 'evCameraRestart'
+    Property: {
+        CameraName: 'rpCameraName',
+        RtspUrl: 'rpRtspUrl',
+        RtspAuthUsername: 'rpRtspAuthUsername',
+        RtspAuthPassword: 'rpRtspAuthPassword',
+        AmsDeviceTag
     },
     Setting: {
-        DetectionClass: 'wpDetectionClass'
-    },
-    Property: {
-        CameraIpAddress: 'rpCameraIpAddress',
-        RtspUrl: 'rpRtspUrl'
-    },
-    Command: {
-        RestartCamera: 'cmRestartCamera'
+        VideoPlaybackHost: IoTCameraSettings.VideoPlaybackHost
     }
 };
 
-const defaultDpsProvisioningHost: string = 'global.azure-devices-provisioning.net';
+enum LvaEdgeOperationsSettings {
+    AutoStart = 'wpAutoStart'
+}
 
-export class AxisDevice {
-    public static async createAndProvisionAxisDevice(logger: LoggingService, dpsInfo: IDpsInfo, deviceProps: IDeviceProps): Promise<IProvisionResult> {
-        logger.log(['AxisDevice', 'info'], `Provisioning new device - id: ${dpsInfo.deviceId}, key: ${dpsInfo.deviceKey}`);
+interface LvaEdgeOperationsSettingsInterface {
+    [LvaEdgeOperationsSettings.AutoStart]: boolean;
+}
 
-        const deviceProvisionResult: IProvisionResult = {
-            dpsProvisionStatus: false,
-            dpsProvisionMessage: '',
-            dpsHubConnectionString: '',
+const LvaEdgeOperationsInterface = {
+    Event: {
+        GraphInstanceCreated: 'evGraphInstanceCreated',
+        GraphInstanceDeleted: 'evGraphInstanceDeleted',
+        GraphInstanceStarted: 'evGraphInstanceStarted',
+        GraphInstanceStopped: 'evGraphInstanceStopped',
+        RecordingStarted: 'evRecordingStarted',
+        RecordingStopped: 'evRecordingStopped',
+        RecordingAvailable: 'evRecordingAvailable',
+        StartLvaGraphCommandReceived: 'evStartLvaGraphCommandReceived',
+        StopLvaGraphCommandReceived: 'evStopLvaGraphCommandReceived'
+    },
+    Setting: {
+        AutoStart: LvaEdgeOperationsSettings.AutoStart
+    },
+    Command: {
+        StartLvaProcessing: 'cmStartLvaProcessing',
+        StopLvaProcessing: 'cmStopLvaProcessing'
+    }
+};
+
+enum LvaEdgeDiagnosticsSettings {
+    DebugTelemetry = 'wpDebugTelemetry'
+}
+
+interface LvaEdgeDiagnosticsSettingsInterface {
+    [LvaEdgeDiagnosticsSettings.DebugTelemetry]: boolean;
+}
+
+const LvaEdgeDiagnosticsInterface = {
+    Event: {
+        RuntimeError: 'evRuntimeError',
+        AuthenticationError: 'evAuthenticationError',
+        AuthorizationError: 'evAuthorizationError',
+        DataDropped: 'evDataDropped',
+        MediaFormatError: 'evMediaFormatError',
+        MediaSessionEstablished: 'evMediaSessionEstablished',
+        NetworkError: 'evNetworkError',
+        ProtocolError: 'evProtocolError',
+        StorageError: 'evStorageError'
+    },
+    Setting: {
+        DebugTelemetry: LvaEdgeDiagnosticsSettings.DebugTelemetry
+    }
+};
+
+export const AiInferenceInterface = {
+    Telemetry: {
+        InferenceCount: 'tlInferenceCount',
+        Inference: 'tlInference'
+    },
+    Event: {
+        InferenceEventVideoUrl: 'evInferenceEventVideoUrl'
+    },
+    Property: {
+        InferenceVideoUrl: 'rpInferenceVideoUrl',
+        InferenceImageUrl: 'rpInferenceImageUrl'
+    }
+};
+
+export abstract class AmsCameraDevice {
+    protected lvaGatewayModule: ModuleService;
+    protected amsGraph: AmsGraph;
+    protected cameraInfo: ICameraDeviceProvisionInfo;
+    protected deviceClient: IoTDeviceClient;
+    protected deviceTwin: Twin;
+
+    protected deferredStart = defer();
+    protected healthState = HealthState.Good;
+    protected activeVideoInference: boolean = false;
+    protected lastInferenceTime: number = 0;
+    protected iotCameraSettings: IoTCameraSettingsInterface = {
+        [IoTCameraSettings.VideoPlaybackHost]: 'localhost:8094'
+    };
+    protected lvaEdgeOperationsSettings: LvaEdgeOperationsSettingsInterface = {
+        [LvaEdgeOperationsSettings.AutoStart]: false
+    };
+    protected lvaEdgeDiagnosticsSettings: LvaEdgeDiagnosticsSettingsInterface = {
+        [LvaEdgeDiagnosticsSettings.DebugTelemetry]: false
+    };
+
+    constructor(lvaGatewayModule: ModuleService, amsGraph: AmsGraph, cameraInfo: ICameraDeviceProvisionInfo) {
+        this.lvaGatewayModule = lvaGatewayModule;
+        this.amsGraph = amsGraph;
+        this.cameraInfo = cameraInfo;
+    }
+
+    public abstract setGraphParameters(): any;
+    public abstract async deviceReady(): Promise<void>;
+    public abstract async processLvaInferences(inferenceData: any): Promise<void>;
+    public abstract async inferenceTimer(): Promise<void>;
+
+    public async connectDeviceClient(dpsHubConnectionString: string): Promise<IClientConnectResult> {
+        let clientConnectionResult: IClientConnectResult = {
             clientConnectionStatus: false,
-            clientConnectionMessage: '',
-            axisDevice: null
+            clientConnectionMessage: ''
         };
 
         try {
-            if (!dpsInfo.deviceId || !dpsInfo.deviceKey) {
-                deviceProvisionResult.dpsProvisionStatus = false;
-                deviceProvisionResult.dpsProvisionMessage = `Missing device configuration - skipping DPS provisioning`;
+            clientConnectionResult = await this.connectDeviceClientInternal(dpsHubConnectionString, this.onHandleDeviceProperties);
 
-                logger.log(['AxisDevice', 'warning'], deviceProvisionResult.dpsProvisionMessage);
+            if (clientConnectionResult.clientConnectionStatus === true) {
+                await this.deferredStart.promise;
 
-                return deviceProvisionResult;
+                await this.deviceReady();
+
+                setInterval(async () => {
+                    await this.inferenceTimer();
+                }, 3000);
             }
 
-            const dpsProvisioningHost = process.env.dpsProvisioningHost || defaultDpsProvisioningHost;
-            const provisioningSecurityClient = new SymmetricKeySecurityClient(dpsInfo.deviceId, dpsInfo.deviceKey);
-            const provisioningClient = ProvisioningDeviceClient.create(dpsProvisioningHost, dpsInfo.scopeId, new ProvisioningTransport(), provisioningSecurityClient);
-
-            provisioningClient.setProvisioningPayload({
-                iotcModelId: dpsInfo.templateId,
-                iotcGateway: {
-                    iotcGatewayId: dpsInfo.iotcGatewayId,
-                    iotcModuleId: dpsInfo.iotcModuleId
+            if (this.lvaEdgeOperationsSettings[LvaEdgeOperationsSettings.AutoStart] === true) {
+                try {
+                    await this.startLvaProcessingInternal(true);
                 }
-            });
-
-            const dpsConnectionString = await new Promise<string>((resolve, reject) => {
-                provisioningClient.register((dpsError, dpsResult) => {
-                    if (dpsError) {
-                        return reject(dpsError);
-                    }
-
-                    logger.log(['AxisDevice', 'info'], `DPS registration succeeded - hub: ${dpsResult.assignedHub}`);
-
-                    return resolve(`HostName=${dpsResult.assignedHub};DeviceId=${dpsResult.deviceId};SharedAccessKey=${dpsInfo.deviceKey}`);
-                });
-            });
-
-            deviceProvisionResult.dpsProvisionStatus = true;
-            deviceProvisionResult.dpsProvisionMessage = `IoT Central successfully provisioned device: ${dpsInfo.deviceId}`;
-            deviceProvisionResult.dpsHubConnectionString = dpsConnectionString;
-
-            deviceProvisionResult.axisDevice = new AxisDevice(logger, deviceProps);
-
-            const { clientConnectionStatus, clientConnectionMessage } = await deviceProvisionResult.axisDevice.connectDeviceClient(deviceProvisionResult.dpsHubConnectionString);
-            deviceProvisionResult.clientConnectionStatus = clientConnectionStatus;
-            deviceProvisionResult.clientConnectionMessage = clientConnectionMessage;
+                catch (ex) {
+                    this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `Error while trying to auto-start Lva graph: ${ex.message}`);
+                }
+            }
         }
         catch (ex) {
-            deviceProvisionResult.dpsProvisionStatus = false;
-            deviceProvisionResult.dpsProvisionMessage = `Error while provisioning device: ${ex.message}`;
-
-            logger.log(['AxisDevice', 'error'], deviceProvisionResult.dpsProvisionMessage);
+            clientConnectionResult.clientConnectionStatus = false;
+            clientConnectionResult.clientConnectionMessage = `An error occurred while accessing the device twin properties`;
         }
 
-        return deviceProvisionResult;
-    }
-
-    private logger: LoggingService;
-    private deviceProps: IDeviceProps;
-    private deviceClient: IoTDeviceClient = null;
-    private deviceTwin: Twin = null;
-
-    private healthState = HealthState.Good;
-    private deviceSettings: IDeviceSettings = {
-        wpDetectionClass: ''
-    };
-    private debugDeviceTelemetry: string = '';
-
-    constructor(logger: LoggingService, deviceProps: IDeviceProps) {
-        this.logger = logger;
-        this.deviceProps = deviceProps;
-
-        this.debugDeviceTelemetry = _get(process.env, 'DEBUG_DEVICE_TELEMETRY') || '';
-    }
-
-    public async sendTelemetry(telemetryData: any) {
-        await this.sendMeasurement(telemetryData);
+        return clientConnectionResult;
     }
 
     @bind
     public async getHealth(): Promise<number> {
         await this.sendMeasurement({
-            [DeviceInterface.Telemetry.SystemHeartbeat]: this.healthState
+            [IoTCameraInterface.Telemetry.SystemHeartbeat]: this.healthState
         });
 
         return this.healthState;
     }
 
-    private async connectDeviceClient(dpsHubConnectionString: string): Promise<any> {
-        const result = {
-            clientConnectionStatus: false,
-            clientConnectionMessage: ''
-        };
+    public async deleteCamera(): Promise<void> {
+        this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Deleting camera device instance for cameraId: ${this.cameraInfo.cameraId}`);
 
-        if (this.deviceClient) {
-            await this.deviceClient.close();
+        try {
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Deactiving graph instance: ${this.amsGraph.getInstanceName()}`);
+
+            await this.amsGraph.deleteLvaGraph();
+
+            const clientInterface = this.deviceClient;
             this.deviceClient = null;
-        }
-
-        try {
-            this.deviceClient = await IoTDeviceClient.fromConnectionString(dpsHubConnectionString, IoTHubTransport);
-            if (!this.deviceClient) {
-                result.clientConnectionStatus = false;
-                result.clientConnectionMessage = `Failed to connect device client interface from connection string - device: ${this.deviceProps.deviceId}`;
-            }
-            else {
-                result.clientConnectionStatus = true;
-                result.clientConnectionMessage = `Successfully connected to IoT Central - device: ${this.deviceProps.deviceId}`;
-            }
-        }
-        catch (ex) {
-            result.clientConnectionStatus = false;
-            result.clientConnectionMessage = `Failed to instantiate client interface from configuraiton: ${ex.message}`;
-
-            this.logger.log(['AxisDevice', 'error'], `${result.clientConnectionMessage}`);
-        }
-
-        if (result.clientConnectionStatus === false) {
-            return result;
-        }
-
-        try {
-            await this.deviceClient.open();
-
-            this.logger.log(['AxisDevice', 'info'], `Device client is connected`);
-
-            this.deviceTwin = await this.deviceClient.getTwin();
-            this.deviceTwin.on('properties.desired', this.onHandleDeviceProperties);
-
-            this.deviceClient.on('error', this.onDeviceClientError);
-
-            this.deviceClient.onDeviceMethod(DeviceInterface.Command.RestartCamera, this.restartCameraDirectMethod);
-            this.deviceClient.on('inputMessage', this.onHandleDownstreamMessages);
-
-            await this.updateDeviceProperties({
-                [DeviceInterface.Property.CameraIpAddress]: this.deviceProps.ipAddress,
-                [DeviceInterface.Property.RtspUrl]: this.deviceProps.rtspUrl,
-                [AxisDeviceProperties.Manufacturer]: this.deviceProps.manufacturer,
-                [AxisDeviceProperties.Model]: this.deviceProps.model,
-                [AxisDeviceProperties.OsName]: this.deviceProps.osName,
-                [AxisDeviceProperties.SwVersion]: this.deviceProps.swVersion,
-                [AxisDeviceProperties.ProcessorArchitecture]: this.deviceProps.processorArchitecture,
-                [AxisDeviceProperties.ProcessorManufacturer]: this.deviceProps.processorManufacturer,
-                [AxisDeviceProperties.TotalMemory]: this.deviceProps.totalMemory,
-                [AxisDeviceProperties.TotalStorage]: this.deviceProps.totalStorage
-            });
+            await clientInterface.close();
 
             await this.sendMeasurement({
-                [DeviceInterface.State.IoTCentralClientState]: IoTCentralClientState.Connected,
-                [DeviceInterface.State.CameraState]: CameraState.Active,
-                [DeviceInterface.Event.CameraProcessingStarted]: 'Axis IoT Central Device'
+                [IoTCameraInterface.State.CameraState]: CameraState.Inactive
             });
-
-            result.clientConnectionStatus = true;
         }
         catch (ex) {
-            result.clientConnectionStatus = false;
-            result.clientConnectionMessage = `IoT Central connection error: ${ex.message}`;
-
-            this.logger.log(['AxisDevice', 'error'], result.clientConnectionMessage);
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `Error while deleting camera: ${this.cameraInfo.cameraId}`);
         }
-
-        return result;
     }
 
-    @bind
-    private async sendMeasurement(data: any): Promise<void> {
-        if (!data || !this.deviceClient) {
-            return;
+    public async sendLvaEvent(lvaEvent: string, messageJson?: any): Promise<void> {
+        let eventField;
+        let eventValue = this.cameraInfo.cameraId;
+
+        switch (lvaEvent) {
+            case 'Microsoft.Media.Graph.Operational.RecordingStarted':
+                eventField = LvaEdgeOperationsInterface.Event.RecordingStarted;
+                eventValue = messageJson?.outputLocation || this.cameraInfo.cameraId;
+                break;
+
+            case 'Microsoft.Media.Graph.Operational.RecordingStopped':
+                eventField = LvaEdgeOperationsInterface.Event.RecordingStopped;
+                eventValue = messageJson?.outputLocation || this.cameraInfo.cameraId;
+                break;
+
+            case 'Microsoft.Media.Graph.Operational.RecordingAvailable':
+                eventField = LvaEdgeOperationsInterface.Event.RecordingAvailable;
+                eventValue = messageJson?.outputLocation || this.cameraInfo.cameraId;
+                break;
+
+            case 'Microsoft.Media.Edge.Diagnostics.RuntimeError':
+                eventField = LvaEdgeDiagnosticsInterface.Event.RuntimeError;
+                eventValue = messageJson?.code || this.cameraInfo.cameraId;
+                break;
+
+            case 'Microsoft.Media.Graph.Diagnostics.AuthenticationError':
+                eventField = LvaEdgeDiagnosticsInterface.Event.AuthenticationError;
+                eventValue = messageJson?.errorCode || this.cameraInfo.cameraId;
+                break;
+
+            case 'Microsoft.Media.Graph.Diagnostics.AuthorizationError':
+                eventField = LvaEdgeDiagnosticsInterface.Event.AuthorizationError;
+                eventValue = messageJson?.errorCode || this.cameraInfo.cameraId;
+                break;
+
+            case 'Microsoft.Media.Graph.Diagnostics.DataDropped':
+                eventField = LvaEdgeDiagnosticsInterface.Event.DataDropped;
+                eventValue = messageJson?.dataType || this.cameraInfo.cameraId;
+                break;
+
+            case 'Microsoft.Media.Graph.Diagnostics.MediaFormatError':
+                eventField = LvaEdgeDiagnosticsInterface.Event.MediaFormatError;
+                eventValue = messageJson?.code || this.cameraInfo.cameraId;
+                break;
+
+            case 'Microsoft.Media.Graph.Diagnostics.MediaSessionEstablished':
+                eventField = LvaEdgeDiagnosticsInterface.Event.MediaSessionEstablished;
+                eventValue = this.cameraInfo.cameraId;
+                break;
+
+            case 'Microsoft.Media.Graph.Diagnostics.NetworkError':
+                eventField = LvaEdgeDiagnosticsInterface.Event.NetworkError;
+                eventValue = messageJson?.errorCode || this.cameraInfo.cameraId;
+                break;
+
+            case 'Microsoft.Media.Graph.Diagnostics.ProtocolError':
+                eventField = LvaEdgeDiagnosticsInterface.Event.ProtocolError;
+                eventValue = `${messageJson?.protocol}: ${messageJson?.errorCode}` || this.cameraInfo.cameraId;
+                break;
+
+            case 'Microsoft.Media.Graph.Diagnostics.StorageError':
+                eventField = LvaEdgeDiagnosticsInterface.Event.StorageError;
+                eventValue = messageJson?.storageAccountName || this.cameraInfo.cameraId;
+                break;
+
+            default:
+                this.lvaGatewayModule.logger(['AmsCameraDevice', 'warning'], `Received Unknown Lva event telemetry: ${lvaEvent}`);
+                break;
         }
 
+        if (lvaEvent) {
+            await this.sendMeasurement({
+                [eventField]: eventValue
+            });
+        }
+        else {
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'warning'], `Received Unknown Lva event telemetry: ${lvaEvent}`);
+        }
+    }
+
+    protected abstract async onHandleDeviceProperties(desiredChangedSettings: any);
+
+    protected async onHandleDevicePropertiesInternal(desiredChangedSettings: any) {
         try {
-            const iotcMessage = new IoTMessage(JSON.stringify(data));
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
 
-            await this.deviceClient.sendEvent(iotcMessage);
+            const patchedProperties = {};
 
-            if (this.debugDeviceTelemetry === this.deviceProps.deviceId) {
-                this.logger.log(['AxisDevice', 'info'], `sendEvent: ${JSON.stringify(data, null, 4)}`);
+            for (const setting in desiredChangedSettings) {
+                if (!desiredChangedSettings.hasOwnProperty(setting)) {
+                    continue;
+                }
+
+                if (setting === '$version') {
+                    continue;
+                }
+
+                const value = desiredChangedSettings[`${setting}`]?.value;
+
+                switch (setting) {
+                    case IoTCameraInterface.Setting.VideoPlaybackHost:
+                        patchedProperties[setting] = (this.iotCameraSettings[setting] as any) = value || '';
+                        break;
+
+                    case LvaEdgeOperationsInterface.Setting.AutoStart:
+                        patchedProperties[setting] = (this.lvaEdgeOperationsSettings[setting] as any) = value || false;
+                        break;
+
+                    case LvaEdgeDiagnosticsInterface.Setting.DebugTelemetry:
+                        patchedProperties[setting] = (this.lvaEdgeDiagnosticsSettings[setting] as any) = value || false;
+
+                    default:
+                        break;
+                }
+            }
+
+            if (!emptyObj(patchedProperties)) {
+                await this.updateDeviceProperties(patchedProperties);
             }
         }
         catch (ex) {
-            this.logger.log(['AxisDevice', 'error'], `sendMeasurement: ${ex.message}`);
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `Exception while handling desired properties: ${ex.message}`);
         }
     }
 
-    private async updateDeviceProperties(properties: any): Promise<void> {
+    protected async updateDeviceProperties(properties: any): Promise<void> {
         if (!properties || !this.deviceTwin) {
             return;
         }
@@ -302,145 +380,220 @@ export class AxisDevice {
                 });
             });
 
-            this.logger.log(['AxisDevice', 'info'], `Device live properties updated: ${JSON.stringify(properties, null, 4)}`);
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Device live properties updated: ${JSON.stringify(properties, null, 4)}`);
         }
         catch (ex) {
-            this.logger.log(['AxisDevice', 'error'], `Error while updating client properties: ${ex.message}`);
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `Error while updating client properties: ${ex.message}`);
         }
     }
 
-    @bind
-    private async onHandleDeviceProperties(desiredChangedSettings: any) {
+    protected async sendMeasurement(data: any): Promise<void> {
+        if (!data || !this.deviceClient) {
+            return;
+        }
+
         try {
-            this.logger.log(['AxisDevice', 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
+            const iotcMessage = new IoTMessage(JSON.stringify(data));
 
-            const patchedProperties = {};
+            await this.deviceClient.sendEvent(iotcMessage);
 
-            for (const setting in desiredChangedSettings) {
-                if (!desiredChangedSettings.hasOwnProperty(setting)) {
-                    continue;
-                }
-
-                if (setting === '$version') {
-                    continue;
-                }
-
-                let changedSettingResult;
-
-                switch (setting) {
-                    case DeviceInterface.Setting.DetectionClass:
-                        changedSettingResult = await this.deviceSettingChange(setting, _get(desiredChangedSettings, `${setting}`));
-                        break;
-
-                    default:
-                        this.logger.log(['AxisDevice', 'error'], `Received desired property change for unknown setting '${setting}'`);
-                        break;
-                }
-
-                if (_get(changedSettingResult, 'status') === true) {
-                    patchedProperties[setting] = changedSettingResult.value;
-                }
-            }
-
-            if (!emptyObj(patchedProperties)) {
-                await this.updateDeviceProperties(patchedProperties);
+            if (this.lvaEdgeDiagnosticsSettings[LvaEdgeDiagnosticsSettings.DebugTelemetry] === true) {
+                this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `sendEvent: ${JSON.stringify(data, null, 4)}`);
             }
         }
         catch (ex) {
-            this.logger.log(['AxisDevice', 'error'], `Exception while handling desired properties: ${ex.message}`);
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `sendMeasurement: ${ex.message}`);
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `inspect the error: ${JSON.stringify(ex, null, 4)}`);
+
+            // TODO:
+            // Detect DPS/Hub reprovisioning scenarios - sample exeption:
+            //
+            // [12:41:54 GMT+0000], [log,[AmsCameraDevice, error]] data: inspect the error: {
+            //     "name": "UnauthorizedError",
+            //     "transportError": {
+            //         "name": "NotConnectedError",
+            //         "transportError": {
+            //             "code": 5
+            //         }
+            //     }
+            // }
         }
     }
 
-    private async deviceSettingChange(setting: string, value: any): Promise<any> {
-        this.logger.log(['AxisDevice', 'info'], `Handle device setting change for '${setting}': ${typeof value === 'object' && value !== null ? JSON.stringify(value, null, 4) : value}`);
+    protected async startLvaProcessingInternal(autoStart: boolean): Promise<boolean> {
+        await this.sendMeasurement({
+            [LvaEdgeOperationsInterface.Event.StartLvaGraphCommandReceived]: autoStart ? 'AutoStart' : 'Command'
+        });
 
-        const result = {
-            value: undefined,
-            status: true
+        const startLvaGraphResult = await this.amsGraph.startLvaGraph(this.setGraphParameters());
+
+        if (this.lvaEdgeDiagnosticsSettings[LvaEdgeDiagnosticsSettings.DebugTelemetry] === true) {
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Graph Instance Name: ${JSON.stringify(this.amsGraph.getInstanceName(), null, 4)}`);
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Graph Instance: ${JSON.stringify(this.amsGraph.getInstance(), null, 4)}`);
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Graph Topology Name: ${JSON.stringify(this.amsGraph.getInstanceName(), null, 4)}`);
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Graph Topology: ${JSON.stringify(this.amsGraph.getTopology(), null, 4)}`);
+        }
+
+        await this.sendMeasurement({
+            [IoTCameraInterface.State.CameraState]: startLvaGraphResult === true ? CameraState.Active : CameraState.Inactive
+        });
+
+        return startLvaGraphResult;
+    }
+
+    private async connectDeviceClientInternal(
+        dpsHubConnectionString: string,
+        devicePropertiesHandler: DevicePropertiesHandler): Promise<IClientConnectResult> {
+
+        const result: IClientConnectResult = {
+            clientConnectionStatus: false,
+            clientConnectionMessage: ''
         };
 
-        switch (setting) {
-            case DeviceInterface.Setting.DetectionClass:
-                result.value = this.deviceSettings[setting] = value || '';
-                break;
+        if (this.deviceClient) {
+            await this.deviceClient.close();
+            this.deviceClient = null;
+        }
 
-            default:
-                this.logger.log(['AxisDevice', 'info'], `Unknown device setting change request '${setting}'`);
-                result.status = false;
+        try {
+            this.deviceClient = await IoTDeviceClient.fromConnectionString(dpsHubConnectionString, IoTHubTransport);
+            if (!this.deviceClient) {
+                result.clientConnectionStatus = false;
+                result.clientConnectionMessage = `Failed to connect device client interface from connection string - device: ${this.cameraInfo.cameraId}`;
+            }
+            else {
+                result.clientConnectionStatus = true;
+                result.clientConnectionMessage = `Successfully connected to IoT Central - device: ${this.cameraInfo.cameraId}`;
+            }
+        }
+        catch (ex) {
+            result.clientConnectionStatus = false;
+            result.clientConnectionMessage = `Failed to instantiate client interface from configuraiton: ${ex.message}`;
+
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `${result.clientConnectionMessage}`);
+        }
+
+        if (result.clientConnectionStatus === false) {
+            return result;
+        }
+
+        try {
+            await this.deviceClient.open();
+
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Device client is connected`);
+
+            this.deviceTwin = await this.deviceClient.getTwin();
+            this.deviceTwin.on('properties.desired', devicePropertiesHandler);
+
+            this.deviceClient.on('error', this.onDeviceClientError);
+
+            this.deviceClient.onDeviceMethod(LvaEdgeOperationsInterface.Command.StartLvaProcessing, this.startLvaProcessing);
+            this.deviceClient.onDeviceMethod(LvaEdgeOperationsInterface.Command.StopLvaProcessing, this.stopLvaProcessing);
+
+            const cameraProps = await this.getCameraProps();
+
+            await this.updateDeviceProperties({
+                ...cameraProps,
+                [IoTCameraInterface.Property.CameraName]: this.cameraInfo.cameraName,
+                [IoTCameraInterface.Property.RtspUrl]: this.cameraInfo.rtspUrl,
+                [IoTCameraInterface.Property.RtspAuthUsername]: this.cameraInfo.rtspAuthUsername,
+                [IoTCameraInterface.Property.RtspAuthPassword]: this.cameraInfo.rtspAuthPassword,
+                [IoTCameraInterface.Property.AmsDeviceTag]: `${this.lvaGatewayModule.getInstanceId()}:${AmsDeviceTagValue}`,
+                [IoTCameraInterface.Setting.VideoPlaybackHost]: this.iotCameraSettings[IoTCameraSettings.VideoPlaybackHost],
+                [LvaEdgeOperationsInterface.Setting.AutoStart]: this.lvaEdgeOperationsSettings[LvaEdgeOperationsSettings.AutoStart],
+                [LvaEdgeDiagnosticsInterface.Setting.DebugTelemetry]: this.lvaEdgeOperationsSettings[LvaEdgeDiagnosticsSettings.DebugTelemetry]
+            });
+
+            await this.sendMeasurement({
+                [IoTCameraInterface.State.IoTCentralClientState]: IoTCentralClientState.Connected,
+                [IoTCameraInterface.State.CameraState]: CameraState.Inactive
+            });
+
+            result.clientConnectionStatus = true;
+        }
+        catch (ex) {
+            result.clientConnectionStatus = false;
+            result.clientConnectionMessage = `IoT Central connection error: ${ex.message}`;
+
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], result.clientConnectionMessage);
         }
 
         return result;
     }
 
-    @bind
-    private async onHandleDownstreamMessages(inputName: string, message: any) {
-        // this.logger.log(['AxisDevice', 'info'], `Received downstream message: ${JSON.stringify(message, null, 4)}`);
-
-        if (!this.deviceClient) {
-            return;
-        }
-
-        try {
-            await this.deviceClient.complete(message);
-
-            const messageData = message.getBytes().toString('utf8');
-            if (!messageData) {
-                return;
-            }
-
-            const messageJson = JSON.parse(messageData);
-
-            switch (inputName) {
-                case 'axisdevicetelemetry':
-                    this.logger.log(['AxisDevice', 'info'], `Received routed message - inputName: ${inputName}, message: ${JSON.stringify(messageJson, null, 4)}`);
-                    break;
-
-                default:
-                    this.logger.log(['AxisDevice', 'warning'], `Warning: received routed message for unknown input: ${inputName}`);
-                    break;
-            }
-        }
-        catch (ex) {
-            this.logger.log(['AxisDevice', 'error'], `Error while handling downstream message: ${ex.message}`);
-        }
+    private async getCameraProps(): Promise<IoTDeviceInformation> {
+        // TODO:
+        // Introduce some ONVIF tech to get camera props
+        return {
+            manufacturer: 'Axis',
+            model: '1367',
+            swVersion: 'v1.0.0',
+            osName: 'Axis OS',
+            processorArchitecture: 'Axis CPU',
+            processorManufacturer: 'Axis',
+            totalStorage: 0,
+            totalMemory: 0
+        };
     }
 
     @bind
     private onDeviceClientError(error: Error) {
-        this.logger.log(['AxisDevice', 'error'], `Device client connection error: ${error.message}`);
+        this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `Device client connection error: ${error.message}`);
         this.healthState = HealthState.Critical;
     }
 
     @bind
-    private async restartCameraDirectMethod(commandRequest: DeviceMethodRequest, commandResponse: DeviceMethodResponse) {
-        this.logger.log(['AxisDevice', 'info'], `${DeviceInterface.Command.RestartCamera} command received`);
+    // @ts-ignore
+    private async startLvaProcessing(commandRequest: DeviceMethodRequest, commandResponse: DeviceMethodResponse) {
+        this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `${LvaEdgeOperationsInterface.Command.StartLvaProcessing} command received`);
 
         try {
-            await commandResponse.send(200);
+            const startLvaGraphResult = await this.startLvaProcessingInternal(false);
+
+            const responseMessage = `LVA Edge start graph request: ${startLvaGraphResult ? 'succeeded' : 'failed'}`;
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], responseMessage);
+
+            await commandResponse.send(202);
+            await this.updateDeviceProperties({
+                [LvaEdgeOperationsInterface.Command.StartLvaProcessing]: {
+                    value: responseMessage
+                }
+            });
         }
         catch (ex) {
-            this.logger.log(['AxisDevice', 'error'], `Error sending response for ${DeviceInterface.Command.RestartCamera} command: ${ex.message}`);
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `startLvaProcessing error: ${ex.message}`);
         }
+    }
 
-        const timeout = _get(commandRequest, `payload.${RestartCameraCommandParams.Timeout}`);
+    @bind
+    // @ts-ignore
+    private async stopLvaProcessing(commandRequest: DeviceMethodRequest, commandResponse: DeviceMethodResponse) {
+        this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `${LvaEdgeOperationsInterface.Command.StopLvaProcessing} command received`);
 
         try {
             await this.sendMeasurement({
-                [DeviceInterface.Event.CameraRestart]: 'DirectMethod called for camera restart',
-                [DeviceInterface.Event.CameraProcessingStopped]: 'Axis IoT Central Device',
-                [DeviceInterface.State.CameraState]: CameraState.Inactive
+                [LvaEdgeOperationsInterface.Event.StopLvaGraphCommandReceived]: this.cameraInfo.cameraId
             });
 
-            if (timeout > 0) {
-                await new Promise((resolve) => {
-                    setTimeout(() => {
-                        return resolve();
-                    }, 1000 * timeout);
+            const stopLvaGraphResult = await this.amsGraph.stopLvaGraph();
+            if (stopLvaGraphResult) {
+                await this.sendMeasurement({
+                    [IoTCameraInterface.State.CameraState]: CameraState.Inactive
                 });
             }
+
+            const responseMessage = `LVA Edge stop graph request: ${stopLvaGraphResult ? 'succeeded' : 'failed'}`;
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], responseMessage);
+
+            await commandResponse.send(202);
+            await this.updateDeviceProperties({
+                [LvaEdgeOperationsInterface.Command.StopLvaProcessing]: {
+                    value: responseMessage
+                }
+            });
         }
         catch (ex) {
-            this.logger.log(['AxisDevice', 'error'], `${ex.message}`);
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `Stop LVA error ${ex.message}`);
         }
     }
 }

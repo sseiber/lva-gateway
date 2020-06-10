@@ -7,7 +7,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Axis IoTC Local Debug",
+            "name": "LVA IoTC Local Debug",
             "console": "integratedTerminal",
             "program": "${workspaceFolder}/src/index.ts",
             "protocol": "inspector",
@@ -27,13 +27,12 @@
                 "NODE_ENV": "local",
                 "PORT": "9070",
                 "DATAMISC_ROOT": "${workspaceFolder}/storage",
-                "LOCAL_DEBUG": "0",
-                "DEBUG_MODULE_TELEMETRY": "1",
-                "DEBUG_ROUTING_DATA": "0"
+                "CONTENT_ROOT": "${workspaceFolder}/setup",
+                "LOCAL_DEBUG": "0"
             }
         },
         {
-            "name": "Axis IoTC Remote Debug",
+            "name": "LVA IoTC Remote Debug",
             "type": "node",
             "request": "attach",
             "port": 9229,

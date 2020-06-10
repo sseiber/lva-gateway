@@ -1,7 +1,6 @@
 const ROOT = '__ROOT__';
 import { service, inject } from 'spryly';
 import { Server } from '@hapi/hapi';
-import { LoggingService } from './logging';
 import * as fse from 'fs-extra';
 import { resolve as pathResolve } from 'path';
 import * as _get from 'lodash.get';
@@ -12,18 +11,20 @@ export class StorageService {
     @inject('$server')
     private server: Server;
 
-    @inject('logger')
-    private logger: LoggingService;
-
     private setupDone = false;
     private storageDirectory;
 
     public async init() {
-        this.logger.log(['StorageService', 'info'], 'initialize');
+        this.server.log(['StorageService', 'info'], 'initialize');
 
-        this.storageDirectory = _get(this.server, 'settings.app.storageRootDirectory');
+        this.storageDirectory = (this.server?.settings?.app as any)?.storageRootDirectory;
 
-        this.setup();
+        try {
+            this.setup();
+        }
+        catch (ex) {
+            this.server.log(['StorageService', 'error'], `Exception during storage setup: ${ex.message}`);
+        }
     }
 
     public async get(scope: string, property?: string): Promise<any> {
@@ -99,14 +100,14 @@ export class StorageService {
     }
 
     private writeScope(scope, data) {
-        this.setup();
-
-        const writeOptions = {
-            spaces: 2,
-            throws: false
-        };
-
         try {
+            this.setup();
+
+            const writeOptions = {
+                spaces: 2,
+                throws: false
+            };
+
             fse.writeJsonSync(this.getScopePath(scope), data, writeOptions);
         }
         catch (ex) {
