@@ -57,10 +57,10 @@ To add the *state.json* configuration file to the *data/storage* folder:
     sudo chmod -R 777 /data
     ```
 
-1. Use the PuTTY `pscp` utility in a command prompt to copy the *state.json* file you created in the previous tutorial into the IoT Edge device. This example uses `40.121.209.246` as an example IP address, replace it with the IP address of your IoT Edge device:
+1. Use the PuTTY `scp` utility in a command prompt to copy the *state.json* file you created in the previous tutorial into the IoT Edge device. This example uses `40.121.209.246` as an example IP address, replace it with the IP address of your IoT Edge device:
 
     ```cmd
-    pscp state.json YourUserName@40.121.209.246:/data/storage/state.json`
+    scp state.json YourUserName@40.121.209.246:/data/storage/state.json`
     ```
 
 To configure IoT Edge in the VM to use DPS to register and connect to your IoT Central application:
