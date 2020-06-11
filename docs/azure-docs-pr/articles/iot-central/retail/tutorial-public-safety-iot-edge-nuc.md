@@ -35,6 +35,8 @@ In this tutorial, you learn how to:
 
 ## Configure the IoT Edge device
 
+If you don't have the IoT Edge runtime installed in your NUC machine follow [this](https://docs.microsoft.com/en-us/azure/iot-edge/how-to-install-iot-edge-linux) instructions.
+
 To update the IoT Edge runtime:
 
 1. Use the PuTTY utility to connect to the IoT Edge device.
@@ -47,13 +49,13 @@ To update the IoT Edge runtime:
     sudo iotedge --version
     ```
 
-To add the *state.json* configuration file to the *data/storage* folder:
+To add the *state.json* configuration file to the */data/storage* folder:
 
 1. Use the following commands to create the folders with the necessary permissions:
 
     ```bash
-    sudo mkdir -p data/storage
-    sudo mkdir -p data/media
+    sudo mkdir -p /data/storage
+    sudo mkdir -p /data/media
     sudo chmod -R 777 /data
     ```
 
@@ -63,7 +65,7 @@ To add the *state.json* configuration file to the *data/storage* folder:
     scp state.json YourUserName@40.121.209.246:/data/storage/state.json`
     ```
 
-To configure IoT Edge in the VM to use DPS to register and connect to your IoT Central application:
+Configure IoT Edge to register and connect to your IoT Central application:
 
 1. Use a text editor, such as `nano`, to open the IoT Edge config.yaml file.
 
@@ -97,12 +99,9 @@ To configure IoT Edge in the VM to use DPS to register and connect to your IoT C
         symmetric_key: "{symmetric_key}"
     ```
 
-    > [!TIP]
-    > Make sure there's no space left in front of `provisioning:`
-
 1. Replace `{scope_id}` with the **ID Scope** you made a note of in the previous tutorial.
 
-1. Replace `{registration_id}` with *lva-gateway-001*, the device you created in the previous tutorial.
+1. Replace `{registration_id}` with *[lva-gateway-001]*, the device you created in the previous tutorial.
 
 1. Replace `{symmetric_key}` with the **Primary key** you made a note of in the previous tutorial.
 
