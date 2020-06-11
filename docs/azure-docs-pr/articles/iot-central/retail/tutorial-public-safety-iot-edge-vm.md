@@ -63,6 +63,8 @@ Use the information in the following table to complete the **Custom deployment**
 
 Select **Review + create**. When the validation is complete, select **Create**. It typically takes about three minutes for the deployment to complete. When the deployment is complete, navigate to the **lva-rg** resource group in the Azure portal.
 
+<!-- TODO - we should have some steps here to confirm Edge device provisioned and connected - look at modules page for device?-->
+
 ## Use the RTSP simulator
 
 If you don't have real camera devices to connect to your IoT Edge device, you can use the two simulated camera devices in the public safety application template. This section shows you how to use a simulated video stream in your IoT Edge device.

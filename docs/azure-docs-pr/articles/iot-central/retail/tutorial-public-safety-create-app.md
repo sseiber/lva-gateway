@@ -132,7 +132,7 @@ Use the following command to clone the repository to a suitable location on your
 git clone https://github.com/SOMEWHERE/lva-gateway
 ```
 
-## Create the configuration files
+## Create the configuration file
 
 You need to edit the IoT Edge deployment manifest file called *deployment.amd64.json*. Copy this file to the *storage* folder before you make any changes:
 
@@ -227,7 +227,7 @@ To prepare the deployment manifest:
 
 ## Create the gateway device
 
-The **Public Safety** application includes an **Lva Edge Motion Detector** device template and an **Lva Edge Motion Detector** device template. In this section you create a gateway device template using the deployment manifest, and add devices to your IoT Central application.
+The **Public Safety** application includes an **Lva Edge Motion Detector** device template and an **Lva Edge Motion Detector** device template. In this section you create a gateway device template using the deployment manifest, and add the gateway device to your IoT Central application.
 
 ### Create a device template for the Lva Edge Gateway
 
