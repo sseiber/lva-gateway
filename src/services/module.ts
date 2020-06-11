@@ -261,6 +261,8 @@ export class ModuleService {
             result = await this.connectModuleClient();
 
             if (result === true) {
+                await this.recreateExistingDevices();
+
                 await this.deferredStart.promise;
             }
         }
@@ -326,32 +328,26 @@ export class ModuleService {
 
     @bind
     public async getHealth(): Promise<number> {
-        let healthState = HealthState.Good;
+        let healthState = this.healthState;
 
         try {
-            const healthTelemetry = {};
-            const systemProperties = await this.getSystemProperties();
-            const freeMemory = systemProperties?.freeMemory || 0;
+            if (healthState === HealthState.Good) {
+                const healthTelemetry = {};
+                const systemProperties = await this.getSystemProperties();
+                const freeMemory = systemProperties?.freeMemory || 0;
 
-            healthTelemetry[LvaGatewayInterface.Telemetry.FreeMemory] = freeMemory;
-            healthTelemetry[LvaGatewayInterface.Telemetry.ConnectedCameras] = this.amsInferenceDeviceMap.size;
+                healthTelemetry[LvaGatewayInterface.Telemetry.FreeMemory] = freeMemory;
+                healthTelemetry[LvaGatewayInterface.Telemetry.ConnectedCameras] = this.amsInferenceDeviceMap.size;
 
-            // TODO:
-            // Find the right threshold for this metric
-            if (freeMemory === 0) {
-                healthState = HealthState.Critical;
-            }
-
-            healthTelemetry[LvaGatewayInterface.Telemetry.SystemHeartbeat] = healthState;
-
-            await this.sendMeasurement(healthTelemetry);
-
-            if (healthState < HealthState.Good) {
-                this.server.log(['HealthService', 'warning'], `Health check watch: ${healthState}`);
-
-                if (++this.healthCheckFailStreak >= this.healthCheckRetries) {
-                    await this.restartModule(10, 'checkHealthState');
+                // TODO:
+                // Find the right threshold for this metric
+                if (freeMemory === 0) {
+                    healthState = HealthState.Critical;
                 }
+
+                healthTelemetry[LvaGatewayInterface.Telemetry.SystemHeartbeat] = healthState;
+
+                await this.sendMeasurement(healthTelemetry);
             }
 
             this.healthState = healthState;
@@ -361,8 +357,18 @@ export class ModuleService {
             }
         }
         catch (ex) {
-            this.server.log(['ModuleService', 'error'], `Error computing healthState: ${ex.message}`);
-            healthState = HealthState.Critical;
+            this.server.log(['ModuleService', 'error'], `Error in healthState (may indicate a critical issue): ${ex.message}`);
+            this.healthState = HealthState.Critical;
+        }
+
+        if (this.healthState < HealthState.Good) {
+            this.server.log(['HealthService', 'warning'], `Health check warning: ${healthState}`);
+
+            if (++this.healthCheckFailStreak >= this.healthCheckRetries) {
+                this.server.log(['HealthService', 'warning'], `Health check too many warnings: ${healthState}`);
+
+                await this.restartModule(0, 'checkHealthState');
+            }
         }
 
         return this.healthState;
@@ -531,8 +537,6 @@ export class ModuleService {
                 [LvaGatewayInterface.State.ModuleState]: ModuleState.Active,
                 [LvaGatewayInterface.Event.ModuleStarted]: 'Module initialization'
             });
-
-            await this.recreateExistingDevices();
         }
         catch (ex) {
             connectionStatus = `IoT Central connection error: ${ex.message}`;
@@ -563,7 +567,7 @@ export class ModuleService {
             this.server.log(['ModuleService', 'info'], `Found ${deviceList.length} devices`);
 
             for (const device of deviceList) {
-                await sleep(1000);
+                await sleep(500);
 
                 try {
                     this.server.log(['ModuleService', 'info'], `Getting properties for device: ${device.id}`);
