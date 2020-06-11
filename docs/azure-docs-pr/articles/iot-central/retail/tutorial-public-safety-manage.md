@@ -11,84 +11,79 @@ ms.date: 07/01/2020
 ---
 # Tutorial: Monitor and manage a public safety application
 
-<!-- No editing done here yet -->
-Here mockups of the main dashboards
+<!-- TODO - make sure to summarize the key learning steps of this tutorial -->
 
-Main Dashboards
+In this tutorial, you learn how to:
+> [!div class="checklist"]
+> * Instantiate Object detection and Motion Detection Cameras
+> * Manage your video streams and play them once the inference occurs
 
-### 1 -- Setup 
+## Prerequisites
 
-The setup tab shows a diagram with the various components and how they
-interact.
+* Complete the Create a live video analytics application in Azure IoT Central
+* Either deploy the Edge modules into a Linux VM or to the NUC computer and a real camera
+* Locate the **Rtsp** URL for the camera stream
 
-It also has the commands to Add cameras. After the initial setup, no
-additional setup should be required.
+## Instantiate an Object Detection Camera
 
-The only challenge is that the commands are part of the Edge LvaGateway
-and won't hold through a template export/import.
+Navigate to the LVA Gateway and under the **Commands** tab, locate the Add Camera request.
 
-![](media/image32.emf){width="6.5in" height="6.004861111111111in"}
+Parameters for the command:
 
-### 2 -- Manage and Diagnosis
+Go to Devices and select the Lva Edge Gateway, and pick the device instance you created. Select the **Command** tab, and fill in the following information on the `Add Camera Request` command.
 
-As a network or asset manager, I want to be able to quickly identify and
-resolve infrastructure problems. I also want to ensure the Live Video
-Analytic equipment is working and responding as expected. I have
-pictures and properties to describe the assets.
+| Field| Description| Sample Value|
+|---------|---------|---------|
+| Camera Id      | Device ID for provisioning | 4mca46neku87 |
+| Camera Name    | Friendly Name           | Camera 1 |
+| Rtsp Url       | Address of the stream   | |
+| | For the simulated stream, use the private IP address of the VM| rtsp://10.0.0.4:554/media/camera-300s.mkv|
+| |For a real Camera find  your streaming options |rtsp://192.168.1.64:554/Streaming/Channels/101/ |
+| Rtsp Username  |                         | Enter dummy value for the simulated stream    |
+| Rtsp password  |                         | Enter dummy value for the simulated stream    |
+| Detection Type | Dropdown                | Object Detection       |
 
-I also see the lifecycle and functional details like the Graph
-instantiation sequence.
+Click Run
 
-And mainly, I see the health and the performance of the solution.
+:::image type="content" source="media/tutorial-public-safety-manage/add_camera.png" alt-text="Add Camera":::
 
-![](media/image33.emf){width="6.5in" height="3.4611111111111112in"}
+> [!NOTE]
+> The Device Template for the Object Detector already exists in the application.
 
-### 3 -- Monitor
+## Optional instantiate a Motion Detection Camera
 
-As a Security operator I want to quickly find anomalies on the security
-streams. The solution is capable of detecting objects and motion to
-trigger "Smart" event tagging.
+Repeat the steps to instantiate an Object Detection Camera, but use a new device Id, call it **Camera 2**, supply a new Rtsp and for the **Detection Type** select **Motion Detection**
 
-I want to be able to quickly navigate through the events.
+## Inspect the downstream devices
 
-I want to see activity spikes to identify times when we have a problem.
+In the LVA Gateway device, navigate to the downstream devices and ensure **Camera 1** and if instantiated also **Camera 2** are listed. You can click on the **Camera 1** link to navigate to it, and also it appears under the device list for the **Lva Edge Object Detector** device template
 
-![](media/image34.emf){width="6.5in" height="4.5159722222222225in"}
+:::image type="content" source="media/tutorial-public-safety-manage/inspect_downstream.png" alt-text="Inspect":::
 
-IoT Edge Running on an Intel NUC and Camera running on-prem
-===========================================================
+## Configure and Manage the detection
 
-Steps
------
+Navigate to **Camera 1** and click on the settings tab
 
-1.  Create the Azure Media Services needed for this application
+Set the desire properties as follows:
 
-2.  Create an IoT Central Application from the template (it will not
-    include the Edge Gateway)
+| Property | Description | Suggested Value |
+|-|-|-|
+| **Object Detection** | |
+| Confidence Threshold | Qualification percentage to determine if the object detection is valid or not | 70 |
+| Detection Classes | Space delimited strings with the detection classes | car bicycle person |
+| Sensitivity | True positive (hit) rate dropdown | Medium |
+| **Camera Settings** | | |
+| Video Playback Host | Host for the Azure Media Player viewer | http://localhost:8094 |
+| **LVA Settings** | | |
+| Auto Start | Start the Object detection when the LVA Gateway restarts | Checked |
+| Debug Telemetry | Event Traces | Checked |
 
-3.  Follow the steps to create and associate the Edge Gateway with the
-    downstream devices
+Click the **Save** icon
 
-4.  Grab the secrets for IoT Edge Provision
+Expect to see the **synced** confirmation under each box after a few seconds
 
-5.  Create a Linux IoT Edge on the Intel NUC
-
-6.  Update the IoT Edge Agent's configuration to connect to the IoT
-    Central App
-
-7.  Run the IoT Edge device and monitor the deployment process and
-    ensure all the modules are loaded
-
-8.  Set up the desire properties and instantiate the Cameras, point the
-    RTSP stream from the real camera
-
-9.  Monitor the solution
-
-[^1]: The LvaGatewayModule creates new direct connected Devices
-    therefore select "Devices" instead of Azure Edge Devices
-
-[^2]: The LvaGatewayModule generates symmetric device keys from the
-    Group Master Key. This is a reference implementation, but for
-    production environments you should build a provisioning strategy
+:::image type="content" source="media/tutorial-public-safety-manage/object_detect.png" alt-text="Object Detect":::
 
 ## Next steps
+
+Host the Azure Media Player in your local environment
