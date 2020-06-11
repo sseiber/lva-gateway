@@ -30,8 +30,6 @@ Navigate to the LVA Gateway and under the **Commands** tab, locate the Add Camer
 
 Parameters for the command:
 
-Go to Devices and select the Lva Edge Gateway, and pick the device instance you created. Select the **Command** tab, and fill in the following information on the `Add Camera Request` command.
-
 | Field| Description| Sample Value|
 |---------|---------|---------|
 | Camera Id      | Device ID for provisioning | 4mca46neku87 |
@@ -84,6 +82,12 @@ Expect to see the **synced** confirmation under each box after a few seconds
 
 :::image type="content" source="media/tutorial-public-safety-manage/object_detect.png" alt-text="Object Detect":::
 
+## Start LVA processing
+
+For the same camera **Camera 1** navigate to the **Commands** tab
+
+Run the Start LVA processing command
+
 ## Monitor the cameras
 
 Select the **Camera 1** and go to the **Dashboard** tab
@@ -94,6 +98,31 @@ The **Inference** pie chart shows the count percentage by class type
 
 The **Inference Event Video** is a list with links to the assets in Azure Media Services containing the detections. The link uses the host player described in the next tutorial.
 
-## Next steps
+## Host the Azure Media Player in your local environment
 
-Host the Azure Media Player in your local environment
+The days of watching cameras and reacting to suspicious images are over, with event tagging and direct links to inferred detection, security operators just need to find the event in a list and click the link.
+
+In this application the video is stored in Azure Media Services an streamed from there, but we need a viewer to watch the feeds. In this Repo you can find a reference solution for a video player.
+
+It is not our intention to document how to host it and expose it's endpoint, but instead we are making the recommendation to pull the docker image to the same machine where you run your browser and run it from there as localhost.
+
+Using VSCode, in the terminal run the following command:
+
+```Bash
+    docker run \
+    -d \
+    -it \
+    --rm \
+    -e amsAadClientId=<FROM_AZURE_PORTAL> \
+    -e amsAadSecret=<FROM_AZURE_PORTAL> \
+    -e amsAadTenantId=<FROM_AZURE_PORTAL> \
+    -e amsArmAadAudience=<FROM_AZURE_PORTAL> \
+    -e amsArmEndpoint=<FROM_AZURE_PORTAL> \
+    -e amsAadEndpoint=<FROM_AZURE_PORTAL> \
+    -e amsSubscriptionId=<FROM_AZURE_PORTAL> \
+    -e amsResourceGroup=<FROM_AZURE_PORTAL> \
+    -e amsAccountName=<FROM_AZURE_PORTAL> \
+    -p 8094:8094 \
+    sseiber/amp-viewer:1.0.6-amd64
+```
+<!-- We need to fix repo reference to a public endpoint-->
