@@ -263,7 +263,7 @@ Navigate to the *storage* folder in your local copy of the **lva-gateway** repos
 
 ### Add relationships
 
-In the **Lva Edge Gateway** device template, under the **Lva Edge Gateway Module**, select **Relationships**. Select **+ Add relationships** and add the following two relationships:
+In the **Lva Edge Gateway** device template, under the **Modules\Lva Edge Gateway Module**, select **Relationships**. Select **+ Add relationships** and add the following two relationships:
 
 |Display Name               |Name          |Target |
 |-------------------------- |------------- |------ |
@@ -271,6 +271,8 @@ In the **Lva Edge Gateway** device template, under the **Lva Edge Gateway Module
 |Lva Edge Motion Detector   |Use default   |Lva Edge Motion Detector Device |
 
 Then select **Save**.
+
+:::image type="content" source="media/tutorial-public-safety-create-app/relationships.png" alt-text="Add relationships":::
 
 ### Add views
 
