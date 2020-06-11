@@ -18,17 +18,18 @@ The ARM template visualized for exploration
 ## Azure CLI command to deploy IoT Edge enabled VM with IoT Central edge module
 
 ```bash
+az deployment group create \
+  --subscription "<SUBSCRIPTION_NAME>" \
   --name edgeModuleVM \
   --resource-group <REPLACE_WITH_RESOURCE_GROUP_NAME> \
-  --template-file edgeDeploy.json \
+  --template-file edgeModuleVMDeploy.json \
   --parameters dnsLabelPrefix="edgeModuleDeploy" \
   --parameters adminUsername="<AZURE_USER>" \
+  --parameters adminPassword="<AZURE_USER_PASSWORD>" \
   --parameters scopeId="<IOT_CENTRAL_APP_SCOPE_ID>" \
   --parameters deviceId="<IOT_CENTRAL_DEVICE_ID>" \
   --parameters deviceKey="<IOT_CENTRAL_DEVICE_KEY" \
   --parameters iotCentralAppHost="<IOT_CENTRAL_APP_SUBDOMAIN_AND_DNS_HOST>" \
   --parameters iotCentralAppApiToken="<IOT_CENTRAL_APP_API_TOKEN>" \
-  --parameters iotCentralDeviceProvisioningKey="<IOT_CENTRAL_DEVICE_PROVISIONING_KEY>" \
-  --parameters authenticationType="sshPublicKey" \
-  --parameters adminPasswordOrKey="$(< ~/.ssh/id_rsa.pub)"
+  --parameters iotCentralDeviceProvisioningKey="<IOT_CENTRAL_DEVICE_PROVISIONING_KEY>"
 ```
