@@ -70,19 +70,29 @@ Set the desire properties as follows:
 |-|-|-|
 | **Object Detection** | |
 | Confidence Threshold | Qualification percentage to determine if the object detection is valid or not | 70 |
-| Detection Classes | Space delimited strings with the detection classes | car bicycle person |
+| Detection Classes | Strings delimited by spaces with the detection classes | truck car bicycle person |
 | Sensitivity | True positive (hit) rate dropdown | Medium |
 | **Camera Settings** | | |
 | Video Playback Host | Host for the Azure Media Player viewer | http://localhost:8094 |
 | **LVA Settings** | | |
 | Auto Start | Start the Object detection when the LVA Gateway restarts | Checked |
-| Debug Telemetry | Event Traces | Checked |
+| Debug Telemetry | Event Traces | Optional |
 
 Click the **Save** icon
 
 Expect to see the **synced** confirmation under each box after a few seconds
 
 :::image type="content" source="media/tutorial-public-safety-manage/object_detect.png" alt-text="Object Detect":::
+
+## Monitor the cameras
+
+Select the **Camera 1** and go to the **Dashboard** tab
+
+The tile for **Detection Count** is reporting the average count detections for the selected classes objects during a detection interval (1 sec).
+
+The **Inference** pie chart shows the count percentage by class type
+
+The **Inference Event Video** is a list with links to the assets in Azure Media Services containing the detections. The link uses the host player described in the next tutorial.
 
 ## Next steps
 
