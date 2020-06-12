@@ -112,4 +112,8 @@ The list includes a container called **live555**.
 
 ## Next steps
 
-Now that you've configured the public safety application and its devices, the next step is the [Monitor and manage a public safety application](./tutorial-public-safety-manage.md) tutorial.
+You have now deploy the IoT Edge runtime, the LVA modules and the live555 simulation stream in a Linux VM running on Azure.
+To manage the cameras, follow the next tutorial
+
+> [!div class="nextstepaction"]
+> [Monitor and manage a public safety application](./tutorial-public-safety-manage.md)

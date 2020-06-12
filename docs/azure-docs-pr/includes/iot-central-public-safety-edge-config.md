@@ -13,9 +13,9 @@ This reference implementation keeps some configuration in the */data/storage* fo
 On the Edge gateway, create two directories from root (you need elevated privileges) and give **Read** and and **Write** permissions to these directories
 
 ```bash
-mkdir -p data/storage
-mkdir -p data/media
-chmod -R 777 /data
+mkdir -p /data/storage
+mkdir -p /data/media
+chmod -R /777 /data
 ```
 
 Copy you local *state.json* file into the newly created *storage* folder on the IoT Edge device.
