@@ -296,13 +296,13 @@ To add a view to the device template:
 1. Enter *Lva Edge Gateway device* as the view name.
 
     <!--TODO - specify what information to add to the view -->
-1. Create the **Dashboard** view similar to this
+1. Create the **Dashboard** view
 
     1. Line chart tile with the **Device Info** properties
     1. Line Chart tile with the **Free Memory** and the **System Heartbeat** telemetry elements
     1. Event History tile with all the available events (Create Camera, Delete Camera, Module Restart, etc...)
-    1. Last Known Value tile with the **IoT Central Client State** telemetry size 2x1
-    1. Last Known Value tile with the **Module State** telemetry and change it to Last Known Value and size 2x1
+    1. Last Known Value tile with the **IoT Central Client State** telemetry with size 2x1
+    1. Last Known Value tile with the **Module State** telemetry with size 2x1
     1. Last Known Value tile with the **System Heartbeat** telemetry element
     1. Last Known Value tile with the **Connected Cameras** telemetry element
 
