@@ -77,13 +77,21 @@ Run the following command to check the version of the IoT Edge runtime. At the t
 sudo iotedge --version
 ```
 
-The scripted deployment took care of creating the Linux VM, installing IoT Edge runtime and configuring it to connect via DPS to the IoT Central Application, but if you need to change your IoT Central Application, edit the **config.yaml** and the **state.json** files as described in [this](tutorial-public-safety-iot-edge-nuc.md) tutorial
-
 List your IoT Edge modules using the command:
 
 ```bash
 sudo iotedge list
 ```
+
+The deployment configured the following five IoT Edge modules to run:
+
+* LvaEdgeGatewayModule
+* edgeAgent
+* edgeHub
+* lvaEdge
+* lvaYolov3
+
+The deployment created a custom IoT Edge environment with the required modules for live video analytics. The deployment updated the default **config.yaml** to ensure the IoT Edge runtime used the IoT Device Provisioning Service to connect to IoT Central. The deployment also created a file called **state.json** in the **/data/storage** folder to provide additional configuration data to the modules. For more information, see the [Create an IoT Edge instance for live video analytics (Intel NUC)](./tutorial-public-safety-iot-edge-nuc.md) tutorial.
 
 To troubleshoot the IoT Edge device you can find reference documentation [here](https://docs.microsoft.com/en-us/azure/iot-edge/troubleshoot)
 
@@ -112,7 +120,8 @@ The list includes a container called **live555**.
 
 ## Next steps
 
-You have now deploy the IoT Edge runtime, the LVA modules and the live555 simulation stream in a Linux VM running on Azure.
+You have now deployed the IoT Edge runtime, the LVA modules and the live555 simulation stream in a Linux VM running on Azure.
+
 To manage the cameras, follow the next tutorial
 
 > [!div class="nextstepaction"]

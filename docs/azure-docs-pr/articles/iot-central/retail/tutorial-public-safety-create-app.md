@@ -61,7 +61,7 @@ To create a new live video analytics application:
 1. Optionally, choose a friendly **Application name**. This application is based on a fictional retail store named Northwind Traders. The tutorial uses the **Application name** *Northwind Traders video analytics*.
 
     > [!NOTE]
-    > If you use a friendly **Application name**, you still must use a unique value for the application **URL**.
+    > If you use a friendly **Application name**, you must still use a unique value for the application **URL**.
 
     <!-- Given that you need a subscription for AMS, is it worth mentioning the free trial? -->
 1. If you have an Azure subscription, select your **Directory**, **Azure subscription**, and **United States** as the **Location**. If you don't have a subscription, you can enable **7-day free trial** and complete the required contact information. This tutorial uses three devices - two cameras and an IoT Edge device - so if you don't use the free trial you will be billed for usage.
@@ -80,18 +80,18 @@ In the **Administration** section, select **Your application** and make a note o
 
 :::image type="content" source="./media/tutorial-public-safety-create-app/administration.png" alt-text="Administration":::
 
-Select **API Tokens** and generate a new token for the **Operator** role:
+Select **API Tokens** and generate a new token called **LvaEdgeToken** for the **Operator** role:
 
 :::image type="content" source="./media/tutorial-public-safety-create-app/token.png" alt-text="Generate Token":::
 
 > [!TIP]
 > When the token is generated, make a note of it for later. After the dialog closes you can't view the token again.
 
-In the **Administration** section, select **Device connection**, and then select **View Keys**.
+In the **Administration** section, select **Device connection**, and then select **View Keys** for **Devices**.
 
 <!-- Should we make a note of the Scope ID here as well? -->
 <!-- Should we specify Devices or IoT Edge devices? -->
-Make a note of this **Primary key**. You use this *primary group shared access signature token* later when you configure the IoT Edge device.
+Make a note of this **Primary key** for devices. You use this *primary group shared access signature token* later when you configure the IoT Edge device.
 
 ## Configure Azure Media Services
 
@@ -217,7 +217,10 @@ To prepare the deployment manifest:
             "aadResourceId": "https://management.core.windows.net/",
             "armEndpoint": "https://management.azure.com/",
             "diagnosticsEventsOutputName": "AmsDiagnostics",
-            "operationalMetricsOutputName": "AmsOperational"
+            "operationalMetricsOutputName": "AmsOperational",
+            "logCategories": "Application,Event",
+            "AllowUnsecuredEndpoints": "true",
+            "TelemetryOptOut": false
             }
         }
     }
@@ -263,7 +266,7 @@ Navigate to the *storage* folder in your local copy of the **lva-gateway** repos
 
 ### Add relationships
 
-In the **Lva Edge Gateway** device template, under the **Modules\Lva Edge Gateway Module**, select **Relationships**. Select **+ Add relationships** and add the following two relationships:
+In the **Lva Edge Gateway** device template, under **Modules/Lva Edge Gateway Module**, select **Relationships**. Select **+ Add relationship** and add the following two relationships:
 
 |Display Name               |Name          |Target |
 |-------------------------- |------------- |------ |
@@ -316,7 +319,7 @@ To add an **Lva Edge Gateway** device to the application:
 
 1. Select **Create**.
 
-The device status is now **Registered**.
+The device status is **Registered**.
 
 ### Get the device credentials
 
