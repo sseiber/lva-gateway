@@ -264,6 +264,12 @@ On the **Lva Edge Gateway** page, select **+ Replace manifest**.
 
 Navigate to the *storage* folder in your local copy of the **lva-gateway** repository and select the *deployment.amd64.json* manifest file you edited previously. Select **Upload**. When the validation is complete, select **Replace**.
 
+### Upload image to the Device
+
+Click on the device thumbnail and upload the `amslogo.png` file located under the setup folder from the repository.
+
+:::image type="content" source="media/tutorial-public-safety-create-app/add_logo.png" alt-text="add image":::
+
 ### Add relationships
 
 In the **Lva Edge Gateway** device template, under **Modules/Lva Edge Gateway Module**, select **Relationships**. Select **+ Add relationship** and add the following two relationships:
@@ -290,7 +296,17 @@ To add a view to the device template:
 1. Enter *Lva Edge Gateway device* as the view name.
 
     <!--TODO - specify what information to add to the view -->
-1. Add the Device Information properties to the view.
+1. Create the **Dashboard** view similar to this
+
+    1. Line chart tile with the **Device Info** properties
+    1. Line Chart tile with the **Free Memory** and the **System Heartbeat** telemetry elements
+    1. Event History tile with all the available events (Create Camera, Delete Camera, Module Restart, etc...)
+    1. Last Known Value tile with the **IoT Central Client State** telemetry size 2x1
+    1. Last Known Value tile with the **Module State** telemetry and change it to Last Known Value and size 2x1
+    1. Last Known Value tile with the **System Heartbeat** telemetry element
+    1. Last Known Value tile with the **Connected Cameras** telemetry element
+
+    :::image type="content" source="media/tutorial-public-safety-create-app/gateway_dash.png" alt-text="Dashboard":::
 
 1. Select **Save**.
 
@@ -300,7 +316,7 @@ Before you can add a device to the application, you must publish the device temp
 
 1. In the **Lva Edge Gateway** device template, select **Publish**.
 
-1. On the ***Publish this device template to the application** page, select **Publish**.
+1. On the **Publish this device template to the application** page, select **Publish**.
 
 **Lva Edge Gateway** is now available as device type to use on the **Devices** page in the application.
 
