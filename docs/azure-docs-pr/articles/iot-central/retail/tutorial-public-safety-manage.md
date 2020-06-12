@@ -68,8 +68,8 @@ Set the desire properties as follows:
 |-|-|-|
 | **Object Detection** | |
 | Confidence Threshold | Qualification percentage to determine if the object detection is valid or not | 70 |
-| Detection Classes | Strings delimited by spaces with the detection classes | truck car bicycle person |
-| Sensitivity | True positive (hit) rate dropdown | Medium |
+| Detection Classes | Strings delimited by comma with the detection tags. [Here](https://github.com/Azure/live-video-analytics/blob/master/utilities/video-analysis/yolov3-onnx/tags.txt) is the entire list supported | truck,car,bicycle,person |
+| Sensitivity | Motion detection trigger, it also applies for object detection | Medium |
 | **Camera Settings** | | |
 | Video Playback Host | Host for the Azure Media Player viewer | http://localhost:8094 |
 | **LVA Settings** | | |
@@ -102,27 +102,16 @@ The **Inference Event Video** is a list with links to the assets in Azure Media 
 
 The days of watching cameras and reacting to suspicious images are over, with event tagging and direct links to inferred detection, security operators just need to find the event in a list and click the link.
 
-In this application the video is stored in Azure Media Services an streamed from there, but we need a viewer to watch the feeds. In this Repo you can find a reference solution for a video player.
+In this application the video is stored in Azure Media Services an streamed from there, but we need a viewer to watch the feeds. In [this Repo](https://github.com/sseiber/amp-player) you will find a reference solution for a video player and you can download and run the amp-player and run it locally.
 
-It is not our intention to document how to host it and expose it's endpoint, but instead we are making the recommendation to pull the docker image to the same machine where you run your browser and run it from there as localhost.
+Pull the docker image to the same machine where you are browsing IoT Central and run it as localhost using VSCode's terminal.
 
-Using VSCode, in the terminal run the following command:
+Run the following command:
+
+<!--You have to log into docker if this is not a public repo-->
 
 ```Bash
-    docker run \
-    -d \
-    -it \
-    --rm \
-    -e amsAadClientId=<FROM_AZURE_PORTAL> \
-    -e amsAadSecret=<FROM_AZURE_PORTAL> \
-    -e amsAadTenantId=<FROM_AZURE_PORTAL> \
-    -e amsArmAadAudience=<FROM_AZURE_PORTAL> \
-    -e amsArmEndpoint=<FROM_AZURE_PORTAL> \
-    -e amsAadEndpoint=<FROM_AZURE_PORTAL> \
-    -e amsSubscriptionId=<FROM_AZURE_PORTAL> \
-    -e amsResourceGroup=<FROM_AZURE_PORTAL> \
-    -e amsAccountName=<FROM_AZURE_PORTAL> \
-    -p 8094:8094 \
-    sseiber/amp-viewer:1.0.6-amd64
+docker run -it --rm -e amsAadClientId="<FROM_AZURE_PORTAL>" -e amsAadSecret="<FROM_AZURE_PORTAL>" -e amsAadTenantId="<FROM_AZURE_PORTAL>" -e amsArmAadAudience="<FROM_AZURE_PORTAL>" -e amsArmEndpoint="<FROM_AZURE_PORTAL>" -e amsAadEndpoint="<FROM_AZURE_PORTAL>" -e amsSubscriptionId="<FROM_AZURE_PORTAL>" -e amsResourceGroup="<FROM_AZURE_PORTAL>" -e amsAccountName="<FROM_AZURE_PORTAL>" -p 8094:8094 meshams.azurecr.io/scotts/amp-viewer:1.0.8-amd64
 ```
+
 <!-- We need to fix repo reference to a public endpoint-->
