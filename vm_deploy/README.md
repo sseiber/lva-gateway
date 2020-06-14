@@ -6,13 +6,13 @@ Detailed documentation is available on [Microsoft Docs](https://docs.microsoft.c
 
 ARM template to deploy a VM with IoT Edge pre-installed and configured for an IoT Central edge module (via cloud-init)
 
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsseiber%2Flva-gateway%2Fmaster%2Fvm_deploy%2FedgeModuleVMDeploy.json" target="_blank">
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsseiber%2Flva-gateway%2Fuk%2Fbi8100%2Fvm_deploy%2FedgeModuleVMDeploy.json" target="_blank">
     <img src="https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.png" />
 </a>
 
 The ARM template visualized for exploration
 
-<a href="http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2Fsseiber%2Flva-gateway%2Fmaster%2Fvm_deploy%2FedgeModuleVMDeploy.json" target="_blank">
+<a href="http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2Fsseiber%2Flva-gateway%2Fuk%2Fbi8100%2Fvm_deploy%2FedgeModuleVMDeploy.json" target="_blank">
     <img src="https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/visualizebutton.png" /></a>
 
 ## Azure CLI command to deploy IoT Edge enabled VM with IoT Central edge module
