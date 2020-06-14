@@ -49,7 +49,7 @@ Use the information in the following table to complete the **Custom deployment**
 | Resource group | *lva-rg* - the resource group you created in the previous tutorial. |
 | Region       | *East US* |
 | **SETTINGS** | |
-| DNS Label Prefix | Choose a unique DNS prefix for the VM such as *traders-lva-edge*. |
+| DNS Label Prefix | Choose a unique DNS prefix for the VM. |
 | Admin Username | *AzureUser* |
 | Scope ID | The **Scope ID** you made a note of in the previous tutorial. |
 | Device ID | *lva-gateway-001* - the gateway device you created in the previous tutorial. |
