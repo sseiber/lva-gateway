@@ -58,8 +58,6 @@ Repeat the previous steps to add a motion detection camera to the application. U
 
 If you select the **Downstream Devices** tab for the **LVA Gateway 001** device, you can see the camera devices you just added.
 
-Select the **camera-001** link to view the details of the camera.
-
 :::image type="content" source="media/tutorial-public-safety-manage/inspect_downstream.png" alt-text="Inspect":::
 
 The camera devices also appear in the list on the **Devices** page in the application.
@@ -75,7 +73,7 @@ Use the following tables to set the device properties:
 | Property | Description | Suggested Value |
 |-|-|-|
 | Confidence Threshold | Qualification percentage to determine if the object detection is valid | 70 |
-| Detection Classes | Strings, delimited by commas, with the detection tags. For more information, see the [list of supported tags](https://github.com/Azure/live-video-analytics/blob/master/utilities/video-analysis/yolov3-onnx/tags.txt) | truck,car,bicycle,person |
+| Detection Classes | Strings, delimited by commas, with the detection tags. For more information, see the [list of supported tags](https://github.com/Azure/live-video-analytics/blob/master/utilities/video-analysis/yolov3-onnx/tags.txt) | truck,car,bicycle |
 | Sensitivity | Motion detection trigger, it also applies for object detection | Medium |
 
 **Camera settings**
@@ -124,12 +122,12 @@ The IoT Central application stores the video in Azure Media Services from where 
 
 <!-- Can't it just run at a command prompt? Otherwise we need to add VS Code as a prereq -->
 
-Use the following command in the VS Code terminal to run the video player in a Docker container on your local machine:
+Open a command terminal and use the following command to run the video player in a Docker container on your local machine:
 
 <!--You have to log into docker if this is not a public repo-->
 
 ```bash
-docker run -it --rm -e amsAadClientId="<FROM_AZURE_PORTAL>" -e amsAadSecret="<FROM_AZURE_PORTAL>" -e amsAadTenantId="<FROM_AZURE_PORTAL>" -e amsArmAadAudience="<FROM_AZURE_PORTAL>" -e amsArmEndpoint="<FROM_AZURE_PORTAL>" -e amsAadEndpoint="<FROM_AZURE_PORTAL>" -e amsSubscriptionId="<FROM_AZURE_PORTAL>" -e amsResourceGroup="<FROM_AZURE_PORTAL>" -e amsAccountName="<FROM_AZURE_PORTAL>" -p 8094:8094 meshams.azurecr.io/scotts/amp-viewer:1.0.8-amd64
+docker run -it --rm -e amsAadClientId="<FROM_AZURE_PORTAL>" -e amsAadSecret="<FROM_AZURE_PORTAL>" -e amsAadTenantId="<FROM_AZURE_PORTAL>" -e amsArmAadAudience="https://management.core.windows.net" -e amsArmEndpoint="https://management.azure.com" -e amsAadEndpoint="https://login.microsoftonline.com" -e amsSubscriptionId="<FROM_AZURE_PORTAL>" -e amsResourceGroup="<FROM_AZURE_PORTAL>" -e amsAccountName="<FROM_AZURE_PORTAL>" -p 8094:8094 meshams.azurecr.io/scotts/amp-viewer:1.0.8-amd64
 ```
 
 <!-- We need to fix repo reference to a public endpoint-->

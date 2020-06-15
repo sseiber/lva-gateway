@@ -36,7 +36,31 @@ To complete this tutorial series, you need:
 * An Azure subscription. If you don't have an Azure subscription, you can create one on the [Azure sign-up page](https://aka.ms/createazuresubscription).
 * If you're using a real camera, you need connectivity between the IoT Edge device and the camera, and you need the Real Time Streaming Protocol channel.
 
-## Create an application
+## Deploy and Configure Azure Media Services
+
+The solution uses an Azure Media Services account to store the object detections made by the IoT Edge gateway device.
+
+You can create a [Media Services account in the Azure portal](https://portal.azure.com/?r=1#create/Microsoft.MediaService).
+
+When you create the Media Services account, you need to provide an account name, an Azure subscription, a location, a resource group, and a storage account. Choose the **East US** region for the location.
+
+Create a new resource group called *lva-rg*  in the **East US** region for the Media Services and storage accounts. When you finish the tutorials it's easy to remove all the resources by deleting the *lva-rg* resource group.
+
+> [!TIP]
+> These tutorials use the **East US** region in all the examples. You can use your closest region if you prefer.
+
+When the deployment is complete, navigate to the **Properties** page for your **Media Services** account. Make a note of the **Resource Id**, you use this value later when you configure the IoT Edge module.
+
+Next, configure an Azure Active Directory service principal for your Media Services resource. Select **API access** and then **Service principal authentication**. Create a new AAD app with the same name as your Media Services resource, and create a secret with a description *IoT Edge Access*.
+
+:::image type="content" source="./media/tutorial-public-safety-create-app/ams-aad.png" alt-text="Configure AAD app for AMS":::
+
+When the secret is generated, scroll down to the section **Copy your credentials to connect your service principal application**. Then select **JSON**. You can copy all the credential information from here in one go. Make a note of this information somewhere safe, you use it later when you configure the IoT Edge device.
+
+> [!WARNING]
+> This is your only chance to view and save the secret. If you lose it, you have to generate another secret.
+
+## Create the Azure IoT Central Application
 
 In this section, you create a new Azure IoT Central application from a template. You'll use this application throughout the tutorial series to build a complete solution.
 
@@ -90,30 +114,6 @@ Select **API Tokens** and generate a new token called **LvaEdgeToken** for the *
 In the **Administration** section, select **Device connection**, and then select **View Keys** for **Devices**.
 
 Make a note of this **Primary key** for devices. You use this *primary group shared access signature token* later when you configure the IoT Edge device.
-
-## Configure Azure Media Services
-
-The solution uses an Azure Media Services account to store the object detections made by the IoT Edge gateway device.
-
-You can create a [Media Services account in the Azure portal](https://portal.azure.com/?r=1#create/Microsoft.MediaService).
-
-When you create the Media Services account, you need to provide an account name, an Azure subscription, a location, a resource group, and a storage account. Choose the **East US** region for the location.
-
-Create a new resource group called *lva-rg*  in the **East US** region for the Media Services and storage accounts. When you finish the tutorials it's easy to remove all the resources by deleting the *lva-rg* resource group.
-
-> [!TIP]
-> These tutorials use the **East US** region in all the examples. You can use your closest region if you prefer.
-
-When the deployment is complete, navigate to the **Properties** page for your **Media Services** account. Make a note of the **Resource Id**, you use this value later when you configure the IoT Edge module.
-
-Next, configure an Azure Active Directory service principal for your Media Services resource. Select **API access** and then **Service principal authentication**. Create a new AAD app with the same name as your Media Services resource, and create a secret with a description *IoT Edge Access*.
-
-:::image type="content" source="./media/tutorial-public-safety-create-app/ams-aad.png" alt-text="Configure AAD app for AMS":::
-
-When the secret is generated, scroll down to the section **Copy your credentials to connect your service principal application**. Then select **JSON**. You can copy all the credential information from here in one go. Make a note of this information somewhere safe, you use it later when you configure the IoT Edge device.
-
-> [!WARNING]
-> This is your only chance to view and save the secret. If you lose it, you have to generate another secret.
 
 ## Clone the LvaGateway repository
 
@@ -226,9 +226,9 @@ To prepare the deployment manifest:
 
 1. Save the changes.
 
-## Create the gateway device
+## Create the Azure IoT Edge gateway device
 
-The security and safety video analytics application includes an **Lva Edge Object Detector** device template and an **Lva Edge Motion Detection** device template. In this section you create a gateway device template using the deployment manifest, and add the gateway device to your IoT Central application.
+The security and safety video analytics application includes a **Lva Edge Object Detector** device template and a **Lva Edge Motion Detection** device template. In this section you create a gateway device template using the deployment manifest, and add the gateway device to your IoT Central application.
 
 ### Create a device template for the Lva Edge Gateway
 
@@ -274,7 +274,7 @@ In the **Lva Edge Gateway** device template, under **Modules/Lva Edge Gateway Mo
 
 |Display Name               |Name          |Target |
 |-------------------------- |------------- |------ |
-|Lva Edge Object Detector   |Use default   |Lva Object Detector Device |
+|Lva Edge Object Detector   |Use default   |Lva Edge Object Detector Device |
 |Lva Edge Motion Detector   |Use default   |Lva Edge Motion Detector Device |
 
 Then select **Save**.
@@ -296,7 +296,7 @@ To add a view to the device template:
     <!--TODO - specify what information to add to the view -->
 1. Create the **Dashboard** view
 
-    1. Line chart tile with the **Device Info** properties
+    1. Line Chart tile with the **Device Info** properties
     1. Line Chart tile with the **Free Memory** and the **System Heartbeat** telemetry elements
     1. Event History tile with all the available events (Create Camera, Delete Camera, Module Restart, etc...)
     1. Last Known Value tile with the **IoT Central Client State** telemetry with size 2x1
