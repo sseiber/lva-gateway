@@ -66,7 +66,7 @@ The camera devices also appear in the list on the **Devices** page in the applic
 
 ## Configure and manage the camera
 
-Navigate to **Camera 1** and select the **Settings** tab.
+Navigate to **camera-001** and select the **Manage** tab.
 
 Use the following tables to set the device properties:
 

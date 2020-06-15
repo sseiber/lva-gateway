@@ -44,13 +44,12 @@ Use the information in the following table to complete the **Custom deployment**
 
 | Field | Value |
 | ----- | ----- |
-| **BASICS**| |
 | Subscription | Select your Azure subscription. |
 | Resource group | *lva-rg* - the resource group you created in the previous tutorial. |
 | Region       | *East US* |
-| **SETTINGS** | |
 | DNS Label Prefix | Choose a unique DNS prefix for the VM. |
 | Admin Username | *AzureUser* |
+| Admin Password | Enter a password. Make a note of the password, you use it later. |
 | Scope ID | The **Scope ID** you made a note of in the previous tutorial. |
 | Device ID | *lva-gateway-001* - the gateway device you created in the previous tutorial. |
 | Device Key | The device primary key you made a note of in the previous tutorial. |
@@ -60,12 +59,10 @@ Use the information in the following table to complete the **Custom deployment**
 | VM Size | *Standard_DS1_v2* |
 | Ubuntu OS Version | *18.04-LTS* |
 | Location | *[resourceGroup().location]* |
-| Authentication Type | *password* |
-| Admin Password or Key | Enter a password. Make a note of the password, you use it later. |
 
 Select **Review + create**. When the validation is complete, select **Create**. It typically takes about three minutes for the deployment to complete. When the deployment is complete, navigate to the **lva-rg** resource group in the Azure portal.
 
-## Ensure the Edge Device loads the modules
+## Ensure the IoT Edge runtime loads the modules
 
 In the Azure portal, navigate to the **lva-rg** resource group and select the virtual machine. Then, in the **Support + troubleshooting** section, select **Serial console**.
 

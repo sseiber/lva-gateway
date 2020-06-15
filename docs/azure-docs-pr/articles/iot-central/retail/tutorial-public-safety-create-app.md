@@ -228,7 +228,7 @@ To prepare the deployment manifest:
 
 ## Create the gateway device
 
-The security and safety video analytics application includes an **Lva Edge Motion Detector** device template and an **Lva Edge Motion Detector** device template. In this section you create a gateway device template using the deployment manifest, and add the gateway device to your IoT Central application.
+The security and safety video analytics application includes an **Lva Edge Object Detector** device template and an **Lva Edge Motion Detection** device template. In this section you create a gateway device template using the deployment manifest, and add the gateway device to your IoT Central application.
 
 ### Create a device template for the Lva Edge Gateway
 
