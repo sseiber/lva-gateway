@@ -37,7 +37,7 @@ In this tutorial, you learn how to:
 
 ## Configure the IoT Edge device
 
-If you don't have the IoT Edge runtime installed in your NUC machine follow [this](https://docs.microsoft.com/en-us/azure/iot-edge/how-to-install-iot-edge-linux) instructions.
+If you don't have the IoT Edge runtime installed in your NUC machine, see [Install the Azure IoT Edge runtime on Debian-based Linux systems](https://docs.microsoft.com/azure/iot-edge/how-to-install-iot-edge-linux) instructions.
 
 To update the IoT Edge runtime:
 

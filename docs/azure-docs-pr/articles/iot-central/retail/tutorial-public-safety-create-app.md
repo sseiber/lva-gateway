@@ -89,8 +89,6 @@ Select **API Tokens** and generate a new token called **LvaEdgeToken** for the *
 
 In the **Administration** section, select **Device connection**, and then select **View Keys** for **Devices**.
 
-<!-- Should we make a note of the Scope ID here as well? -->
-<!-- Should we specify Devices or IoT Edge devices? -->
 Make a note of this **Primary key** for devices. You use this *primary group shared access signature token* later when you configure the IoT Edge device.
 
 ## Configure Azure Media Services
@@ -358,9 +356,9 @@ You've now created an IoT Central application using the **Security and safety vi
 If you want to try out the security and safety video analytics application using IoT Edge modules running a cloud VM with simulated video streams:
 
 > [!div class="nextstepaction"]
-> [Create an IoT Edge instance for live video analytics (Linux VM)](./tutorial-public-safety-edge-vm.md)
+> [Create an IoT Edge instance for live video analytics (Linux VM)](./tutorial-public-safety-iot-edge-vm.md)
 
 If you want to try out the security and safety video analytics application using IoT Edge modules running a real device with real **ONVIF** camera:
 
 > [!div class="nextstepaction"]
-> [Create an IoT Edge instance for live video analytics (Intel NUC)](./tutorial-public-safety-nuc.md)
+> [Create an IoT Edge instance for live video analytics (Intel NUC)](./tutorial-public-safety-iot-edge-nuc.md)

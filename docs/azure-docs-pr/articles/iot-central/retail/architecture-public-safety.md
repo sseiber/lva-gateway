@@ -4,7 +4,7 @@ description: Learn to build an IoT Central application using the security and sa
 author: KishorIoT
 ms.author: nandab
 ms.date: 06/20/2020
-ms.topic: concepts
+ms.topic: conceptual
 ms.service: iot-central
 ms.subservice: iot-central-retail
 services: iot-central
