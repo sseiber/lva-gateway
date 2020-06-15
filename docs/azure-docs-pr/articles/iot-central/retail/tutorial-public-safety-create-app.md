@@ -1,5 +1,5 @@
 ---
-title: 'Tutorial - Create a live video analytics application in Azure IoT Central'
+title: 'Tutorial - Create a security and safety video analytics application in Azure IoT Central'
 description: This tutorial shows how to create a live video analytics application in IoT Central. You create it, customize it, and connect it to other Azure services.
 services: iot-central
 ms.service: iot-central
@@ -9,9 +9,9 @@ author: KishorIoT
 ms.author: nandab
 ms.date: 07/01/2020
 ---
-# Tutorial: Create a live video analytics application in Azure IoT Central
+# Tutorial: Create a security and safety video analytics application in Azure IoT Central
 
-The tutorial shows solution builders how to create a live video analytics application using the IoT Central **Public Safety** application template, AzureIoT Edge devices, and Azure Media Services. The solution uses a retail store to show how to meet the common business need to monitor security cameras. The solution uses automatic object detection in a video feed to quickly identify and locate interesting events.
+The tutorial shows solution builders how to create a live video analytics application using the IoT Central **Security and Safety Video Analytics** application template, AzureIoT Edge devices, and Azure Media Services. The solution uses a retail store to show how to meet the common business need to monitor security cameras. The solution uses automatic object detection in a video feed to quickly identify and locate interesting events.
 
 The sample application includes two simulated devices and one IoT Edge gateway. The following tutorials show two approaches to experiment and understand the capabilities of the gateway:
 
@@ -22,7 +22,7 @@ The sample application includes two simulated devices and one IoT Edge gateway. 
 
 In this tutorial, you learn how to:
 > [!div class="checklist"]
-> * Use the Azure IoT Central **Public Safety** application template to create a retail store application
+> * Use the Azure IoT Central security and safety video analytics application template to create a retail store application
 > * Customize the application settings
 > * Create a device template for an IoT Edge gateway device
 > * Add a gateway device to your IoT Central application
@@ -56,7 +56,7 @@ To create a new live video analytics application:
 
 <!-- NOTE - The template is not available yet, use this private template in the meantime <https://apps.azureiotcentral.com/build/new/4d253e63-3ecc-41fc-b333-512bc3c822e1> -->
 
-1. Select the **Public Safety** application template. This template includes device templates for all devices used in the tutorial. The template also provides an operator dashboard for monitoring the video.
+1. Select the **Security and safety video analytics** application template. This template includes device templates for all devices used in the tutorial. The template also provides an operator dashboard for monitoring the video.
 
 1. Optionally, choose a friendly **Application name**. This application is based on a fictional retail store named Northwind Traders. The tutorial uses the **Application name** *Northwind Traders video analytics*.
 
@@ -230,7 +230,7 @@ To prepare the deployment manifest:
 
 ## Create the gateway device
 
-The **Public Safety** application includes an **Lva Edge Motion Detector** device template and an **Lva Edge Motion Detector** device template. In this section you create a gateway device template using the deployment manifest, and add the gateway device to your IoT Central application.
+The security and safety video analytics application includes an **Lva Edge Motion Detector** device template and an **Lva Edge Motion Detector** device template. In this section you create a gateway device template using the deployment manifest, and add the gateway device to your IoT Central application.
 
 ### Create a device template for the Lva Edge Gateway
 
@@ -353,14 +353,14 @@ You need the credentials that allow the device to connect to your IoT Central ap
 
 ## Next steps
 
-You've now created an IoT Central application using the **Public Safety** application template, created a device template for the gateway device, and added a gateway device to the application.
+You've now created an IoT Central application using the **Security and safety video analytics** application template, created a device template for the gateway device, and added a gateway device to the application.
 
-If you want to try out the public safety application template using IoT Edge modules running a cloud VM with simulated video streams:
+If you want to try out the security and safety video analytics application using IoT Edge modules running a cloud VM with simulated video streams:
 
 > [!div class="nextstepaction"]
 > [Create an IoT Edge instance for live video analytics (Linux VM)](./tutorial-public-safety-edge-vm.md)
 
-If you want to try out the public safety application template using IoT Edge modules running a real device with real **ONVIF** camera:
+If you want to try out the security and safety video analytics application using IoT Edge modules running a real device with real **ONVIF** camera:
 
 > [!div class="nextstepaction"]
 > [Create an IoT Edge instance for live video analytics (Intel NUC)](./tutorial-public-safety-nuc.md)

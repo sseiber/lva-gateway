@@ -1,6 +1,6 @@
 ---
-title: 'Tutorial - Modify the live video analytics modules in the Azure IoT Central public safety application'
-description: This tutorial shows you how to modify and build the live video analytics gateway modules that the Azure IoT Central uses.
+title: 'Tutorial - Modify the IoT Edge live video analytics modules'
+description: This tutorial shows you how to modify and build the live video analytics gateway modules that the security and safety video analytics application template uses.
 services: iot-central
 ms.service: iot-central
 ms.subservice: iot-central-retail
@@ -73,7 +73,7 @@ Open the local **lva-gateway** repository folder with VS Code.
 
 ## Next steps
 
-Now that you've learned about the **Public Safety** application template and the LVA IoT Edge modules, the suggested next step is to learn more about:
+Now that you've learned about the security and safety video analytics application template and the LVA IoT Edge modules, the suggested next step is to learn more about:
 
 > [!div class="nextstepaction"]
 > [Building retail solutions with Azure IoT Central](overview-iot-central-retail.md)

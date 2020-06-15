@@ -159,15 +159,15 @@ To learn more, see the [Deploy and walk through the micro-fulfillment center app
 
 Live video analytics (LVA) provides a platform for you to build intelligent video applications that span the edge and the cloud. The platform offers the capability to capture, record, analyze live video, and publish the results, which could be video or video analytics, to Azure services. The Azure services could be running in the cloud or the edge. You can use the platform to enhance IoT solutions with video analytics.
 
-## Public safety
+## Security and safety video analytics application
 
-The IoT Central public safety application template lets you quickly experience how to deploy, manage, and monitor a solution that uses intelligent edge cameras to detect objects and motion. The solution enables you to identify your physical security issues quickly and accurately.
+The IoT Central security and safety video analytics application template lets you quickly experience how to deploy, manage, and monitor a solution that uses intelligent edge cameras to detect objects and motion. The solution enables you to identify your physical security issues quickly and accurately.
 
-The public safety application uses a live video analytics (LVA) module running in IoT Edge. The LVA module provides a platform for you to build intelligent video applications that span the edge and the cloud. The platform offers the capability to capture, record, analyze live video, and publish the results, which could be video or video analytics, to Azure services. The Azure services could be running in the cloud or the edge. You can use the platform to enhance IoT solutions, such as the public safety application, with video analytics.
+The security and safety video analytics application uses a live video analytics (LVA) module running in IoT Edge. The LVA module provides a platform for you to build intelligent video applications that span the edge and the cloud. The platform offers the capability to capture, record, analyze live video, and publish the results, which could be video or video analytics, to Azure services. The Azure services could be running in the cloud or the edge. You can use the platform to enhance IoT solutions, such as the security and safety video analytics application, with video analytics.
 
-To learn more about the architecture of the solution, see []().
+To learn more about the architecture of the solution, see [Security and safety video analytics application architecture](architecture-public-safety.md).
 
-To learn how to deploy the solution, see the []() tutorial.
+To learn how to deploy the solution, see the [Create a security and safety video analytics application in Azure IoT Central](tutorial-public-safety-create-app.md) tutorial.
 
 ## Next steps
 

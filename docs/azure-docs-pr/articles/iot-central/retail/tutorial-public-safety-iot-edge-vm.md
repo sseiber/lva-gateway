@@ -1,6 +1,6 @@
 ---
 title: 'Tutorial - Create a live video analytics IoT Edge instance in Azure IoT Central (Linux VM)'
-description: This tutorial shows how to create a live video analytics IoT Edge instance to use with the public safety application template.
+description: This tutorial shows how to create a live video analytics IoT Edge instance to use with the security and safety video analytics application template.
 services: iot-central
 ms.service: iot-central
 ms.subservice: iot-central-retail
@@ -19,7 +19,7 @@ Azure IoT Edge is a fully managed service that delivers cloud intelligence local
 
 In IoT Edge, these services run directly on cross-platform IoT devices. This enables you to run your IoT solution securely and at scale in the cloud or offline.
 
-This tutorial shows you how to prepare an IoT Edge device in an Azure VM. The IoT Edge instance runs the live video analytics modules that the Azure IoT Central public safety application template uses.
+This tutorial shows you how to prepare an IoT Edge device in an Azure VM. The IoT Edge instance runs the live video analytics modules that the Azure IoT Central security and safety video analytics application template uses.
 
 In this tutorial, you learn how to:
 > [!div class="checklist"]
@@ -97,7 +97,7 @@ To troubleshoot the IoT Edge device you can find reference documentation [here](
 
 ## Use the RTSP simulator
 
-If you don't have real camera devices to connect to your IoT Edge device, you can use the two simulated camera devices in the public safety application template. This section shows you how to use a simulated video stream in your IoT Edge device.
+If you don't have real camera devices to connect to your IoT Edge device, you can use the two simulated camera devices in the security and safety video analytics application template. This section shows you how to use a simulated video stream in your IoT Edge device.
 
 These instructions show you how to use the [Live555 Media Server](http://www.live555.com/mediaServer/) as a RTSP simulator in a docker container.
 
@@ -125,4 +125,4 @@ You have now deployed the IoT Edge runtime, the LVA modules and the live555 simu
 To manage the cameras, follow the next tutorial
 
 > [!div class="nextstepaction"]
-> [Monitor and manage a public safety application](./tutorial-public-safety-manage.md)
+> [Monitor and manage a security and safety video analytics application](./tutorial-public-safety-manage.md)

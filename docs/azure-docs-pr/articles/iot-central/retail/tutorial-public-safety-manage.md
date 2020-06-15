@@ -1,6 +1,6 @@
 ---
-title: 'Tutorial - Monitor video using the Azure IoT Central public safety application template'
-description: This tutorial shows how to use the dashboards in the public safety application template to manage your cameras and monitor the video.
+title: 'Tutorial - Monitor video using the Azure IoT Central security and safety video analytics application template'
+description: This tutorial shows how to use the dashboards in the security and safety video analytics application template to manage your cameras and monitor the video.
 services: iot-central
 ms.service: iot-central
 ms.subservice: iot-central-retail
@@ -9,7 +9,7 @@ ms.author: nandab
 author: KishorIoT
 ms.date: 07/01/2020
 ---
-# Tutorial: Monitor and manage a public safety application
+# Tutorial: Monitor and manage a security and safety video analytics application
 
 <!-- TODO - make sure to summarize the key learning steps of this tutorial -->
 
