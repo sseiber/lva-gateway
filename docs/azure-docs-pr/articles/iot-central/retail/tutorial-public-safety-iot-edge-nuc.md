@@ -134,7 +134,7 @@ Example: HiKvision
 `rtsp://<address>:<port>/Streaming/Channels/<id>/`
 
 Main Stream
-`rtsp://192.168.1.100:554/Streaming/Channels/101/`
+`rtsp://192.168.1.64:554/Streaming/Channels/101/`
 
 > [!TIP]
 > Try see the camera stream on the Edge computer using some media player such as VLC

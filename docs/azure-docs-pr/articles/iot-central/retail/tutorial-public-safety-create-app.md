@@ -200,17 +200,17 @@ To prepare the deployment manifest:
 
 1. Locate the `lvaEdge` module.
 
-1. The template doesn't expose these properties in IoT Central, therefore you need to add the Media Services configuration values to the deployment manifest. Replace the placeholders with the values you made a note of when you created your Media Services account. The `azureMediaServicesArmId` value is the **Resource Id** from the Media Services properties page. You made a note of the `aadTenantId`, `aadServicePrincipalAppId`, and `aadServicePrincipalSecret` when you set up the service principal for your Media Services account:
+1. The template doesn't expose these properties in IoT Central, therefore you need to add the Media Services configuration values to the deployment manifest. Replace the placeholders with the values you made a note of when you created your Media Services account. You made a note of `aadServicePrincipalAppId`, and `aadServicePrincipalSecret` when you set up the service principal for your Media Services account:
 
     ```json
     {
         "lvaEdge":{
         "properties.desired": {
             "applicationDataDirectory": "/var/lib/azuremediaservices",
-            "azureMediaServicesArmId": "/subscriptions/[SUBSCRIPTION_ID]/resourceGroups/[RESOURCE]/providers/microsoft.media/mediaservices/[SERVICE]",
+            "azureMediaServicesArmId": "/subscriptions/[Subscription ID]/resourceGroups/[Resource Group]/providers/microsoft.media/mediaservices/[AMS account name]",
             "aadTenantId": "[Tenant ID]",
-            "aadServicePrincipalAppId": "[Service Principal]",
-            "aadServicePrincipalSecret": "[SECRET]",
+            "aadServicePrincipalAppId": "[AAD Client ID]",
+            "aadServicePrincipalSecret": "[AAD secret]",
             "aadEndpoint": "https://login.microsoftonline.com",
             "aadResourceId": "https://management.core.windows.net/",
             "armEndpoint": "https://management.azure.com/",
@@ -223,6 +223,9 @@ To prepare the deployment manifest:
         }
     }
     ```
+
+    > [!NOTE]
+    >     The `azureMediaServicesArmId` value is the **Resource Id** from the Media Services properties page.
 
 1. Save the changes.
 
@@ -262,11 +265,13 @@ On the **Lva Edge Gateway** page, select **+ Replace manifest**.
 
 Navigate to the *storage* folder in your local copy of the **lva-gateway** repository and select the *deployment.amd64.json* manifest file you edited previously. Select **Upload**. When the validation is complete, select **Replace**.
 
+<!--
 ### Upload image to the Device
 
 Click on the device thumbnail and upload the `amslogo.png` file located under the setup folder from the repository.
 
 :::image type="content" source="media/tutorial-public-safety-create-app/add_logo.png" alt-text="add image":::
+-->
 
 ### Add relationships
 
