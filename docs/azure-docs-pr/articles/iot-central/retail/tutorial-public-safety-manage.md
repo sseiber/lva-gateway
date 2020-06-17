@@ -26,13 +26,13 @@ Before you start, you should complete:
 
 * One of the previous [Create an IoT Edge instance for live video analytics (Linux VM)](tutorial-public-safety-iot-edge-vm.md) or [Create an IoT Edge instance for live video analytics (Linux VM)](tutorial-public-safety-iot-edge-nuc.md) tutorials.
 
-* Docker installed on your local machine to run the video viewer.
+You should have [Docker](https://www.docker.com/products/docker-desktop) installed on your local machine to run the video viewer application.
 
 ## Add an object detection camera
 
 In your IoT Central application, navigate to the **LVA Gateway 001** device you created previously. Then select the **Commands** tab.
 
-Use the values in the following table to fill out the parameters for the **Add Camera Request** command. The values shown in the table assume you're using the simulated camera in the Azure VM, adjust the values appropriately if you're using a real camera:
+Use the values in the following table as the parameter values for the **Add Camera Request** command. The values shown in the table assume you're using the simulated camera in the Azure VM, adjust the values appropriately if you're using a real camera:
 
 | Field| Description| Sample value|
 |---------|---------|---------|
@@ -52,11 +52,11 @@ Select **Run** to add the camera device.
 
 ## Add a motion detection camera (optional)
 
-Repeat the previous steps to add a motion detection camera to the application. Use a different **Camera Id**, **Camera Name**, and **Rtsp Url**.
+If you have two cameras connected to your IoT Edge gateway device, repeat the previous steps to add a motion detection camera to the application. Use different values for the **Camera Id**, **Camera Name**, and **Rtsp Url** parameters.
 
 ## View the downstream devices
 
-If you select the **Downstream Devices** tab for the **LVA Gateway 001** device, you can see the camera devices you just added.
+Select the **Downstream Devices** tab for the **LVA Gateway 001** device to see the camera devices you just added.
 
 :::image type="content" source="media/tutorial-public-safety-manage/inspect_downstream.png" alt-text="Inspect":::
 
@@ -64,11 +64,11 @@ The camera devices also appear in the list on the **Devices** page in the applic
 
 ## Configure and manage the camera
 
-Navigate to **camera-001** and select the **Manage** tab.
+Navigate to the **camera-001** device and select the **Manage** tab.
 
 Use the following tables to set the device properties:
 
-**Object detection**
+**AI Object Detection**
 
 | Property | Description | Suggested Value |
 |-|-|-|
@@ -82,7 +82,7 @@ Use the following tables to set the device properties:
 |-|-|-|
 | Video Playback Host | Host for the Azure Media Player viewer | http://localhost:8094 |
 
-**LVA settings**
+**LVA Operations and Diagnostics**
 
 | Property | Description | Suggested Value |
 |-|-|-|
@@ -97,13 +97,13 @@ After a few seconds you see the **synced** confirmation message for each setting
 
 ## Start LVA processing
 
-Navigate to **Camera 1** and select the **Commands** tab.
+Navigate to the **camera-001** device and select the **Commands** tab.
 
 Run the **Start LVA Processing** command
 
 ## Monitor the cameras
 
-Navigate to **Camera 1** and select the **Dashboard** tab.
+Navigate to the **camera-001** device select the **Dashboard** tab.
 
 The **Detection Count** tile shows the average detection count for each of the selected detection classes objects during a one second detection interval.
 
@@ -122,12 +122,14 @@ The IoT Central application stores the video in Azure Media Services from where 
 
 <!-- Can't it just run at a command prompt? Otherwise we need to add VS Code as a prereq -->
 
-Open a command terminal and use the following command to run the video player in a Docker container on your local machine:
+Open a command prompt and use the following command to run the video player in a Docker container on your local machine. Replace the placeholders in the command with the values you made a note of previoulsy. You made a note of the `amsAadClientId`, `amsAadSecret`, `amsAadTenantId`, `amsSubscriptionId`, and `amsAccountName` when you created the service principal for your Media Services account:
 
 <!--You have to log into docker if this is not a public repo-->
 
+<!-- Do we need instructions to start the streaming endpoint? It was stopped in my environment... -->
+
 ```bash
-docker run -it --rm -e amsAadClientId="<FROM_AZURE_PORTAL>" -e amsAadSecret="<FROM_AZURE_PORTAL>" -e amsAadTenantId="<FROM_AZURE_PORTAL>" -e amsArmAadAudience="https://management.core.windows.net" -e amsArmEndpoint="https://management.azure.com" -e amsAadEndpoint="https://login.microsoftonline.com" -e amsSubscriptionId="<FROM_AZURE_PORTAL>" -e amsResourceGroup="<FROM_AZURE_PORTAL>" -e amsAccountName="<FROM_AZURE_PORTAL>" -p 8094:8094 meshams.azurecr.io/scotts/amp-viewer:1.0.8-amd64
+docker run -it --rm -e amsAadClientId="<FROM_AZURE_PORTAL>" -e amsAadSecret="<FROM_AZURE_PORTAL>" -e amsAadTenantId="<FROM_AZURE_PORTAL>" -e amsArmAadAudience="https://management.core.windows.net" -e amsArmEndpoint="https://management.azure.com" -e amsAadEndpoint="https://login.microsoftonline.com" -e amsSubscriptionId="<FROM_AZURE_PORTAL>" -e amsResourceGroup="lva-rg" -e amsAccountName="<FROM_AZURE_PORTAL>" -p 8094:8094 meshams.azurecr.io/scotts/amp-viewer:1.0.8-amd64
 ```
 
 <!-- We need to fix repo reference to a public endpoint-->

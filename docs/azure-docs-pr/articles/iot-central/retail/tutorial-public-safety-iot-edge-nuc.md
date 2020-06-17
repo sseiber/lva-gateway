@@ -29,7 +29,7 @@ In this tutorial, you learn how to:
 
 ## Prerequisites
 
-* A device running Linux, capable of running Docker containers, and enough processing power to run video analysis.
+* A device, such as an Intel NUC, running Linux, capable of running Docker containers, and enough processing power to run video analysis.
 * The IoT Edge runtime installed and running on the device.
 * To connect to the IoT Edge device from your Windows machine, you need the [PuTTY SSH client](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) or an equivalent utility.
 * Before you start, you should complete the previous [Create a live video analytics application in Azure IoT Central](./tutorial-public-safety-create-app.md) tutorial.
@@ -37,7 +37,7 @@ In this tutorial, you learn how to:
 
 ## Configure the IoT Edge device
 
-If you don't have the IoT Edge runtime installed in your NUC machine, see [Install the Azure IoT Edge runtime on Debian-based Linux systems](https://docs.microsoft.com/azure/iot-edge/how-to-install-iot-edge-linux) instructions.
+If you don't have the IoT Edge runtime installed in your Intel NUC machine, see [Install the Azure IoT Edge runtime on Debian-based Linux systems](https://docs.microsoft.com/azure/iot-edge/how-to-install-iot-edge-linux) instructions.
 
 To update the IoT Edge runtime:
 
@@ -61,6 +61,7 @@ To add the *state.json* configuration file to the */data/storage* folder:
     sudo chmod -R 777 /data
     ```
 
+    <!-- TODO - we need instructions for creating the state.json file here - it wasn't done in the previous tutorial -->
 1. Use the PuTTY `scp` utility in a command prompt to copy the *state.json* file you created in the previous tutorial into the IoT Edge device. This example uses `40.121.209.246` as an example IP address, replace it with the IP address of your IoT Edge device:
 
     ```cmd
@@ -103,9 +104,9 @@ Configure IoT Edge to register and connect to your IoT Central application:
 
 1. Replace `{scope_id}` with the **ID Scope** you made a note of in the previous tutorial.
 
-1. Replace `{registration_id}` with *[lva-gateway-001]*, the device you created in the previous tutorial.
+1. Replace `{registration_id}` with *lva-gateway-001*, the device you created in the previous tutorial.
 
-1. Replace `{symmetric_key}` with the **Primary key** you made a note of in the previous tutorial.
+1. Replace `{symmetric_key}` with the **Primary key** for the **lva-gateway-001** device you made a note of in the previous tutorial.
 
 1. Run the following command to restart the IoT Edge daemon:
 
@@ -128,7 +129,7 @@ If the IoT Edge modules don't start correctly, see [Troubleshoot your IoT Edge d
 
 ## Collect the RSTP stream from your camera
 
-Locate from your camera manufacturer, the RTSP Stream URL.
+Locate the RTSP Stream URLs for the cameras connected to your IoT Edge device.
 
 Example: HiKvision
 `rtsp://<address>:<port>/Streaming/Channels/<id>/`
@@ -137,12 +138,13 @@ Main Stream
 `rtsp://192.168.1.64:554/Streaming/Channels/101/`
 
 > [!TIP]
-> Try see the camera stream on the Edge computer using some media player such as VLC
+> Try to view the camera stream on the IoT Edge computer using a media player such as VLC.
 
 ## Next steps
 
-You have now deploy the IoT Edge runtime and the LVA modules in the Intel NUC.
-To manage the cameras, follow the next tutorial
+You have now deployed the IoT Edge runtime and the LVA modules to the Intel NUC gateway device.
+
+To manage the cameras, follow the next tutorial:
 
 > [!div class="nextstepaction"]
 > [Monitor and manage a security and safety video analytics application](./tutorial-public-safety-manage.md)

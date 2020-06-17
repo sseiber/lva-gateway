@@ -14,7 +14,6 @@ ms.date: 07/01/2020
 This tutorial shows you how to modify the IoT Edge module code for the live video analytics (LVA) modules.
 
 The previous tutorials use pre-built images of the modules.
-<!-- No editing done here yet -->
 
 ## Prerequisites
 
