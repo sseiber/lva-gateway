@@ -22,8 +22,8 @@
                 "value": ""
             },
             {
-                "name": "motionSensitivity",
-                "value": ""
+                "name": "frameRate",
+                "value": 2
             }
         ]
     }

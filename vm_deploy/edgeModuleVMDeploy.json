@@ -125,10 +125,10 @@
             "properties": {
                 "securityRules": [
                     {
-                        "name": "default-allow-22",
+                        "name": "SSH-Port",
                         "properties": {
                             "priority": 1000,
-                            "access": "Allow",
+                            "access": "Deny",
                             "direction": "Inbound",
                             "destinationPortRange": "22",
                             "protocol": "Tcp",

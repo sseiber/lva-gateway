@@ -107,10 +107,10 @@
             "properties.desired": {
                 "applicationDataDirectory": "/var/lib/azuremediaservices",
                 "azureMediaServicesArmId": "<FROM_AZURE_PORTAL>",
+                "aadEndpoint": "https://login.microsoftonline.com",
                 "aadTenantId": "<FROM_AZURE_PORTAL>",
                 "aadServicePrincipalAppId": "<FROM_AZURE_PORTAL>",
                 "aadServicePrincipalSecret": "<FROM_AZURE_PORTAL>",
-                "aadEndpoint": "<FROM_AZURE_PORTAL>",
                 "aadResourceId": "<FROM_AZURE_PORTAL>",
                 "armEndpoint": "<FROM_AZURE_PORTAL>",
                 "diagnosticsEventsOutputName": "AmsDiagnostics",

@@ -177,14 +177,12 @@ export class AmsGraph {
         return result;
     }
 
-    public createInferenceVideoLink(videoPlaybackHost: string): string {
-        const startTime = moment.utc().subtract(5, 'seconds').format('YYYY-MM-DDTHH:mm:ss[Z]');
-
+    public createInferenceVideoLink(videoPlaybackHost: string, startTime: moment.Moment, duration: number): string {
         if (videoPlaybackHost.slice(-1) === '/') {
             videoPlaybackHost = videoPlaybackHost.slice(0, -1);
         }
 
-        return `${videoPlaybackHost}/ampplayer?ac=${this.amsAccountName}&an=${this.amsAssetName}&st=${startTime}`;
+        return `${videoPlaybackHost}/ampplayer?ac=${this.amsAccountName}&an=${this.amsAssetName}&st=${startTime.format('YYYY-MM-DDTHH:mm:ss[Z]')}&du=${duration}`;
     }
 
     private async setTopology(): Promise<boolean> {

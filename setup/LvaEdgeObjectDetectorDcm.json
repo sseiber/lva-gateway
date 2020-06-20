@@ -363,6 +363,15 @@
                         "schema": "boolean"
                     },
                     {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Max Inference Capture Time (sec)"
+                        },
+                        "name": "wpMaxVideoInferenceTime",
+                        "writable": true,
+                        "schema": "integer"
+                    },
+                    {
                         "@type": "Command",
                         "commandType": "asynchronous",
                         "response": {
@@ -684,6 +693,15 @@
                         },
                         "name": "rpInferenceImageUrl",
                         "schema": "string"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Inference Timeout (sec)"
+                        },
+                        "name": "wpInferenceTimeout",
+                        "writable": true,
+                        "schema": "integer"
                     }
                 ]
             }
@@ -704,47 +722,6 @@
                     {
                         "@type": "Property",
                         "displayName": {
-                            "en": "Sensitivity"
-                        },
-                        "name": "wpSensitivity",
-                        "writable": true,
-                        "schema": {
-                            "@type": "Enum",
-                            "displayName": {
-                                "en": "Enum"
-                            },
-                            "valueSchema": "string",
-                            "enumValues": [
-                                {
-                                    "@type": "EnumValue",
-                                    "displayName": {
-                                        "en": "High"
-                                    },
-                                    "enumValue": "high",
-                                    "name": "SensitivityEnum_High"
-                                },
-                                {
-                                    "@type": "EnumValue",
-                                    "displayName": {
-                                        "en": "Medium"
-                                    },
-                                    "enumValue": "medium",
-                                    "name": "SensitivityEnum_Medium"
-                                },
-                                {
-                                    "@type": "EnumValue",
-                                    "displayName": {
-                                        "en": "Low"
-                                    },
-                                    "enumValue": "low",
-                                    "name": "SensitivityEnum_Low"
-                                }
-                            ]
-                        }
-                    },
-                    {
-                        "@type": "Property",
-                        "displayName": {
                             "en": "Detection Classes"
                         },
                         "name": "wpDetectionClasses",
@@ -759,6 +736,15 @@
                         "name": "wpConfidenceThreshold",
                         "writable": true,
                         "schema": "double"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Inference Frame Sample Rate (fps)"
+                        },
+                        "name": "wpInferenceFps",
+                        "writable": true,
+                        "schema": "integer"
                     }
                 ]
             }
