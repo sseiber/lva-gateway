@@ -48,7 +48,7 @@ Select **Run** to add the camera device.
 :::image type="content" source="media/tutorial-public-safety-manage/add_camera.png" alt-text="Add Camera":::
 
 > [!NOTE]
-> The **Lva Edge Object Detector** device template already exists in the application.
+> The **LVA Edge Object Detector** device template already exists in the application.
 
 ## Add a motion detection camera (optional)
 

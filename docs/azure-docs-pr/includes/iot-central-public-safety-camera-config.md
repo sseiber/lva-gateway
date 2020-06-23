@@ -14,19 +14,19 @@ model.
 
 To create a camera, follow these steps
 
-### Ensure the Lva Edge Gateway has the correct settings
+### Ensure the LVA Edge Gateway has the correct settings
 
 [TODO: I'm not sure where to find this, a screenshot would help. I'm not sure if I'm supposed to go to the device templates or go to the device instance I've created. I'm not sure what "parameters" or "Gateway Instance Id" the doc is referring to.]
 
-Go to the Lva Edge Gateway and select the Manage tab.
+Go to the LVA Edge Gateway and select the Manage tab.
 
 You pointed these parameters to this application, but ensure they match.
 
-The Gateway Instance Id, is the Device ID for your Lva Edge Gateway
+The Gateway Instance Id, is the Device ID for your LVA Edge Gateway
 
 ### Run the Command Add Camera
 
-Go to Devices and select the Lva Edge Gateway, and pick the device instance you created. Select the Command tab, and fill in the following information on the `Add Camera Request` command.
+Go to Devices and select the LVA Edge Gateway, and pick the device instance you created. Select the Command tab, and fill in the following information on the `Add Camera Request` command.
 
 | Field          | Description             | Sample Value            |
 |---------|---------|---------|
@@ -38,7 +38,7 @@ Go to Devices and select the Lva Edge Gateway, and pick the device instance you 
 | Rtsp password  |                         | Enter dummy value for the simulated stream    |
 | Detection Type | Dropdown                | Object Detection        |
 
-### Ensure the camera shows up as a downstream device for the Lva Edge Gateway
+### Ensure the camera shows up as a downstream device for the LVA Edge Gateway
 
 [TODO: Document]
 

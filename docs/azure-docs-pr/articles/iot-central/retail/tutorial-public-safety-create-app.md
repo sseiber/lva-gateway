@@ -100,7 +100,7 @@ In the **Administration** section, select **Your application** and make a note o
 
 :::image type="content" source="./media/tutorial-public-safety-create-app/administration.png" alt-text="Administration":::
 
-Select **API Tokens** and generate a new token called **LvaEdgeToken** for the **Operator** role:
+Select **API Tokens** and generate a new token called **LVAEdgeToken** for the **Operator** role:
 
 :::image type="content" source="./media/tutorial-public-safety-create-app/token.png" alt-text="Generate Token":::
 
@@ -113,10 +113,10 @@ Make a note of this **Primary key** for devices. You use this *primary group sha
 
 ## Clone the LvaGateway repository
 
-The [Lva-gateway](https://hyperlink_to_the_public_facing_repo) GitHub repository contains the sample IoT Edge deployment manifest for the LVA gateway device and the device capability models for the camera devices.
+The [LVA-gateway](https://hyperlink_to_the_public_facing_repo) GitHub repository contains the sample IoT Edge deployment manifest for the LVA gateway device and the device capability models for the camera devices.
 
 > [!NOTE]
-> The repository also includes the source code for the **LvaEdgeGatewayModule** and **lvaYolov3** IoT Edge modules. For more information about working with the source code, see the [Build the Lva Gateway Modules](tutorial-public-safety-build-module.md).
+> The repository also includes the source code for the **LvaEdgeGatewayModule** and **lvaYolov3** IoT Edge modules. For more information about working with the source code, see the [Build the LVA Gateway Modules](tutorial-public-safety-build-module.md).
 
 Use the following command to clone the repository to a suitable location on your local machine:
 
@@ -252,11 +252,11 @@ To import the deployment manifest and create the **LVA Edge Gateway** device tem
 
 The device template must include a device capability model. On the **LVA Edge Gateway** page, select the **Import capability model** tile. Navigate to the *setup* folder in your local copy of the **lva-gateway** repository and select the *LvaEdgeGatewayDcm.json* file.
 
-The **Lva Edge Gateway** device template now includes the **LVA Edge Gateway Module** along with three interfaces: **Device information**, **Lva Edge Gateway Settings**, and **Lva Edge Gateway Interface**.
+The **LVA Edge Gateway** device template now includes the **LVA Edge Gateway Module** along with three interfaces: **Device information**, **LVA Edge Gateway Settings**, and **LVA Edge Gateway Interface**.
 
 ### Replace the manifest
 
-On the **Lva Edge Gateway** page, select **+ Replace manifest**.
+On the **LVA Edge Gateway** page, select **+ Replace manifest**.
 
 :::image type="content" source="./media/tutorial-public-safety-create-app/replace-manifest.png" alt-text="Replace Manifest":::
 
@@ -272,12 +272,12 @@ Click on the device thumbnail and upload the `amslogo.png` file located under th
 
 ### Add relationships
 
-In the **Lva Edge Gateway** device template, under **Modules/Lva Edge Gateway Module**, select **Relationships**. Select **+ Add relationship** and add the following two relationships:
+In the **LVA Edge Gateway** device template, under **Modules/LVA Edge Gateway Module**, select **Relationships**. Select **+ Add relationship** and add the following two relationships:
 
 |Display Name               |Name          |Target |
 |-------------------------- |------------- |------ |
-|LVA Edge Object Detector   |Use default   |Lva Edge Object Detector Device |
-|LVA Edge Motion Detector   |Use default   |Lva Edge Motion Detector Device |
+|LVA Edge Object Detector   |Use default   |LVA Edge Object Detector Device |
+|LVA Edge Motion Detector   |Use default   |LVA Edge Motion Detector Device |
 
 Then select **Save**.
 
