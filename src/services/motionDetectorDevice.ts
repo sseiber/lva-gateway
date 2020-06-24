@@ -4,7 +4,6 @@ import {
 } from './module';
 import { AmsGraph } from './amsGraph';
 import {
-    IoTCameraSettings,
     AiInferenceInterface,
     AmsCameraDevice
 } from './device';
@@ -60,9 +59,10 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
     }
 
     public async deviceReady(): Promise<void> {
+        this.lvaGatewayModule.logger(['AmsMotionDetectorDevice', 'info'], `Device is ready`);
+
         await this.updateDeviceProperties({
-            [AiInferenceInterface.Property.InferenceImageUrl]: 'https://iotcsavisionai.blob.core.windows.net/image-link-test/rtspcapture.jpg',
-            [MotionDetectorInterface.Setting.Sensitivity]: this.motionDetectorSettings[MotionDetectorSettings.Sensitivity]
+            [AiInferenceInterface.Property.InferenceImageUrl]: 'https://iotcsavisionai.blob.core.windows.net/image-link-test/rtspcapture.jpg'
         });
     }
 
@@ -81,33 +81,18 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
                 await this.sendMeasurement({
                     [AiInferenceInterface.Telemetry.Inference]: inference
                 });
-
-                this.lastInferenceTime = Date.now();
             }
 
             if (inferenceCount > 0) {
-                const inferenceTelemetry: any = {
+                this.lastInferenceTime = moment.utc();
+
+                await this.sendMeasurement({
                     [AiInferenceInterface.Telemetry.InferenceCount]: inferenceCount
-                };
-
-                // if (this.activeVideoInference === false) {
-                //     this.activeVideoInference = true;
-
-                inferenceTelemetry[AiInferenceInterface.Event.InferenceEventVideoUrl] = this.amsGraph.createInferenceVideoLink(this.iotCameraSettings[IoTCameraSettings.VideoPlaybackHost]);
-                // }
-
-                await this.sendMeasurement(inferenceTelemetry);
+                });
             }
         }
         catch (ex) {
             this.lvaGatewayModule.logger(['AmsMotionDetectorDevice', 'error'], `Error processing downstream message: ${ex.message}`);
-        }
-    }
-
-    @bind
-    public async inferenceTimer(): Promise<void> {
-        if (Date.now() - this.lastInferenceTime > 2500) {
-            this.activeVideoInference = false;
         }
     }
 

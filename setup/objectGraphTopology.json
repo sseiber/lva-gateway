@@ -28,12 +28,6 @@
                 "default": "objectDetectorAsset"
             },
             {
-                "name": "motionSensitivity",
-                "type": "String",
-                "description": "motion detection sensitivity",
-                "default": "medium"
-            },
-            {
                 "name": "inferencingUrl",
                 "type": "String",
                 "description": "inferencing Url",
@@ -50,6 +44,12 @@
                 "type": "String",
                 "description": "inferencing endpoint password.",
                 "default": "password"
+            },
+            {
+                "name": "frameRate",
+                "type": "Double",
+                "description": "inferencing frame rate",
+                "default": 2
             },
             {
                 "name": "imageEncoding",
@@ -81,24 +81,14 @@
         ],
         "processors": [
             {
-                "@type": "#Microsoft.Media.MediaGraphMotionDetectionProcessor",
-                "name": "motionDetection",
-                "sensitivity": "${motionSensitivity}",
-                "inputs": [
-                    {
-                        "nodeName": "rtspSource"
-                    }
-                ]
-            },
-            {
                 "@type": "#Microsoft.Media.MediaGraphFrameRateFilterProcessor",
                 "name": "frameRateFilter",
                 "inputs": [
                     {
-                        "nodeName": "motionDetection"
+                        "nodeName": "rtspSource"
                     }
                 ],
-                "maximumFps": 2
+                "maximumFps": "${frameRate}"
             },
             {
                 "@type": "#Microsoft.Media.MediaGraphHttpExtension",

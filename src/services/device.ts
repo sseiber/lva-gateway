@@ -7,6 +7,7 @@ import {
     Twin,
     Message as IoTMessage
 } from 'azure-iot-device';
+import * as moment from 'moment';
 import {
     ICameraDeviceProvisionInfo,
     ModuleService
@@ -31,6 +32,8 @@ interface IoTDeviceInformation {
     totalStorage: number;
     totalMemory: number;
 }
+
+const defaultVideoPlaybackHost = 'http://localhost:8094';
 
 export enum IoTCameraSettings {
     VideoPlaybackHost = 'wpVideoPlaybackHost'
@@ -73,12 +76,16 @@ const IoTCameraInterface = {
     }
 };
 
-enum LvaEdgeOperationsSettings {
-    AutoStart = 'wpAutoStart'
+const defaultMaxVideoInferenceTime = 10;
+
+export enum LvaEdgeOperationsSettings {
+    AutoStart = 'wpAutoStart',
+    MaxVideoInferenceTime = 'wpMaxVideoInferenceTime'
 }
 
 interface LvaEdgeOperationsSettingsInterface {
     [LvaEdgeOperationsSettings.AutoStart]: boolean;
+    [LvaEdgeOperationsSettings.MaxVideoInferenceTime]: number;
 }
 
 const LvaEdgeOperationsInterface = {
@@ -94,7 +101,8 @@ const LvaEdgeOperationsInterface = {
         StopLvaGraphCommandReceived: 'evStopLvaGraphCommandReceived'
     },
     Setting: {
-        AutoStart: LvaEdgeOperationsSettings.AutoStart
+        AutoStart: LvaEdgeOperationsSettings.AutoStart,
+        MaxVideoInferenceTime: LvaEdgeOperationsSettings.MaxVideoInferenceTime
     },
     Command: {
         StartLvaProcessing: 'cmStartLvaProcessing',
@@ -127,6 +135,16 @@ const LvaEdgeDiagnosticsInterface = {
     }
 };
 
+const defaultInferenceTimeout = 5;
+
+export enum AiInferenceSettings {
+    InferenceTimeout = 'wpInferenceTimeout'
+}
+
+interface AiInferenceSettingsInterface {
+    [AiInferenceSettings.InferenceTimeout]: number;
+}
+
 export const AiInferenceInterface = {
     Telemetry: {
         InferenceCount: 'tlInferenceCount',
@@ -138,6 +156,9 @@ export const AiInferenceInterface = {
     Property: {
         InferenceVideoUrl: 'rpInferenceVideoUrl',
         InferenceImageUrl: 'rpInferenceImageUrl'
+    },
+    Setting: {
+        InferenceTimeout: AiInferenceSettings.InferenceTimeout
     }
 };
 
@@ -150,17 +171,23 @@ export abstract class AmsCameraDevice {
 
     protected deferredStart = defer();
     protected healthState = HealthState.Good;
-    protected activeVideoInference: boolean = false;
-    protected lastInferenceTime: number = 0;
+    protected lastInferenceTime: moment.Moment = moment.utc(0);
+    protected videoInferenceStartTime: moment.Moment = moment.utc();
     protected iotCameraSettings: IoTCameraSettingsInterface = {
-        [IoTCameraSettings.VideoPlaybackHost]: 'localhost:8094'
+        [IoTCameraSettings.VideoPlaybackHost]: defaultVideoPlaybackHost
     };
     protected lvaEdgeOperationsSettings: LvaEdgeOperationsSettingsInterface = {
-        [LvaEdgeOperationsSettings.AutoStart]: false
+        [LvaEdgeOperationsSettings.AutoStart]: false,
+        [LvaEdgeOperationsSettings.MaxVideoInferenceTime]: defaultMaxVideoInferenceTime
     };
     protected lvaEdgeDiagnosticsSettings: LvaEdgeDiagnosticsSettingsInterface = {
         [LvaEdgeDiagnosticsSettings.DebugTelemetry]: false
     };
+    protected aiInferenceSettings: AiInferenceSettingsInterface = {
+        [AiInferenceSettings.InferenceTimeout]: defaultInferenceTimeout
+    };
+    private inferenceInterval: NodeJS.Timeout;
+    private createVideoLinkForInferenceTimeout: boolean = false;
 
     constructor(lvaGatewayModule: ModuleService, amsGraph: AmsGraph, cameraInfo: ICameraDeviceProvisionInfo) {
         this.lvaGatewayModule = lvaGatewayModule;
@@ -171,7 +198,6 @@ export abstract class AmsCameraDevice {
     public abstract setGraphParameters(): any;
     public abstract async deviceReady(): Promise<void>;
     public abstract async processLvaInferences(inferenceData: any): Promise<void>;
-    public abstract async inferenceTimer(): Promise<void>;
 
     public async connectDeviceClient(dpsHubConnectionString: string): Promise<IClientConnectResult> {
         let clientConnectionResult: IClientConnectResult = {
@@ -186,10 +212,6 @@ export abstract class AmsCameraDevice {
                 await this.deferredStart.promise;
 
                 await this.deviceReady();
-
-                setInterval(async () => {
-                    await this.inferenceTimer();
-                }, 3000);
             }
 
             if (this.lvaEdgeOperationsSettings[LvaEdgeOperationsSettings.AutoStart] === true) {
@@ -340,15 +362,24 @@ export abstract class AmsCameraDevice {
 
                 switch (setting) {
                     case IoTCameraInterface.Setting.VideoPlaybackHost:
-                        patchedProperties[setting] = (this.iotCameraSettings[setting] as any) = value || '';
+                        patchedProperties[setting] = (this.iotCameraSettings[setting] as any) = value || defaultVideoPlaybackHost;
                         break;
 
                     case LvaEdgeOperationsInterface.Setting.AutoStart:
                         patchedProperties[setting] = (this.lvaEdgeOperationsSettings[setting] as any) = value || false;
                         break;
 
+                    case LvaEdgeOperationsInterface.Setting.MaxVideoInferenceTime:
+                        patchedProperties[setting] = (this.lvaEdgeOperationsSettings[setting] as any) = value || defaultMaxVideoInferenceTime;
+                        break;
+
                     case LvaEdgeDiagnosticsInterface.Setting.DebugTelemetry:
                         patchedProperties[setting] = (this.lvaEdgeDiagnosticsSettings[setting] as any) = value || false;
+                        break;
+
+                    case AiInferenceInterface.Setting.InferenceTimeout:
+                        patchedProperties[setting] = (this.aiInferenceSettings[setting] as any) = value || defaultInferenceTimeout;
+                        break;
 
                     default:
                         break;
@@ -441,6 +472,52 @@ export abstract class AmsCameraDevice {
         return startLvaGraphResult;
     }
 
+    private async inferenceTimer(): Promise<void> {
+        try {
+            if (this.lvaEdgeDiagnosticsSettings[LvaEdgeDiagnosticsSettings.DebugTelemetry] === true) {
+                this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Inference timer`);
+            }
+
+            const videoInferenceDuration = moment.duration(moment.utc().diff(this.videoInferenceStartTime));
+
+            if (moment.duration(moment.utc().diff(this.lastInferenceTime)) >= moment.duration(this.aiInferenceSettings[AiInferenceSettings.InferenceTimeout], 'seconds')) {
+                if (this.createVideoLinkForInferenceTimeout) {
+                    this.createVideoLinkForInferenceTimeout = false;
+
+                    this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `InferenceTimeout reached`);
+
+                    await this.sendMeasurement({
+                        [AiInferenceInterface.Event.InferenceEventVideoUrl]: this.amsGraph.createInferenceVideoLink(
+                            this.iotCameraSettings[IoTCameraSettings.VideoPlaybackHost],
+                            this.videoInferenceStartTime,
+                            Math.trunc(videoInferenceDuration.asSeconds()))
+                    });
+                }
+
+                this.videoInferenceStartTime = moment.utc();
+            }
+            else {
+                this.createVideoLinkForInferenceTimeout = true;
+
+                if (videoInferenceDuration >= moment.duration(this.lvaEdgeOperationsSettings[LvaEdgeOperationsSettings.MaxVideoInferenceTime], 'seconds')) {
+                    this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `MaxVideoInferenceTime reached`);
+
+                    await this.sendMeasurement({
+                        [AiInferenceInterface.Event.InferenceEventVideoUrl]: this.amsGraph.createInferenceVideoLink(
+                            this.iotCameraSettings[IoTCameraSettings.VideoPlaybackHost],
+                            this.videoInferenceStartTime,
+                            Math.trunc(videoInferenceDuration.asSeconds()))
+                    });
+
+                    this.videoInferenceStartTime = moment.utc();
+                }
+            }
+        }
+        catch (ex) {
+            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `Inference timer error: ${ex.message}`);
+        }
+    }
+
     private async connectDeviceClientInternal(
         dpsHubConnectionString: string,
         devicePropertiesHandler: DevicePropertiesHandler): Promise<IClientConnectResult> {
@@ -498,10 +575,7 @@ export abstract class AmsCameraDevice {
                 [IoTCameraInterface.Property.RtspUrl]: this.cameraInfo.rtspUrl,
                 [IoTCameraInterface.Property.RtspAuthUsername]: this.cameraInfo.rtspAuthUsername,
                 [IoTCameraInterface.Property.RtspAuthPassword]: this.cameraInfo.rtspAuthPassword,
-                [IoTCameraInterface.Property.AmsDeviceTag]: `${this.lvaGatewayModule.getInstanceId()}:${AmsDeviceTagValue}`,
-                [IoTCameraInterface.Setting.VideoPlaybackHost]: this.iotCameraSettings[IoTCameraSettings.VideoPlaybackHost],
-                [LvaEdgeOperationsInterface.Setting.AutoStart]: this.lvaEdgeOperationsSettings[LvaEdgeOperationsSettings.AutoStart],
-                [LvaEdgeDiagnosticsInterface.Setting.DebugTelemetry]: this.lvaEdgeOperationsSettings[LvaEdgeDiagnosticsSettings.DebugTelemetry]
+                [IoTCameraInterface.Property.AmsDeviceTag]: `${this.lvaGatewayModule.getInstanceId()}:${AmsDeviceTagValue}`
             });
 
             await this.sendMeasurement({
@@ -559,6 +633,16 @@ export abstract class AmsCameraDevice {
                     value: responseMessage
                 }
             });
+
+            if (startLvaGraphResult) {
+                this.lastInferenceTime = moment.utc(0);
+                this.videoInferenceStartTime = moment.utc();
+                this.createVideoLinkForInferenceTimeout = false;
+
+                this.inferenceInterval = setInterval(async () => {
+                    await this.inferenceTimer();
+                }, 1000);
+            }
         }
         catch (ex) {
             this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `startLvaProcessing error: ${ex.message}`);
@@ -571,6 +655,8 @@ export abstract class AmsCameraDevice {
         this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `${LvaEdgeOperationsInterface.Command.StopLvaProcessing} command received`);
 
         try {
+            clearInterval(this.inferenceInterval);
+
             await this.sendMeasurement({
                 [LvaEdgeOperationsInterface.Event.StopLvaGraphCommandReceived]: this.cameraInfo.cameraId
             });
