@@ -16,7 +16,7 @@ Azure IoT Central is an IoT app platform that reduces the burden and cost associ
 
 This article, describes several retail-specific IoT Central application templates. As a solution builder, you can use these templates to build IoT solutions that optimize supply chains, improve in-store experiences for customers, and track inventory more efficiently.
 
-:::image type="content" source="media/overview-iot-central-retail/retail-app-template.png" alt-text="Azure IoT Retail Overview":::
+:::image type="content" source="media/overview-iot-central-retail/retail-app-templates.png" alt-text="Azure IoT Retail Overview":::
 
 The following sections describe the capabilities of these application templates:
 
