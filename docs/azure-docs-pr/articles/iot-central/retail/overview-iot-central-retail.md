@@ -16,8 +16,7 @@ Azure IoT Central is an IoT app platform that reduces the burden and cost associ
 
 This article, describes several retail-specific IoT Central application templates. As a solution builder, you can use these templates to build IoT solutions that optimize supply chains, improve in-store experiences for customers, and track inventory more efficiently.
 
-> [!div class="mx-imgBorder"]
-> ![Azure IoT Retail Overview](./media/overview-iot-central-retail/retail-app-templates.png)
+:::image type="content" source="media/overview-iot-central-retail/retail-app-template.png" alt-text="Azure IoT Retail Overview":::
 
 The following sections describe the capabilities of these application templates:
 
@@ -37,11 +36,9 @@ The benefits of a connected logistics solution include:
 
 The following screenshots show the out-of-the-box dashboard in the application template. The dashboard is fully customizable to meet your specific solution requirements:
 
-> [!div class="mx-imgBorder"]
-> ![Connected Logistics Dashboard](./media/overview-iot-central-retail/connected-logistics-dashboard1.png)
+:::image type="content" source="media/overview-iot-central-retail/connected-logistics-dashboard1.png" alt-text="Connected Logistics Dashboard":::
 
-> [!div class="mx-imgBorder"]
-> ![Connected Logistics Dashboard](./media/overview-iot-central-retail/connected-logistics-dashboard2.png)
+:::image type="content" source="media/overview-iot-central-retail/connected-logistics-dashboard2.png" alt-text="Connected Logistics Dashboard":::
 
 To learn more, see the [Deploy and walk through a connected logistics application template](./tutorial-iot-central-connected-logistics.md) tutorial.
 
@@ -62,8 +59,7 @@ The benefits of a digital distribution center include:
 
 The following screenshot shows the out-of-the-box dashboard in the application template. The dashboard is fully customizable to meet your specific solution requirements: 
 
-> [!div class="mx-imgBorder"]
-> ![Digital Distribution Center Dashboard](./media/overview-iot-central-retail/digital-distribution-center-dashboard.png)
+:::image type="content" source="media/overview-iot-central-retail/digital-distribution-center-dashboard.png" alt-text="Digital Distribution Center Dashboard":::
 
 To learn more, see the [Deploy and walk through a digital distribution center application template](./tutorial-iot-central-digital-distribution-center.md) tutorial.
 
@@ -85,8 +81,7 @@ The application template comes with a set of device templates and uses a set of 
 
 The following screenshot shows the out-of-the-box dashboard in the application template. The dashboard is fully customizable to meet your specific solution requirements: 
 
-> [!div class="mx-imgBorder"]
-> ![In-Store Analytics Condition Monitoring](./media/overview-iot-central-retail/in-store-analytics-condition-dashboard.png)
+:::image type="content" source="media/overview-iot-central-retail/in-store-analytics-condition-dashboard.png" alt-text="In-Store Analytics Condition Monitoring":::
 
 To learn more, see the [Create an in-store analytics application in Azure IoT Central](./tutorial-in-store-analytics-create-app.md) tutorial.
 
@@ -108,8 +103,7 @@ The application template comes with a set of device templates and uses a set of 
 
 The following screenshot shows the out-of-the-box dashboard in the application template. The dashboard is fully customizable to meet your specific solution requirements: 
 
-> [!div class="mx-imgBorder"]
-> ![In-Store Analytics Checkout](./media/overview-iot-central-retail/In-Store-Analytics-Checkout-Dashboard.png)
+:::image type="content" source="media/overview-iot-central-retail/In-Store-Analytics-Checkout-Dashboard.png" alt-text="In-Store Analytics Checkout":::
 
 To learn more, see the [Create an in-store analytics application in Azure IoT Central](./tutorial-in-store-analytics-create-app.md) tutorial.
 
@@ -129,8 +123,7 @@ This application template focuses on device connectivity, and the configuration 
 
 The following screenshot shows the out-of-the-box dashboard in the application template. The dashboard is fully customizable to meet your specific solution requirements:
 
-> [!div class="mx-imgBorder"]
-> ![Smart Inventory Management Dashboard](./media/overview-iot-central-retail/smart-inventory-management-dashboard.png)
+:::image type="content" source="media/overview-iot-central-retail/smart-inventory-management-dashboard.png" alt-text="Smart Inventory Management Dashboard":::
 
 To learn more, see the [Deploy and walk through a smart inventory management application template](./tutorial-iot-central-smart-inventory-management.md) tutorial.
 
@@ -150,24 +143,32 @@ The application template enables you to:
 
 The following screenshot shows the out-of-the-box dashboard in the application template. The dashboard is fully customizable to meet your specific solution requirements:
 
-> [!div class="mx-imgBorder"]
-> ![Micro-fulfillment Center](./media/overview-iot-central-retail/MFC-Dashboard.png)
+:::image type="content" source="media/overview-iot-central-retail/MFC-Dashboard.png" alt-text="Micro-fulfillment Center":::
 
 To learn more, see the [Deploy and walk through the micro-fulfillment center application template](./tutorial-micro-fulfillment-center.md) tutorial.
-
-## Live video analytics
-
-Live video analytics (LVA) provides a platform for you to build intelligent video applications that span the edge and the cloud. The platform offers the capability to capture, record, analyze live video, and publish the results, which could be video or video analytics, to Azure services. The Azure services could be running in the cloud or the edge. You can use the platform to enhance IoT solutions with video analytics.
 
 ## Security and safety video analytics application
 
 The IoT Central security and safety video analytics application template lets you quickly experience how to deploy, manage, and monitor a solution that uses intelligent edge cameras to detect objects and motion. The solution enables you to identify your physical security issues quickly and accurately.
 
-The security and safety video analytics application uses a live video analytics (LVA) module running in IoT Edge. The LVA module provides a platform for you to build intelligent video applications that span the edge and the cloud. The platform offers the capability to capture, record, analyze live video, and publish the results, which could be video or video analytics, to Azure services. The Azure services could be running in the cloud or the edge. You can use the platform to enhance IoT solutions, such as the security and safety video analytics application, with video analytics.
+The security and safety video analytics application uses a [live video analytics (LVA)](#live-video-analytics) module running in IoT Edge. The LVA module provides a platform for you to build intelligent video applications that span the edge and the cloud. The platform offers the capability to capture, record, analyze live video, and publish the results, which could be video or video analytics, to Azure services. The Azure services could be running in the cloud or the edge. You can use the platform to enhance IoT solutions, such as the security and safety video analytics application, with video analytics.
+
+The application template includes four application dashboards:
+
+* **Setup** provides information about the application design and lets you add and delete cameras.
+* **Manage** lets you manage your cameras. For example, you can configure the cameras, view status information, and start cameras running.
+* **Real Cameras** lets you view information from your real cameras such as detection counts and camera events.
+* **Monitor** lets you view detailed information from all of your cameras.
+
+:::image type="content" source="media/overview-iot-central-retail/live-video-analytics.png" alt-text="Security and safety video analytics":::
 
 To learn more about the architecture of the solution, see [Security and safety video analytics application architecture](architecture-public-safety.md).
 
 To learn how to deploy the solution, see the [Create a security and safety video analytics application in Azure IoT Central](tutorial-public-safety-create-app.md) tutorial.
+
+### Live video analytics
+
+Live video analytics provides a platform for you to build intelligent video applications that span the edge and the cloud. The platform offers the capability to capture, record, analyze live video, and publish the results, which could be video or video analytics, to Azure services. The Azure services could be running in the cloud or the edge. You can use the platform to enhance IoT solutions with video analytics.
 
 ## Next steps
 

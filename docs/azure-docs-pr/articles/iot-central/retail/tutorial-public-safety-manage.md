@@ -111,6 +111,14 @@ The **Inference** pie chart shows the count percentage by detection class type.
 
 The **Inference Event Video** is a list of links to the assets in Azure Media Services that contain the detections. The link uses the host player described in the following section.
 
+## Start the streaming endpoint
+
+Before you try to view the video, make sure that the streaming endpoint for your media services account is running:
+
+* In the Azure portal, navigate to the **lva-rg** resource group.
+* Click on the **Streaming Endpoint** resource.
+* On the **Streaming endpoint details** page, select **Start**. You see a warning that billing starts when the endpoint starts.
+
 ## View stored video
 
 The days of watching cameras and reacting to suspicious images are over. With automatic event tagging and direct links to the stored video with the inferred detection, security operators can find events of interest in a list and then follow the link to view the video.

@@ -74,7 +74,7 @@ To create a new Azure IoT Central application:
 
 To create a new live video analytics application:  
 
-<!-- NOTE - The template is not available yet, use this private template in the meantime <https://apps.azureiotcentral.com/build/new/223659de-9704-4652-87b3-086e2a76e609> -->
+<!-- NOTE - The template is not available yet, use this private template in the meantime <https://apps.azureiotcentral.com/build/new/4583065c-c742-4eb8-930f-c9d7017ba414> -->
 
 1. Select the **Security and safety video analytics** application template. This template includes device templates for the devices used in the tutorial. The template also provides an operator dashboard for monitoring the video.
 

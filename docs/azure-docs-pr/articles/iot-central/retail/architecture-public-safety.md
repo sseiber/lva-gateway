@@ -14,7 +14,7 @@ services: iot-central
 
 The **Security and safety video analytics** application template lets you build solutions that...
 
-:::image type="content" source="media/architecture-public-safety/lva.png" alt-text="Architecture":::
+:::image type="content" source="media/architecture-public-safety/architecture.png" alt-text="Architecture":::
 
 The key components of the security and safety video analytics solution include:
 
