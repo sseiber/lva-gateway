@@ -23,21 +23,21 @@ This tutorial shows you how to install and configure the IoT Edge runtime on an 
 
 In this tutorial, you learn how to:
 > [!div class="checklist"]
-> * Update and configure Edge
-> * Setup the gateway with a configuration file with one-time secrets that should not be transferable from the cloud.
-> * join a local ONVIF camera to your NUC for video analysis
+> * Update and configure IoT Edge
+> * Setup the IoT Edge gateway
+> * Connect a local ONVIF-compatible camera to your Intel NUC device
 
 ## Prerequisites
 
 * A device, such as an Intel NUC, running Linux, capable of running Docker containers, and enough processing power to run video analysis.
-* The IoT Edge runtime installed and running on the device.
+* The [IoT Edge runtime installed](../../iot-edge/how-to-install-iot-edge-linux.md) and running on the device.
 * To connect to the IoT Edge device from your Windows machine, you need the [PuTTY SSH client](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) or an equivalent utility.
 * Before you start, you should complete the previous [Create a live video analytics application in Azure IoT Central](./tutorial-public-safety-create-app.md) tutorial.
 * You also need an Azure subscription. If you don't have an Azure subscription, you can create one for free on the [Azure sign-up page](https://aka.ms/createazuresubscription).
 
 ## Configure the IoT Edge device
 
-If you don't have the IoT Edge runtime installed in your Intel NUC machine, see [Install the Azure IoT Edge runtime on Debian-based Linux systems](https://docs.microsoft.com/azure/iot-edge/how-to-install-iot-edge-linux) instructions.
+If you don't have the IoT Edge runtime installed in your Intel NUC machine, see [Install the Azure IoT Edge runtime on Debian-based Linux systems](../../iot-edge/how-to-install-iot-edge-linux.md) instructions.
 
 To update the IoT Edge runtime:
 
@@ -51,9 +51,7 @@ To update the IoT Edge runtime:
     sudo iotedge --version
     ```
 
-To add the *state.json* configuration file to the */data/storage* folder:
-
-1. Use the following commands to create the folders with the necessary permissions:
+1. Use the following commands to create the folders the deployment uses with the necessary permissions:
 
     ```bash
     sudo mkdir -p /data/storage
@@ -61,14 +59,25 @@ To add the *state.json* configuration file to the */data/storage* folder:
     sudo chmod -R 777 /data
     ```
 
-    <!-- TODO - we need instructions for creating the state.json file here - it wasn't done in the previous tutorial -->
-1. Use the PuTTY `scp` utility in a command prompt to copy the *state.json* file you created in the previous tutorial into the IoT Edge device. This example uses `40.121.209.246` as an example IP address, replace it with the IP address of your IoT Edge device:
+To add the *state.json* configuration file to the */data/storage* folder:
+
+1. In your local copy of the **lva-gateway** repository, copy the file *state.json* from the *setup* folder to the *storage* folder.
+
+1. Use a text editor to open the copy of the *state.json* file in the *storage* folder.
+
+1. Update the `system` and `iotCentral > properties` placeholders with string values that describe your gateway device. You can view these values later in the IoT Central application dashboard.
+
+1. Update the `iotCentral > appKeys` placeholders with the values you made a note of in the previous tutorial. Save the changes.
+
+1. Use the PuTTY `scp` utility in a command prompt to copy the *state.json* file you created in the previous tutorial into the IoT Edge device. This example uses `192.168.0.144` as an example IP address, replace it with the IP address of your IoT Edge device:
 
     ```cmd
-    scp state.json YourUserName@40.121.209.246:/data/storage/state.json`
+    scp state.json YourUserName@192.168.0.144:/data/storage/state.json`
     ```
 
 Configure IoT Edge to register and connect to your IoT Central application:
+
+1. Use the PuTTY utility to connect to the IoT Edge device.
 
 1. Use a text editor, such as `nano`, to open the IoT Edge config.yaml file.
 
@@ -129,7 +138,7 @@ If the IoT Edge modules don't start correctly, see [Troubleshoot your IoT Edge d
 
 ## Collect the RSTP stream from your camera
 
-Locate the RTSP Stream URLs for the cameras connected to your IoT Edge device.
+Identify the RTSP stream URLs for the cameras connected to your IoT Edge device.
 
 Example: HiKvision
 `rtsp://<address>:<port>/Streaming/Channels/<id>/`
