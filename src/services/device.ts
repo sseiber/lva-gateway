@@ -226,6 +226,8 @@ export abstract class AmsCameraDevice {
         catch (ex) {
             clientConnectionResult.clientConnectionStatus = false;
             clientConnectionResult.clientConnectionMessage = `An error occurred while accessing the device twin properties`;
+
+            this.lvaGatewayModule.logger(['ModuleService', 'error'], clientConnectionResult.clientConnectionMessage);
         }
 
         return clientConnectionResult;
@@ -491,6 +493,10 @@ export abstract class AmsCameraDevice {
                             this.iotCameraSettings[IoTCameraSettings.VideoPlaybackHost],
                             this.videoInferenceStartTime,
                             Math.trunc(videoInferenceDuration.asSeconds()))
+                    });
+
+                    await this.updateDeviceProperties({
+                        [AiInferenceInterface.Property.InferenceImageUrl]: this.lvaGatewayModule.getSampleImageUrls().ANALYZE
                     });
                 }
 
