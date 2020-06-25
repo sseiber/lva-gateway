@@ -190,6 +190,17 @@ const LvaGatewayCommands = {
 const defaultDpsProvisioningHost: string = 'global.azure-devices-provisioning.net';
 const defaultHealthCheckRetries: number = 3;
 
+export interface ISampleImageUrls {
+    ANALYZE: string;
+    BICYCLE: string;
+    BLANK: string;
+    BUS: string;
+    CAR: string;
+    MOTION: string;
+    PERSON: string;
+    TRUCK: string;
+}
+
 @service('module')
 export class ModuleService {
     @inject('$server')
@@ -230,6 +241,16 @@ export class ModuleService {
     private amsInferenceDeviceMap = new Map<string, AmsCameraDevice>();
     private dpsProvisioningHost: string = defaultDpsProvisioningHost;
     private healthCheckRetries: number = defaultHealthCheckRetries;
+    private sampleImageUrls: ISampleImageUrls = {
+        ANALYZE: '',
+        BICYCLE: '',
+        BLANK: '',
+        BUS: '',
+        CAR: '',
+        MOTION: '',
+        PERSON: '',
+        TRUCK: ''
+    };
 
     public getScopeId(): string {
         return this.iotCentralAppKeys.iotCentralScopeId;
@@ -237,6 +258,10 @@ export class ModuleService {
 
     public getInstanceId(): string {
         return this.iotcGatewayInstanceId;
+    }
+
+    public getSampleImageUrls(): ISampleImageUrls {
+        return this.sampleImageUrls;
     }
 
     public async init(): Promise<void> {
@@ -251,6 +276,15 @@ export class ModuleService {
 
         this.dpsProvisioningHost = this.config.get('dpsProvisioningHost') || defaultDpsProvisioningHost;
         this.healthCheckRetries = this.config.get('healthCheckRetries') || defaultHealthCheckRetries;
+
+        this.sampleImageUrls.ANALYZE = this.config.get('sampleImage_analyze');
+        this.sampleImageUrls.BICYCLE = this.config.get('sampleImage_bike');
+        this.sampleImageUrls.BLANK = this.config.get('sampleImage_blank');
+        this.sampleImageUrls.BUS = this.config.get('sampleImage_bus');
+        this.sampleImageUrls.CAR = this.config.get('sampleImage_car');
+        this.sampleImageUrls.MOTION = this.config.get('sampleImage_motion');
+        this.sampleImageUrls.PERSON = this.config.get('sampleImage_person');
+        this.sampleImageUrls.TRUCK = this.config.get('sampleImage_truck');
     }
 
     @bind
@@ -750,6 +784,7 @@ export class ModuleService {
             }
 
             deviceProvisionResult = await this.createAndProvisionAmsInferenceDevice(cameraInfo);
+
             if (deviceProvisionResult.dpsProvisionStatus === true && deviceProvisionResult.clientConnectionStatus === true) {
                 this.amsInferenceDeviceMap.set(cameraInfo.cameraId, deviceProvisionResult.amsInferenceDevice);
 
@@ -760,7 +795,7 @@ export class ModuleService {
         }
         catch (ex) {
             deviceProvisionResult.dpsProvisionStatus = false;
-            deviceProvisionResult.dpsProvisionMessage = `Error while processing downstream message: ${ex.message}`;
+            deviceProvisionResult.dpsProvisionMessage = `Error while provisioning amsInferenceDevice: ${ex.message}`;
 
             this.server.log(['ModuleService', 'error'], deviceProvisionResult.dpsProvisionMessage);
         }
@@ -818,6 +853,9 @@ export class ModuleService {
             deviceProvisionResult.amsInferenceDevice = new LvaInferenceDeviceMap[cameraInfo.detectionType].deviceClass(this, amsGraph, cameraInfo);
 
             const { clientConnectionStatus, clientConnectionMessage } = await deviceProvisionResult.amsInferenceDevice.connectDeviceClient(deviceProvisionResult.dpsHubConnectionString);
+
+            this.server.log(['ModuleService', 'info'], `clientConnectionStatus: ${clientConnectionStatus}, clientConnectionMessage: ${clientConnectionMessage}`);
+
             deviceProvisionResult.clientConnectionStatus = clientConnectionStatus;
             deviceProvisionResult.clientConnectionMessage = clientConnectionMessage;
         }

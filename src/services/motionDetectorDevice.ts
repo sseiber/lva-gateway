@@ -62,7 +62,7 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
         this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `Device is ready`);
 
         await this.updateDeviceProperties({
-            [AiInferenceInterface.Property.InferenceImageUrl]: 'https://iotcsavisionai.blob.core.windows.net/image-link-test/rtspcapture.jpg'
+            [AiInferenceInterface.Property.InferenceImageUrl]: this.lvaGatewayModule.getSampleImageUrls().ANALYZE
         });
     }
 
@@ -88,6 +88,10 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
 
                 await this.sendMeasurement({
                     [AiInferenceInterface.Telemetry.InferenceCount]: inferenceCount
+                });
+
+                await this.updateDeviceProperties({
+                    [AiInferenceInterface.Property.InferenceImageUrl]: this.lvaGatewayModule.getSampleImageUrls().MOTION
                 });
             }
         }
