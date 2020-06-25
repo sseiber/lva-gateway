@@ -4,7 +4,6 @@ import {
 } from './module';
 import { AmsGraph } from './amsGraph';
 import {
-    IoTCameraSettings,
     AiInferenceInterface,
     AmsCameraDevice
 } from './device';
@@ -27,37 +26,35 @@ interface IObjectInference {
     };
 }
 
-enum MotionDetectorSensitivity {
-    Low = 'low',
-    Medium = 'medium',
-    High = 'high'
-}
+const defaultDetectionClass = 'person';
+const defaultConfidenceThreshold = 70.0;
+const defaultInferenceFps = 2;
 
 enum ObjectDetectorSettings {
-    MotionDetectorSensitivity = 'wpSensitivity',
     DetectionClasses = 'wpDetectionClasses',
-    ConfidenceThreshold = 'wpConfidenceThreshold'
+    ConfidenceThreshold = 'wpConfidenceThreshold',
+    InferenceFps = 'wpInferenceFps'
 }
 
 interface IObjectDetectorSettings {
-    [ObjectDetectorSettings.MotionDetectorSensitivity]: MotionDetectorSensitivity;
     [ObjectDetectorSettings.DetectionClasses]: string;
     [ObjectDetectorSettings.ConfidenceThreshold]: number;
+    [ObjectDetectorSettings.InferenceFps]: number;
 }
 
 const ObjectDetectorInterface = {
     Setting: {
-        MotionDetectorSensitivity: ObjectDetectorSettings.MotionDetectorSensitivity,
         DetectionClasses: ObjectDetectorSettings.DetectionClasses,
-        ConfidenceThreshold: ObjectDetectorSettings.ConfidenceThreshold
+        ConfidenceThreshold: ObjectDetectorSettings.ConfidenceThreshold,
+        InferenceFps: ObjectDetectorSettings.InferenceFps
     }
 };
 
 export class AmsObjectDetectorDevice extends AmsCameraDevice {
     private objectDetectorSettings: IObjectDetectorSettings = {
-        [ObjectDetectorSettings.MotionDetectorSensitivity]: MotionDetectorSensitivity.Medium,
-        [ObjectDetectorSettings.DetectionClasses]: 'person',
-        [ObjectDetectorSettings.ConfidenceThreshold]: 70.0
+        [ObjectDetectorSettings.DetectionClasses]: defaultDetectionClass,
+        [ObjectDetectorSettings.ConfidenceThreshold]: defaultConfidenceThreshold,
+        [ObjectDetectorSettings.InferenceFps]: defaultInferenceFps
     };
 
     private detectionClasses: string[] = this.objectDetectorSettings[ObjectDetectorSettings.DetectionClasses].toUpperCase().split(/[\s,]+/);
@@ -68,23 +65,22 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
 
     public setGraphParameters(): any {
         return {
-            motionSensitivity: this.objectDetectorSettings[ObjectDetectorSettings.MotionDetectorSensitivity],
+            frameRate: this.objectDetectorSettings[ObjectDetectorSettings.InferenceFps],
             assetName: `${this.lvaGatewayModule.getScopeId()}-${this.cameraInfo.cameraId}-${moment.utc().format('YYYYMMDD-HHmmss')}`
         };
     }
 
     public async deviceReady(): Promise<void> {
+        this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `Device is ready`);
+
         await this.updateDeviceProperties({
-            [AiInferenceInterface.Property.InferenceImageUrl]: 'https://iotcsavisionai.blob.core.windows.net/image-link-test/rtspcapture.jpg',
-            [ObjectDetectorInterface.Setting.MotionDetectorSensitivity]: this.objectDetectorSettings[ObjectDetectorSettings.MotionDetectorSensitivity],
-            [ObjectDetectorInterface.Setting.DetectionClasses]: this.objectDetectorSettings[ObjectDetectorSettings.DetectionClasses],
-            [ObjectDetectorInterface.Setting.ConfidenceThreshold]: this.objectDetectorSettings[ObjectDetectorSettings.ConfidenceThreshold]
+            [AiInferenceInterface.Property.InferenceImageUrl]: 'https://iotcsavisionai.blob.core.windows.net/image-link-test/rtspcapture.jpg'
         });
     }
 
     public async processLvaInferences(inferences: IObjectInference[]): Promise<void> {
         if (!Array.isArray(inferences) || !this.deviceClient) {
-            this.lvaGatewayModule.logger(['AmsObjectDetectorDevice', 'error'], `Missing inferences array or client not connected`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `Missing inferences array or client not connected`);
             return;
         }
 
@@ -98,8 +94,6 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
                 if (this.detectionClasses.includes(detectedClass) && confidence >= this.objectDetectorSettings[ObjectDetectorSettings.ConfidenceThreshold]) {
                     ++detectionCount;
 
-                    this.lastInferenceTime = Date.now();
-
                     await this.sendMeasurement({
                         [AiInferenceInterface.Telemetry.Inference]: inference
                     });
@@ -107,28 +101,15 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
             }
 
             if (detectionCount > 0) {
-                const inferenceTelemetry: any = {
+                this.lastInferenceTime = moment.utc();
+
+                await this.sendMeasurement({
                     [AiInferenceInterface.Telemetry.InferenceCount]: detectionCount
-                };
-
-                // if (this.activeVideoInference === false) {
-                //     this.activeVideoInference = true;
-
-                inferenceTelemetry[AiInferenceInterface.Event.InferenceEventVideoUrl] = this.amsGraph.createInferenceVideoLink(this.iotCameraSettings[IoTCameraSettings.VideoPlaybackHost]);
-                // }
-
-                await this.sendMeasurement(inferenceTelemetry);
+                });
             }
         }
         catch (ex) {
-            this.lvaGatewayModule.logger(['AmsObjectDetectorDevice', 'error'], `Error processing downstream message: ${ex.message}`);
-        }
-    }
-
-    @bind
-    public async inferenceTimer(): Promise<void> {
-        if (Date.now() - this.lastInferenceTime > 2500) {
-            this.activeVideoInference = false;
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `Error processing downstream message: ${ex.message}`);
         }
     }
 
@@ -137,7 +118,7 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
         await super.onHandleDevicePropertiesInternal(desiredChangedSettings);
 
         try {
-            this.lvaGatewayModule.logger(['AmsObjectDetectorDevice', 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
 
             const patchedProperties = {};
 
@@ -162,12 +143,12 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
                         break;
                     }
 
-                    case ObjectDetectorInterface.Setting.MotionDetectorSensitivity:
-                        patchedProperties[setting] = (this.objectDetectorSettings[setting] as any) = (value || '');
+                    case ObjectDetectorInterface.Setting.ConfidenceThreshold:
+                        patchedProperties[setting] = (this.objectDetectorSettings[setting] as any) = value || defaultConfidenceThreshold;
                         break;
 
-                    case ObjectDetectorInterface.Setting.ConfidenceThreshold:
-                        patchedProperties[setting] = (this.objectDetectorSettings[setting] as any) = (value || 0.0);
+                    case ObjectDetectorInterface.Setting.InferenceFps:
+                        patchedProperties[setting] = (this.aiInferenceSettings[setting] as any) = value || defaultInferenceFps;
                         break;
 
                     default:
@@ -180,7 +161,7 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
             }
         }
         catch (ex) {
-            this.lvaGatewayModule.logger(['AmsObjectDetectorDevice', 'error'], `Exception while handling desired properties: ${ex.message}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `Exception while handling desired properties: ${ex.message}`);
         }
 
         this.deferredStart.resolve();
