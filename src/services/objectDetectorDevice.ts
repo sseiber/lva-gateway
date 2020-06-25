@@ -57,7 +57,7 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
         [ObjectDetectorSettings.InferenceFps]: defaultInferenceFps
     };
 
-    private detectionClasses: string[] = this.objectDetectorSettings[ObjectDetectorSettings.DetectionClasses].toUpperCase().split(/[\s,]+/);
+    private detectionClasses: string[] = this.objectDetectorSettings[ObjectDetectorSettings.DetectionClasses].toUpperCase().split(',');
 
     constructor(lvaGatewayModule: ModuleService, amsGraph: AmsGraph, cameraInfo: ICameraDeviceProvisionInfo) {
         super(lvaGatewayModule, amsGraph, cameraInfo);
@@ -74,7 +74,7 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
         this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `Device is ready`);
 
         await this.updateDeviceProperties({
-            [AiInferenceInterface.Property.InferenceImageUrl]: 'https://iotcsavisionai.blob.core.windows.net/image-link-test/rtspcapture.jpg'
+            [AiInferenceInterface.Property.InferenceImageUrl]: this.lvaGatewayModule.getSampleImageUrls().ANALYZE
         });
     }
 
@@ -86,6 +86,7 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
 
         try {
             let detectionCount = 0;
+            let sampleImage = this.lvaGatewayModule.getSampleImageUrls().ANALYZE;
 
             for (const inference of inferences) {
                 const detectedClass = (inference.entity?.tag?.value || '').toUpperCase();
@@ -93,6 +94,7 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
 
                 if (this.detectionClasses.includes(detectedClass) && confidence >= this.objectDetectorSettings[ObjectDetectorSettings.ConfidenceThreshold]) {
                     ++detectionCount;
+                    sampleImage = this.lvaGatewayModule.getSampleImageUrls()[detectedClass];
 
                     await this.sendMeasurement({
                         [AiInferenceInterface.Telemetry.Inference]: inference
@@ -105,6 +107,10 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
 
                 await this.sendMeasurement({
                     [AiInferenceInterface.Telemetry.InferenceCount]: detectionCount
+                });
+
+                await this.updateDeviceProperties({
+                    [AiInferenceInterface.Property.InferenceImageUrl]: sampleImage
                 });
             }
         }
@@ -137,7 +143,7 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
                     case ObjectDetectorInterface.Setting.DetectionClasses: {
                         const detectionClassesString = (value || '');
 
-                        this.detectionClasses = detectionClassesString.toUpperCase().split(/[\s,]+/);
+                        this.detectionClasses = detectionClassesString.toUpperCase().split(',');
 
                         patchedProperties[setting] = detectionClassesString;
                         break;
