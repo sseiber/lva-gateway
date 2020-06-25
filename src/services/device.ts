@@ -219,7 +219,7 @@ export abstract class AmsCameraDevice {
                     await this.startLvaProcessingInternal(true);
                 }
                 catch (ex) {
-                    this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `Error while trying to auto-start Lva graph: ${ex.message}`);
+                    this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `Error while trying to auto-start Lva graph: ${ex.message}`);
                 }
             }
         }
@@ -241,10 +241,10 @@ export abstract class AmsCameraDevice {
     }
 
     public async deleteCamera(): Promise<void> {
-        this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Deleting camera device instance for cameraId: ${this.cameraInfo.cameraId}`);
+        this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `Deleting camera device instance for cameraId: ${this.cameraInfo.cameraId}`);
 
         try {
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Deactiving graph instance: ${this.amsGraph.getInstanceName()}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `Deactiving graph instance: ${this.amsGraph.getInstanceName()}`);
 
             await this.amsGraph.deleteLvaGraph();
 
@@ -257,7 +257,7 @@ export abstract class AmsCameraDevice {
             });
         }
         catch (ex) {
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `Error while deleting camera: ${this.cameraInfo.cameraId}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `Error while deleting camera: ${this.cameraInfo.cameraId}`);
         }
     }
 
@@ -327,7 +327,7 @@ export abstract class AmsCameraDevice {
                 break;
 
             default:
-                this.lvaGatewayModule.logger(['AmsCameraDevice', 'warning'], `Received Unknown Lva event telemetry: ${lvaEvent}`);
+                this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'warning'], `Received Unknown Lva event telemetry: ${lvaEvent}`);
                 break;
         }
 
@@ -337,7 +337,7 @@ export abstract class AmsCameraDevice {
             });
         }
         else {
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'warning'], `Received Unknown Lva event telemetry: ${lvaEvent}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'warning'], `Received Unknown Lva event telemetry: ${lvaEvent}`);
         }
     }
 
@@ -345,7 +345,7 @@ export abstract class AmsCameraDevice {
 
     protected async onHandleDevicePropertiesInternal(desiredChangedSettings: any) {
         try {
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
 
             const patchedProperties = {};
 
@@ -391,7 +391,7 @@ export abstract class AmsCameraDevice {
             }
         }
         catch (ex) {
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `Exception while handling desired properties: ${ex.message}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `Exception while handling desired properties: ${ex.message}`);
         }
     }
 
@@ -411,10 +411,10 @@ export abstract class AmsCameraDevice {
                 });
             });
 
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Device live properties updated: ${JSON.stringify(properties, null, 4)}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `Device live properties updated: ${JSON.stringify(properties, null, 4)}`);
         }
         catch (ex) {
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `Error while updating client properties: ${ex.message}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `Error while updating client properties: ${ex.message}`);
         }
     }
 
@@ -429,17 +429,17 @@ export abstract class AmsCameraDevice {
             await this.deviceClient.sendEvent(iotcMessage);
 
             if (this.lvaEdgeDiagnosticsSettings[LvaEdgeDiagnosticsSettings.DebugTelemetry] === true) {
-                this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `sendEvent: ${JSON.stringify(data, null, 4)}`);
+                this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `sendEvent: ${JSON.stringify(data, null, 4)}`);
             }
         }
         catch (ex) {
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `sendMeasurement: ${ex.message}`);
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `inspect the error: ${JSON.stringify(ex, null, 4)}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `sendMeasurement: ${ex.message}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `inspect the error: ${JSON.stringify(ex, null, 4)}`);
 
             // TODO:
             // Detect DPS/Hub reprovisioning scenarios - sample exeption:
             //
-            // [12:41:54 GMT+0000], [log,[AmsCameraDevice, error]] data: inspect the error: {
+            // [12:41:54 GMT+0000], [log,[this.cameraInfo.cameraId, error]] data: inspect the error: {
             //     "name": "UnauthorizedError",
             //     "transportError": {
             //         "name": "NotConnectedError",
@@ -459,10 +459,10 @@ export abstract class AmsCameraDevice {
         const startLvaGraphResult = await this.amsGraph.startLvaGraph(this.setGraphParameters());
 
         if (this.lvaEdgeDiagnosticsSettings[LvaEdgeDiagnosticsSettings.DebugTelemetry] === true) {
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Graph Instance Name: ${JSON.stringify(this.amsGraph.getInstanceName(), null, 4)}`);
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Graph Instance: ${JSON.stringify(this.amsGraph.getInstance(), null, 4)}`);
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Graph Topology Name: ${JSON.stringify(this.amsGraph.getInstanceName(), null, 4)}`);
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Graph Topology: ${JSON.stringify(this.amsGraph.getTopology(), null, 4)}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `Graph Instance Name: ${JSON.stringify(this.amsGraph.getInstanceName(), null, 4)}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `Graph Instance: ${JSON.stringify(this.amsGraph.getInstance(), null, 4)}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `Graph Topology Name: ${JSON.stringify(this.amsGraph.getInstanceName(), null, 4)}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `Graph Topology: ${JSON.stringify(this.amsGraph.getTopology(), null, 4)}`);
         }
 
         await this.sendMeasurement({
@@ -475,7 +475,7 @@ export abstract class AmsCameraDevice {
     private async inferenceTimer(): Promise<void> {
         try {
             if (this.lvaEdgeDiagnosticsSettings[LvaEdgeDiagnosticsSettings.DebugTelemetry] === true) {
-                this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Inference timer`);
+                this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `Inference timer`);
             }
 
             const videoInferenceDuration = moment.duration(moment.utc().diff(this.videoInferenceStartTime));
@@ -484,7 +484,7 @@ export abstract class AmsCameraDevice {
                 if (this.createVideoLinkForInferenceTimeout) {
                     this.createVideoLinkForInferenceTimeout = false;
 
-                    this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `InferenceTimeout reached`);
+                    this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `InferenceTimeout reached`);
 
                     await this.sendMeasurement({
                         [AiInferenceInterface.Event.InferenceEventVideoUrl]: this.amsGraph.createInferenceVideoLink(
@@ -500,7 +500,7 @@ export abstract class AmsCameraDevice {
                 this.createVideoLinkForInferenceTimeout = true;
 
                 if (videoInferenceDuration >= moment.duration(this.lvaEdgeOperationsSettings[LvaEdgeOperationsSettings.MaxVideoInferenceTime], 'seconds')) {
-                    this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `MaxVideoInferenceTime reached`);
+                    this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `MaxVideoInferenceTime reached`);
 
                     await this.sendMeasurement({
                         [AiInferenceInterface.Event.InferenceEventVideoUrl]: this.amsGraph.createInferenceVideoLink(
@@ -514,7 +514,7 @@ export abstract class AmsCameraDevice {
             }
         }
         catch (ex) {
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `Inference timer error: ${ex.message}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `Inference timer error: ${ex.message}`);
         }
     }
 
@@ -547,7 +547,7 @@ export abstract class AmsCameraDevice {
             result.clientConnectionStatus = false;
             result.clientConnectionMessage = `Failed to instantiate client interface from configuraiton: ${ex.message}`;
 
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `${result.clientConnectionMessage}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `${result.clientConnectionMessage}`);
         }
 
         if (result.clientConnectionStatus === false) {
@@ -557,7 +557,7 @@ export abstract class AmsCameraDevice {
         try {
             await this.deviceClient.open();
 
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `Device client is connected`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `Device client is connected`);
 
             this.deviceTwin = await this.deviceClient.getTwin();
             this.deviceTwin.on('properties.desired', devicePropertiesHandler);
@@ -589,7 +589,7 @@ export abstract class AmsCameraDevice {
             result.clientConnectionStatus = false;
             result.clientConnectionMessage = `IoT Central connection error: ${ex.message}`;
 
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], result.clientConnectionMessage);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], result.clientConnectionMessage);
         }
 
         return result;
@@ -612,20 +612,20 @@ export abstract class AmsCameraDevice {
 
     @bind
     private onDeviceClientError(error: Error) {
-        this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `Device client connection error: ${error.message}`);
+        this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `Device client connection error: ${error.message}`);
         this.healthState = HealthState.Critical;
     }
 
     @bind
     // @ts-ignore
     private async startLvaProcessing(commandRequest: DeviceMethodRequest, commandResponse: DeviceMethodResponse) {
-        this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `${LvaEdgeOperationsInterface.Command.StartLvaProcessing} command received`);
+        this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `${LvaEdgeOperationsInterface.Command.StartLvaProcessing} command received`);
 
         try {
             const startLvaGraphResult = await this.startLvaProcessingInternal(false);
 
             const responseMessage = `LVA Edge start graph request: ${startLvaGraphResult ? 'succeeded' : 'failed'}`;
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], responseMessage);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], responseMessage);
 
             await commandResponse.send(202);
             await this.updateDeviceProperties({
@@ -645,14 +645,14 @@ export abstract class AmsCameraDevice {
             }
         }
         catch (ex) {
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `startLvaProcessing error: ${ex.message}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `startLvaProcessing error: ${ex.message}`);
         }
     }
 
     @bind
     // @ts-ignore
     private async stopLvaProcessing(commandRequest: DeviceMethodRequest, commandResponse: DeviceMethodResponse) {
-        this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], `${LvaEdgeOperationsInterface.Command.StopLvaProcessing} command received`);
+        this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `${LvaEdgeOperationsInterface.Command.StopLvaProcessing} command received`);
 
         try {
             clearInterval(this.inferenceInterval);
@@ -669,7 +669,7 @@ export abstract class AmsCameraDevice {
             }
 
             const responseMessage = `LVA Edge stop graph request: ${stopLvaGraphResult ? 'succeeded' : 'failed'}`;
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'info'], responseMessage);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], responseMessage);
 
             await commandResponse.send(202);
             await this.updateDeviceProperties({
@@ -679,7 +679,7 @@ export abstract class AmsCameraDevice {
             });
         }
         catch (ex) {
-            this.lvaGatewayModule.logger(['AmsCameraDevice', 'error'], `Stop LVA error ${ex.message}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `Stop LVA error ${ex.message}`);
         }
     }
 }
