@@ -71,7 +71,7 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
     }
 
     public async deviceReady(): Promise<void> {
-        this.lvaGatewayModule.logger(['AmsObjectDetectorDevice', 'info'], `Device is ready`);
+        this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `Device is ready`);
 
         await this.updateDeviceProperties({
             [AiInferenceInterface.Property.InferenceImageUrl]: 'https://iotcsavisionai.blob.core.windows.net/image-link-test/rtspcapture.jpg'
@@ -80,7 +80,7 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
 
     public async processLvaInferences(inferences: IObjectInference[]): Promise<void> {
         if (!Array.isArray(inferences) || !this.deviceClient) {
-            this.lvaGatewayModule.logger(['AmsObjectDetectorDevice', 'error'], `Missing inferences array or client not connected`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `Missing inferences array or client not connected`);
             return;
         }
 
@@ -109,7 +109,7 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
             }
         }
         catch (ex) {
-            this.lvaGatewayModule.logger(['AmsObjectDetectorDevice', 'error'], `Error processing downstream message: ${ex.message}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `Error processing downstream message: ${ex.message}`);
         }
     }
 
@@ -118,7 +118,7 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
         await super.onHandleDevicePropertiesInternal(desiredChangedSettings);
 
         try {
-            this.lvaGatewayModule.logger(['AmsObjectDetectorDevice', 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
 
             const patchedProperties = {};
 
@@ -161,7 +161,7 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
             }
         }
         catch (ex) {
-            this.lvaGatewayModule.logger(['AmsObjectDetectorDevice', 'error'], `Exception while handling desired properties: ${ex.message}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `Exception while handling desired properties: ${ex.message}`);
         }
 
         this.deferredStart.resolve();
