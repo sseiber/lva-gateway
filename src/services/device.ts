@@ -22,7 +22,7 @@ export interface IClientConnectResult {
     clientConnectionMessage: string;
 }
 
-interface IoTDeviceInformation {
+export interface IoTDeviceInformation {
     manufacturer: string;
     model: string;
     swVersion: string;
@@ -46,17 +46,17 @@ interface IoTCameraSettingsInterface {
 export const AmsDeviceTag = 'rpAmsDeviceTag';
 export const AmsDeviceTagValue = 'AmsInferenceDevice.v1';
 
-enum IoTCentralClientState {
+export enum IoTCentralClientState {
     Disconnected = 'disconnected',
     Connected = 'connected'
 }
 
-enum CameraState {
+export enum CameraState {
     Inactive = 'inactive',
     Active = 'active'
 }
 
-const IoTCameraInterface = {
+export const IoTCameraInterface = {
     Telemetry: {
         SystemHeartbeat: 'tlSystemHeartbeat'
     },
@@ -198,6 +198,7 @@ export abstract class AmsCameraDevice {
     public abstract setGraphParameters(): any;
     public abstract async deviceReady(): Promise<void>;
     public abstract async processLvaInferences(inferenceData: any): Promise<void>;
+    public abstract async getCameraProps(): Promise<IoTDeviceInformation>;
 
     public async connectDeviceClient(dpsHubConnectionString: string): Promise<IClientConnectResult> {
         let clientConnectionResult: IClientConnectResult = {
@@ -573,22 +574,6 @@ export abstract class AmsCameraDevice {
             this.deviceClient.onDeviceMethod(LvaEdgeOperationsInterface.Command.StartLvaProcessing, this.startLvaProcessing);
             this.deviceClient.onDeviceMethod(LvaEdgeOperationsInterface.Command.StopLvaProcessing, this.stopLvaProcessing);
 
-            const cameraProps = await this.getCameraProps();
-
-            await this.updateDeviceProperties({
-                ...cameraProps,
-                [IoTCameraInterface.Property.CameraName]: this.cameraInfo.cameraName,
-                [IoTCameraInterface.Property.RtspUrl]: this.cameraInfo.rtspUrl,
-                [IoTCameraInterface.Property.RtspAuthUsername]: this.cameraInfo.rtspAuthUsername,
-                [IoTCameraInterface.Property.RtspAuthPassword]: this.cameraInfo.rtspAuthPassword,
-                [IoTCameraInterface.Property.AmsDeviceTag]: `${this.lvaGatewayModule.getInstanceId()}:${AmsDeviceTagValue}`
-            });
-
-            await this.sendMeasurement({
-                [IoTCameraInterface.State.IoTCentralClientState]: IoTCentralClientState.Connected,
-                [IoTCameraInterface.State.CameraState]: CameraState.Inactive
-            });
-
             result.clientConnectionStatus = true;
         }
         catch (ex) {
@@ -599,21 +584,6 @@ export abstract class AmsCameraDevice {
         }
 
         return result;
-    }
-
-    private async getCameraProps(): Promise<IoTDeviceInformation> {
-        // TODO:
-        // Introduce some ONVIF tech to get camera props
-        return {
-            manufacturer: 'Axis',
-            model: '1367',
-            swVersion: 'v1.0.0',
-            osName: 'Axis OS',
-            processorArchitecture: 'Axis CPU',
-            processorManufacturer: 'Axis',
-            totalStorage: 0,
-            totalMemory: 0
-        };
     }
 
     @bind
