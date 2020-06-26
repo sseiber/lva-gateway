@@ -817,8 +817,11 @@ export class ModuleService {
 
         try {
             const amsGraph = await AmsGraph.createAmsGraph(this, this.moduleDeploymentProperties.amsAccountName, cameraInfo);
+            this.server.log(['ModuleService', 'info'], `Create AmsGraph succeeded: ${this.moduleDeploymentProperties.amsAccountName}`);
 
             const deviceKey = this.computeDeviceKey(cameraInfo.cameraId, this.iotCentralAppKeys.iotCentralDeviceProvisioningKey);
+            this.server.log(['ModuleService', 'info'], `Computed deviceKey: ${deviceKey}`);
+
             const provisioningSecurityClient = new SymmetricKeySecurityClient(cameraInfo.cameraId, deviceKey);
             const provisioningClient = ProvisioningDeviceClient.create(
                 this.dpsProvisioningHost,
@@ -826,13 +829,18 @@ export class ModuleService {
                 new ProvisioningTransport(),
                 provisioningSecurityClient);
 
-            provisioningClient.setProvisioningPayload({
+            this.server.log(['ModuleService', 'info'], `Created provisioningClient succeeded`);
+
+            const provisioningPayload = {
                 iotcModelId: LvaInferenceDeviceMap[cameraInfo.detectionType].templateId,
                 iotcGateway: {
                     iotcGatewayId: this.iotcGatewayInstanceId,
                     iotcModuleId: this.iotcGatewayModuleId
                 }
-            });
+            };
+
+            provisioningClient.setProvisioningPayload(provisioningPayload);
+            this.server.log(['ModuleService', 'info'], `setProvisioningPayload succeeded ${JSON.stringify(provisioningPayload, null, 4)}`);
 
             const dpsConnectionString = await new Promise<string>((resolve, reject) => {
                 provisioningClient.register((dpsError, dpsResult) => {
@@ -845,6 +853,7 @@ export class ModuleService {
                     return resolve(`HostName=${dpsResult.assignedHub};DeviceId=${dpsResult.deviceId};SharedAccessKey=${deviceKey}`);
                 });
             });
+            this.server.log(['ModuleService', 'info'], `register device client succeeded`);
 
             deviceProvisionResult.dpsProvisionStatus = true;
             deviceProvisionResult.dpsProvisionMessage = `IoT Central successfully provisioned device: ${cameraInfo.cameraId}`;
