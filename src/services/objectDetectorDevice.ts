@@ -4,6 +4,11 @@ import {
 } from './module';
 import { AmsGraph } from './amsGraph';
 import {
+    IoTDeviceInformation,
+    AmsDeviceTagValue,
+    IoTCameraInterface,
+    IoTCentralClientState,
+    CameraState,
     AiInferenceInterface,
     AmsCameraDevice
 } from './device';
@@ -73,7 +78,20 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
     public async deviceReady(): Promise<void> {
         this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `Device is ready`);
 
+        await this.sendMeasurement({
+            [IoTCameraInterface.State.IoTCentralClientState]: IoTCentralClientState.Connected,
+            [IoTCameraInterface.State.CameraState]: CameraState.Inactive
+        });
+
+        const cameraProps = await this.getCameraProps();
+
         await this.updateDeviceProperties({
+            ...cameraProps,
+            [IoTCameraInterface.Property.CameraName]: this.cameraInfo.cameraName,
+            [IoTCameraInterface.Property.RtspUrl]: this.cameraInfo.rtspUrl,
+            [IoTCameraInterface.Property.RtspAuthUsername]: this.cameraInfo.rtspAuthUsername,
+            [IoTCameraInterface.Property.RtspAuthPassword]: this.cameraInfo.rtspAuthPassword,
+            [IoTCameraInterface.Property.AmsDeviceTag]: `${this.lvaGatewayModule.getInstanceId()}:${AmsDeviceTagValue}`,
             [AiInferenceInterface.Property.InferenceImageUrl]: this.lvaGatewayModule.getSampleImageUrls().ANALYZE
         });
     }
@@ -117,6 +135,21 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
         catch (ex) {
             this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `Error processing downstream message: ${ex.message}`);
         }
+    }
+
+    public async getCameraProps(): Promise<IoTDeviceInformation> {
+        // TODO:
+        // Introduce some ONVIF tech to get camera props
+        return {
+            manufacturer: 'Axis',
+            model: '1367',
+            swVersion: 'v1.0.0',
+            osName: 'Axis OS',
+            processorArchitecture: 'Axis CPU',
+            processorManufacturer: 'Axis',
+            totalStorage: 0,
+            totalMemory: 0
+        };
     }
 
     @bind
