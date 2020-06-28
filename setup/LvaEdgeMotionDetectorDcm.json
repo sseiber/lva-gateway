@@ -363,6 +363,15 @@
                         "schema": "boolean"
                     },
                     {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Max Inference Capture Time (sec)"
+                        },
+                        "name": "wpMaxVideoInferenceTime",
+                        "writable": true,
+                        "schema": "integer"
+                    },
+                    {
                         "@type": "Command",
                         "commandType": "asynchronous",
                         "response": {
@@ -684,6 +693,15 @@
                         },
                         "name": "rpInferenceImageUrl",
                         "schema": "string"
+                    },
+                    {
+                        "@type": "Property",
+                        "displayName": {
+                            "en": "Inference Timeout (sec)"
+                        },
+                        "name": "wpInferenceTimeout",
+                        "writable": true,
+                        "schema": "integer"
                     }
                 ]
             }

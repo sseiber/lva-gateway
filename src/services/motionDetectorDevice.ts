@@ -4,7 +4,11 @@ import {
 } from './module';
 import { AmsGraph } from './amsGraph';
 import {
-    IoTCameraSettings,
+    IoTDeviceInformation,
+    AmsDeviceTagValue,
+    IoTCameraInterface,
+    IoTCentralClientState,
+    CameraState,
     AiInferenceInterface,
     AmsCameraDevice
 } from './device';
@@ -60,15 +64,29 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
     }
 
     public async deviceReady(): Promise<void> {
+        this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `Device is ready`);
+
+        await this.sendMeasurement({
+            [IoTCameraInterface.State.IoTCentralClientState]: IoTCentralClientState.Connected,
+            [IoTCameraInterface.State.CameraState]: CameraState.Inactive
+        });
+
+        const cameraProps = await this.getCameraProps();
+
         await this.updateDeviceProperties({
-            [AiInferenceInterface.Property.InferenceImageUrl]: 'https://iotcsavisionai.blob.core.windows.net/image-link-test/rtspcapture.jpg',
-            [MotionDetectorInterface.Setting.Sensitivity]: this.motionDetectorSettings[MotionDetectorSettings.Sensitivity]
+            ...cameraProps,
+            [IoTCameraInterface.Property.CameraName]: this.cameraInfo.cameraName,
+            [IoTCameraInterface.Property.RtspUrl]: this.cameraInfo.rtspUrl,
+            [IoTCameraInterface.Property.RtspAuthUsername]: this.cameraInfo.rtspAuthUsername,
+            [IoTCameraInterface.Property.RtspAuthPassword]: this.cameraInfo.rtspAuthPassword,
+            [IoTCameraInterface.Property.AmsDeviceTag]: `${this.lvaGatewayModule.getInstanceId()}:${AmsDeviceTagValue}`,
+            [AiInferenceInterface.Property.InferenceImageUrl]: this.lvaGatewayModule.getSampleImageUrls().ANALYZE
         });
     }
 
     public async processLvaInferences(inferences: IMotionInference[]): Promise<void> {
         if (!Array.isArray(inferences) || !this.deviceClient) {
-            this.lvaGatewayModule.logger(['AmsMotionDetectorDevice', 'error'], `Missing inferences array or client not connected`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `Missing inferences array or client not connected`);
             return;
         }
 
@@ -81,34 +99,38 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
                 await this.sendMeasurement({
                     [AiInferenceInterface.Telemetry.Inference]: inference
                 });
-
-                this.lastInferenceTime = Date.now();
             }
 
             if (inferenceCount > 0) {
-                const inferenceTelemetry: any = {
+                this.lastInferenceTime = moment.utc();
+
+                await this.sendMeasurement({
                     [AiInferenceInterface.Telemetry.InferenceCount]: inferenceCount
-                };
+                });
 
-                // if (this.activeVideoInference === false) {
-                //     this.activeVideoInference = true;
-
-                inferenceTelemetry[AiInferenceInterface.Event.InferenceEventVideoUrl] = this.amsGraph.createInferenceVideoLink(this.iotCameraSettings[IoTCameraSettings.VideoPlaybackHost]);
-                // }
-
-                await this.sendMeasurement(inferenceTelemetry);
+                await this.updateDeviceProperties({
+                    [AiInferenceInterface.Property.InferenceImageUrl]: this.lvaGatewayModule.getSampleImageUrls().MOTION
+                });
             }
         }
         catch (ex) {
-            this.lvaGatewayModule.logger(['AmsMotionDetectorDevice', 'error'], `Error processing downstream message: ${ex.message}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `Error processing downstream message: ${ex.message}`);
         }
     }
 
-    @bind
-    public async inferenceTimer(): Promise<void> {
-        if (Date.now() - this.lastInferenceTime > 2500) {
-            this.activeVideoInference = false;
-        }
+    public async getCameraProps(): Promise<IoTDeviceInformation> {
+        // TODO:
+        // Introduce some ONVIF tech to get camera props
+        return {
+            manufacturer: 'Axis',
+            model: '1367',
+            swVersion: 'v1.0.0',
+            osName: 'Axis OS',
+            processorArchitecture: 'Axis CPU',
+            processorManufacturer: 'Axis',
+            totalStorage: 0,
+            totalMemory: 0
+        };
     }
 
     @bind
@@ -116,7 +138,7 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
         await super.onHandleDevicePropertiesInternal(desiredChangedSettings);
 
         try {
-            this.lvaGatewayModule.logger(['AmsMotionDetectorDevice', 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
 
             const patchedProperties = {};
 
@@ -146,7 +168,7 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
             }
         }
         catch (ex) {
-            this.lvaGatewayModule.logger(['AmsMotionDetectorDevice', 'error'], `Exception while handling desired properties: ${ex.message}`);
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `Exception while handling desired properties: ${ex.message}`);
         }
 
         this.deferredStart.resolve();
