@@ -10,7 +10,8 @@ import {
     IoTCentralClientState,
     CameraState,
     AiInferenceInterface,
-    AmsCameraDevice
+    AmsCameraDevice,
+    LvaEdgeDiagnosticsSettings
 } from './device';
 import * as moment from 'moment';
 import { bind, emptyObj } from '../utils';
@@ -138,7 +139,9 @@ export class AmsMotionDetectorDevice extends AmsCameraDevice {
         await super.onHandleDevicePropertiesInternal(desiredChangedSettings);
 
         try {
-            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
+            if (this.lvaEdgeDiagnosticsSettings[LvaEdgeDiagnosticsSettings.DebugTelemetry] === true) {
+                this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
+            }
 
             const patchedProperties = {};
 

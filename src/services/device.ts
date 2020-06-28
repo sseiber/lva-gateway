@@ -110,7 +110,7 @@ const LvaEdgeOperationsInterface = {
     }
 };
 
-enum LvaEdgeDiagnosticsSettings {
+export enum LvaEdgeDiagnosticsSettings {
     DebugTelemetry = 'wpDebugTelemetry'
 }
 
@@ -118,7 +118,7 @@ interface LvaEdgeDiagnosticsSettingsInterface {
     [LvaEdgeDiagnosticsSettings.DebugTelemetry]: boolean;
 }
 
-const LvaEdgeDiagnosticsInterface = {
+export const LvaEdgeDiagnosticsInterface = {
     Event: {
         RuntimeError: 'evRuntimeError',
         AuthenticationError: 'evAuthenticationError',
@@ -414,7 +414,9 @@ export abstract class AmsCameraDevice {
                 });
             });
 
-            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `Device live properties updated: ${JSON.stringify(properties, null, 4)}`);
+            if (this.lvaEdgeDiagnosticsSettings[LvaEdgeDiagnosticsSettings.DebugTelemetry] === true) {
+                this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `Device live properties updated: ${JSON.stringify(properties, null, 4)}`);
+            }
         }
         catch (ex) {
             this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `Error while updating client properties: ${ex.message}`);
