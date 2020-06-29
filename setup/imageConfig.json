@@ -1,4 +1,4 @@
 {
-    "arch": "<flavor e.g. amd64>",
-    "imageName": "<container-registry>/<container-name>"
+    "arch": "amd64",
+    "imageName": "meshams.azurecr.io/lva-edge-gateway"
 }
