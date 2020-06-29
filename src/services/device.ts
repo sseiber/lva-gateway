@@ -110,7 +110,7 @@ const LvaEdgeOperationsInterface = {
     }
 };
 
-export enum LvaEdgeDiagnosticsSettings {
+enum LvaEdgeDiagnosticsSettings {
     DebugTelemetry = 'wpDebugTelemetry'
 }
 
@@ -118,7 +118,7 @@ interface LvaEdgeDiagnosticsSettingsInterface {
     [LvaEdgeDiagnosticsSettings.DebugTelemetry]: boolean;
 }
 
-export const LvaEdgeDiagnosticsInterface = {
+const LvaEdgeDiagnosticsInterface = {
     Event: {
         RuntimeError: 'evRuntimeError',
         AuthenticationError: 'evAuthenticationError',
@@ -348,10 +348,7 @@ export abstract class AmsCameraDevice {
 
     protected async onHandleDevicePropertiesInternal(desiredChangedSettings: any) {
         try {
-            this.lvaGatewayModule.logger(['ModuleService', 'info'], `onHandleDeviceProperties`);
-            if (this.lvaEdgeDiagnosticsSettings[LvaEdgeDiagnosticsSettings.DebugTelemetry] === true) {
-                this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], JSON.stringify(desiredChangedSettings, null, 4));
-            }
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
 
             const patchedProperties = {};
 
@@ -364,7 +361,7 @@ export abstract class AmsCameraDevice {
                     continue;
                 }
 
-                const value = desiredChangedSettings[setting]?.value;
+                const value = desiredChangedSettings[`${setting}`]?.value;
 
                 switch (setting) {
                     case IoTCameraInterface.Setting.VideoPlaybackHost:
@@ -417,9 +414,7 @@ export abstract class AmsCameraDevice {
                 });
             });
 
-            if (this.lvaEdgeDiagnosticsSettings[LvaEdgeDiagnosticsSettings.DebugTelemetry] === true) {
-                this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `Device live properties updated: ${JSON.stringify(properties, null, 4)}`);
-            }
+            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `Device live properties updated: ${JSON.stringify(properties, null, 4)}`);
         }
         catch (ex) {
             this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'error'], `Error while updating client properties: ${ex.message}`);
