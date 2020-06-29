@@ -10,7 +10,8 @@ import {
     IoTCentralClientState,
     CameraState,
     AiInferenceInterface,
-    AmsCameraDevice
+    AmsCameraDevice,
+    LvaEdgeDiagnosticsSettings
 } from './device';
 import * as moment from 'moment';
 import { bind, emptyObj } from '../utils';
@@ -157,7 +158,9 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
         await super.onHandleDevicePropertiesInternal(desiredChangedSettings);
 
         try {
-            this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
+            if (this.lvaEdgeDiagnosticsSettings[LvaEdgeDiagnosticsSettings.DebugTelemetry] === true) {
+                this.lvaGatewayModule.logger([this.cameraInfo.cameraId, 'info'], `desiredPropsDelta:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
+            }
 
             const patchedProperties = {};
 
@@ -170,7 +173,7 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
                     continue;
                 }
 
-                const value = desiredChangedSettings[`${setting}`]?.value;
+                const value = desiredChangedSettings[setting]?.value;
 
                 switch (setting) {
                     case ObjectDetectorInterface.Setting.DetectionClasses: {
@@ -187,7 +190,7 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
                         break;
 
                     case ObjectDetectorInterface.Setting.InferenceFps:
-                        patchedProperties[setting] = (this.aiInferenceSettings[setting] as any) = value || defaultInferenceFps;
+                        patchedProperties[setting] = (this.objectDetectorSettings[setting] as any) = value || defaultInferenceFps;
                         break;
 
                     default:
