@@ -295,9 +295,11 @@ export class ModuleService {
             result = await this.connectModuleClient();
 
             if (result === true) {
-                await this.recreateExistingDevices();
-
                 await this.deferredStart.promise;
+
+                await this.moduleReady();
+
+                await this.recreateExistingDevices();
             }
         }
         catch (ex) {
@@ -551,26 +553,6 @@ export class ModuleService {
             this.moduleClient.onMethod(LvaGatewayInterface.Command.DeleteCamera, this.deleteCameraDirectMethod);
             this.moduleClient.onMethod(LvaGatewayInterface.Command.RestartModule, this.restartModuleDirectMethod);
             this.moduleClient.on('inputMessage', this.onHandleDownstreamMessages);
-
-            const systemProperties = await this.getSystemProperties();
-            const moduleProperties = await this.getModuleProperties();
-            this.iotCentralAppKeys = await this.getIoTCentralAppKeys();
-
-            const deviceProperties = {
-                ...moduleProperties,
-                [LvaGatewayDeviceProperties.OsName]: osPlatform() || '',
-                [LvaGatewayDeviceProperties.SwVersion]: osRelease() || '',
-                [LvaGatewayDeviceProperties.ProcessorArchitecture]: osArch() || '',
-                [LvaGatewayDeviceProperties.TotalMemory]: systemProperties.totalMemory
-            };
-
-            await this.updateModuleProperties(deviceProperties);
-
-            await this.sendMeasurement({
-                [LvaGatewayInterface.State.IoTCentralClientState]: IoTCentralClientState.Connected,
-                [LvaGatewayInterface.State.ModuleState]: ModuleState.Active,
-                [LvaGatewayInterface.Event.ModuleStarted]: 'Module initialization'
-            });
         }
         catch (ex) {
             connectionStatus = `IoT Central connection error: ${ex.message}`;
@@ -582,10 +564,36 @@ export class ModuleService {
         return result;
     }
 
+    private async moduleReady(): Promise<void> {
+        this.server.log(['ModuleService', 'info'], `Module ready`);
+
+        const systemProperties = await this.getSystemProperties();
+        const moduleProperties = await this.getModuleProperties();
+        this.iotCentralAppKeys = await this.getIoTCentralAppKeys();
+
+        await this.updateModuleProperties({
+            ...moduleProperties,
+            [LvaGatewayDeviceProperties.OsName]: osPlatform() || '',
+            [LvaGatewayDeviceProperties.SwVersion]: osRelease() || '',
+            [LvaGatewayDeviceProperties.ProcessorArchitecture]: osArch() || '',
+            [LvaGatewayDeviceProperties.TotalMemory]: systemProperties.totalMemory
+        });
+
+        await this.sendMeasurement({
+            [LvaGatewayInterface.State.IoTCentralClientState]: IoTCentralClientState.Connected,
+            [LvaGatewayInterface.State.ModuleState]: ModuleState.Active,
+            [LvaGatewayInterface.Event.ModuleStarted]: 'Module initialization'
+        });
+    }
+
     private async recreateExistingDevices() {
         this.server.log(['ModuleService', 'info'], 'recreateExistingDevices');
 
         try {
+            if (this.moduleSettings[LvaGatewaySettings.DebugTelemetry] === true) {
+                this.server.log(['ModuleService', 'info'], `Calling api: https://${this.iotCentralAppKeys.iotCentralAppHost}/api/preview/devices`);
+            }
+
             const deviceListResponse = await this.iotcApiRequest(
                 `https://${this.iotCentralAppKeys.iotCentralAppHost}/api/preview/devices`,
                 'get',
@@ -599,10 +607,16 @@ export class ModuleService {
             const deviceList = deviceListResponse.payload?.value || [];
 
             this.server.log(['ModuleService', 'info'], `Found ${deviceList.length} devices`);
+            if (this.moduleSettings[LvaGatewaySettings.DebugTelemetry] === true) {
+                this.server.log(['ModuleService', 'info'], `${JSON.stringify(deviceList, null, 4)}`);
+            }
 
             for (const device of deviceList) {
                 try {
                     this.server.log(['ModuleService', 'info'], `Getting properties for device: ${device.id}`);
+                    if (this.moduleSettings[LvaGatewaySettings.DebugTelemetry] === true) {
+                        this.server.log(['ModuleService', 'info'], `Calling api: https://${this.iotCentralAppKeys.iotCentralAppHost}/api/preview/devices/${device.id}/properties`);
+                    }
 
                     const devicePropertiesResponse = await this.iotcApiRequest(
                         `https://${this.iotCentralAppKeys.iotCentralAppHost}/api/preview/devices/${device.id}/properties`,
@@ -613,6 +627,11 @@ export class ModuleService {
                             },
                             json: true
                         });
+
+                    if (this.moduleSettings[LvaGatewaySettings.DebugTelemetry] === true) {
+                        this.server.log(['ModuleService', 'info'], `Response: ${device.id}`);
+                        this.server.log(['ModuleService', 'info'], `${JSON.stringify(devicePropertiesResponse, null, 4)}`);
+                    }
 
                     if (devicePropertiesResponse.payload.IoTCameraInterface?.[AmsDeviceTag] === `${this.iotcGatewayInstanceId}:${AmsDeviceTagValue}`) {
                         const deviceInterfaceProperties = devicePropertiesResponse.payload.IoTCameraInterface;
@@ -1004,7 +1023,9 @@ export class ModuleService {
                 });
             });
 
-            this.server.log(['ModuleService', 'info'], `Module properties updated: ${JSON.stringify(properties, null, 4)}`);
+            if (this.moduleSettings[LvaGatewaySettings.DebugTelemetry] === true) {
+                this.server.log(['ModuleService', 'info'], `Module properties updated: ${JSON.stringify(properties, null, 4)}`);
+            }
         }
         catch (ex) {
             this.server.log(['ModuleService', 'error'], `Error updating module properties: ${ex.message}`);
@@ -1013,7 +1034,10 @@ export class ModuleService {
 
     @bind
     private async onHandleModuleProperties(desiredChangedSettings: any) {
-        this.server.log(['ModuleService', 'info'], `desiredChangedSettings:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
+        this.server.log(['ModuleService', 'info'], `onHandleModuleProperties`);
+        if (this.moduleSettings[LvaGatewaySettings.DebugTelemetry] === true) {
+            this.server.log(['ModuleService', 'info'], JSON.stringify(desiredChangedSettings, null, 4));
+        }
 
         const patchedProperties = {};
         const moduleSettingsForPatching = this.getModuleSettingsForPatching();
@@ -1033,7 +1057,7 @@ export class ModuleService {
                 switch (desiredSettingsKey) {
                     case LvaGatewayInterface.Setting.DebugTelemetry:
                     case LvaGatewayInterface.Setting.DebugRoutedMessage:
-                        changedSettingResult = await this.moduleSettingChange(moduleSettingsForPatching, desiredSettingsKey, desiredChangedSettings?.[`${desiredSettingsKey}`]);
+                        changedSettingResult = await this.moduleSettingChange(moduleSettingsForPatching, desiredSettingsKey, desiredChangedSettings?.[desiredSettingsKey]);
                         break;
 
                     default:
