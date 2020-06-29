@@ -173,7 +173,7 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
                     continue;
                 }
 
-                const value = desiredChangedSettings[`${setting}`]?.value;
+                const value = desiredChangedSettings[setting]?.value;
 
                 switch (setting) {
                     case ObjectDetectorInterface.Setting.DetectionClasses: {
@@ -190,7 +190,7 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
                         break;
 
                     case ObjectDetectorInterface.Setting.InferenceFps:
-                        patchedProperties[setting] = (this.aiInferenceSettings[setting] as any) = value || defaultInferenceFps;
+                        patchedProperties[setting] = (this.objectDetectorSettings[setting] as any) = value || defaultInferenceFps;
                         break;
 
                     default:

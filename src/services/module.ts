@@ -1057,7 +1057,7 @@ export class ModuleService {
                 switch (desiredSettingsKey) {
                     case LvaGatewayInterface.Setting.DebugTelemetry:
                     case LvaGatewayInterface.Setting.DebugRoutedMessage:
-                        changedSettingResult = await this.moduleSettingChange(moduleSettingsForPatching, desiredSettingsKey, desiredChangedSettings?.[`${desiredSettingsKey}`]);
+                        changedSettingResult = await this.moduleSettingChange(moduleSettingsForPatching, desiredSettingsKey, desiredChangedSettings?.[desiredSettingsKey]);
                         break;
 
                     default:
