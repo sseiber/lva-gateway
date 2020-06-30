@@ -175,11 +175,11 @@ To prepare the deployment manifest:
 
 1. For each of the modules listed under `modules` update the image element with the desired version:
 
-    | Module name | Image |
-    | ----------- | ----- |
-    |LvaEdgeGatewayModule|   meshams.azurecr.io/scotts/lva-edge-gateway:2.0.45-amd64|
-    |lvaYolov3|              mcr.microsoft.com/lva-utilities/yolov3-onnx:1.0|
-    |lvaEdge|                mcr.microsoft.com/media/live-video-analytics:1|
+    | Module name | Image | Description |
+    | ----------- | ----- | ------------|
+    |LvaEdgeGatewayModule|   meshams.azurecr.io/lva-edge-gateway:2.0.48-amd64| Bridge to connect the device twins to IoT central|
+    |lvaYolov3|              mcr.microsoft.com/lva-utilities/yolov3-onnx:1.0| Models to detect inference classes using object graphs |
+    |lvaEdge|                mcr.microsoft.com/media/live-video-analytics:1| Pipe to route the Video Analytics with Yolo3 | 
 
 1. Add the name of your Media Services account in the `env` node:
 

@@ -142,6 +142,27 @@ docker run -it --rm -e amsAadClientId="<FROM_AZURE_PORTAL>" -e amsAadSecret="<FR
 
 <!-- We need to fix repo reference to a public endpoint-->
 
+## Change the simulated devices in Application Dashboard
+
+The application dashboards are originally populated with telemetry and properties generated from the IoT Central Simulated devices. to replace the tiles with telemetry originated from real cameras or the Live555 simulator follow these steps:
+
+1. Navigate to the **Real Cameras** dashboard
+1. Click on Edit
+1. For the **Detection Count** tile, click the configure button
+1. On the **Configure Chart** section select the LVA Edge Object Selector and check one or more real cameras
+1. Check the **Inference Count** telemetry field
+1. Click **Update**
+
+   :::image type="content" source="media/tutorial-public-safety-manage/update_real_cameras.png" alt-text="Ream Cameras":::
+
+1. Repeat the steps for the following tiles:
+    1. **Detection** uses `AI Inference Interface/Inference/entity/tag/value` Pie chart
+    1. **Object Detected** uses `AI Inference Interface/Inference/entity/tag/value` Last Known Value
+    1. **Confidence %** uses `AI Inference Interface/Inference/entity/tag/confidence` Last Know value
+    1. **Snapshot** uses `AI Inference Interface/Inference Image` Shown as **Image**
+    1. **Inference Event Video** uses `AI Inference Interface/Inference Event Video` Shown as **Link**
+1. Click **Save**
+
 ## Next steps
 
 You've now learned how to add cameras to the IoT Central application and configure them for object and motion detection.
