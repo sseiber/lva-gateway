@@ -111,7 +111,9 @@ In the **Administration** section, select **Device connection**, and then select
 
 Make a note of this **Primary key** for devices. You use this *primary group shared access signature token* later when you configure the IoT Edge device.
 
-## Clone the LvaGateway repository
+## TODO: [Copy] Clone the LvaGateway repository
+
+<!-- TODO - No need to clone, just copy but we need the folders -->
 
 The [LVA-gateway](https://hyperlink_to_the_public_facing_repo) GitHub repository contains the sample IoT Edge deployment manifest for the LVA gateway device and the device capability models for the camera devices.
 
@@ -119,8 +121,6 @@ The [LVA-gateway](https://hyperlink_to_the_public_facing_repo) GitHub repository
 > The repository also includes the source code for the **LvaEdgeGatewayModule** and **lvaYolov3** IoT Edge modules. For more information about working with the source code, see the [Build the LVA Gateway Modules](tutorial-public-safety-build-module.md).
 
 Use the following command to clone the repository to a suitable location on your local machine:
-
-<!-- TODO - be sure to update the address of this repository -->
 
 ```cmd
 git clone https://github.com/SOMEWHERE/lva-gateway
