@@ -364,7 +364,7 @@ export abstract class AmsCameraDevice {
                     continue;
                 }
 
-                const value = desiredChangedSettings[setting]?.value;
+                const value = desiredChangedSettings[setting].hasOwnProperty('value') ? desiredChangedSettings[setting]?.value : desiredChangedSettings[setting];
 
                 switch (setting) {
                     case IoTCameraInterface.Setting.VideoPlaybackHost:
@@ -656,7 +656,8 @@ export abstract class AmsCameraDevice {
             await this.updateDeviceProperties({
                 [LvaEdgeOperationsInterface.Command.StopLvaProcessing]: {
                     value: responseMessage
-                }
+                },
+                [AiInferenceInterface.Property.InferenceImageUrl]: this.lvaGatewayModule.getSampleImageUrls().ANALYZE
             });
         }
         catch (ex) {
