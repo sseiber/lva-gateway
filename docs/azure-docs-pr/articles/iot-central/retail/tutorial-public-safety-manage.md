@@ -130,38 +130,57 @@ The IoT Central application stores the video in Azure Media Services from where 
 
 <!-- Can't it just run at a command prompt? Otherwise we need to add VS Code as a prereq -->
 
-Open a command prompt and use the following command to run the video player in a Docker container on your local machine. Replace the placeholders in the command with the values you made a note of previoulsy. You made a note of the `amsAadClientId`, `amsAadSecret`, `amsAadTenantId`, `amsSubscriptionId`, and `amsAccountName` when you created the service principal for your Media Services account:
+Open a command prompt and use the following command to run the video player in a Docker container on your local machine. Replace the placeholders in the command with the values you made a note of previously. You made a note of the `amsAadClientId`, `amsAadSecret`, `amsAadTenantId`, `amsSubscriptionId`, and `amsAccountName` when you created the service principal for your Media Services account:
 
 <!--You have to log into docker if this is not a public repo-->
 
 <!-- Do we need instructions to start the streaming endpoint? It was stopped in my environment... -->
 
 ```bash
-docker run -it --rm -e amsAadClientId="<FROM_AZURE_PORTAL>" -e amsAadSecret="<FROM_AZURE_PORTAL>" -e amsAadTenantId="<FROM_AZURE_PORTAL>" -e amsArmAadAudience="https://management.core.windows.net" -e amsArmEndpoint="https://management.azure.com" -e amsAadEndpoint="https://login.microsoftonline.com" -e amsSubscriptionId="<FROM_AZURE_PORTAL>" -e amsResourceGroup="<FROM_AZURE_PORTAL>" -e amsAccountName="<FROM_AZURE_PORTAL>" -p 8094:8094 meshams.azurecr.io/scotts/amp-viewer:1.0.8-amd64
+docker run -it --rm -e amsAadClientId="<FROM_AZURE_PORTAL>" -e amsAadSecret="<FROM_AZURE_PORTAL>" -e amsAadTenantId="<FROM_AZURE_PORTAL>" -e amsArmAadAudience="https://management.core.windows.net" -e amsArmEndpoint="https://management.azure.com" -e amsAadEndpoint="https://login.microsoftonline.com" -e amsSubscriptionId="<FROM_AZURE_PORTAL>" -e amsResourceGroup="lva-rg" -e amsAccountName="<FROM_AZURE_PORTAL>" -p 8094:8094 meshams.azurecr.io/scotts/amp-viewer:1.0.8-amd64
 ```
 
-<!-- We need to fix repo reference to a public endpoint-->
+Navigate to the **Monitor** dashboard in your application. Then select one of the captured object detection events on the **Inference Event Video** tile. The video displays on a page displayed by the local video player.
 
 ## Change the simulated devices in Application Dashboard
 
-The application dashboards are originally populated with telemetry and properties generated from the IoT Central Simulated devices. to replace the tiles with telemetry originated from real cameras or the Live555 simulator follow these steps:
+The application dashboards are originally populated with telemetry and properties generated from the IoT Central simulated devices. To configure the tiles to telemetry from real cameras or the Live555 simulator follow these steps:
 
-1. Navigate to the **Real Cameras** dashboard
-1. Click on Edit
-1. For the **Detection Count** tile, click the configure button
-1. On the **Configure Chart** section select the LVA Edge Object Selector and check one or more real cameras
-1. Check the **Inference Count** telemetry field
-1. Click **Update**
+1. Navigate to the **Real Cameras** dashboard.
+1. Select **Edit**.
+1. On the **Detection Count** tile, select the configure icon.
+1. In the **Configure Chart** section, select one or more real cameras in the **LVA Edge Object Detector** device group.
+1. Check the **Inference Count** telemetry field.
+1. Select **Update**.
 
    :::image type="content" source="media/tutorial-public-safety-manage/update_real_cameras.png" alt-text="Ream Cameras":::
 
 1. Repeat the steps for the following tiles:
-    1. **Detection** uses `AI Inference Interface/Inference/entity/tag/value` Pie chart
-    1. **Object Detected** uses `AI Inference Interface/Inference/entity/tag/value` Last Known Value
-    1. **Confidence %** uses `AI Inference Interface/Inference/entity/tag/confidence` Last Know value
-    1. **Snapshot** uses `AI Inference Interface/Inference Image` Shown as **Image**
-    1. **Inference Event Video** uses `AI Inference Interface/Inference Event Video` Shown as **Link**
-1. Click **Save**
+    1. **Detection** uses `AI Inference Interface/Inference/entity/tag/value` pie chart.
+    1. **Object Detected** uses `AI Inference Interface/Inference/entity/tag/value` last known value.
+    1. **Confidence %** uses `AI Inference Interface/Inference/entity/tag/confidence` last known value.
+    1. **Snapshot** uses `AI Inference Interface/Inference Image` shown as an image.
+    1. **Inference Event Video** uses `AI Inference Interface/Inference Event Video` shown as a link.
+1. Select **Save**.
+
+## Pause processing
+
+You can pause live video analytics processing in the application:
+
+1. In your application, navigate to the **Commands** page for object detection camera. Then run the **Stop LVA Processing** command.
+
+1. Stop the streaming endpoint for your media services account:
+    * In the Azure portal, navigate to the **lva-rg** resource group.
+    * Click on the **Streaming Endpoint** resource.
+    * On the **Streaming endpoint details** page, select **Stop**.
+
+## Tidy up
+
+If you've finished with the application, you can remove all the resources you created as follows:
+
+1. In the IoT Central application, navigate to the **Your application** page in the **Administration** section. Then select **Delete**.
+1. In the Azure portal, delete the **lva-rg** resource group.
+1. On your local machine, stop the **amp-viewer** Docker container.
 
 ## Next steps
 
