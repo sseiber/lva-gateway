@@ -173,7 +173,7 @@ export class AmsObjectDetectorDevice extends AmsCameraDevice {
                     continue;
                 }
 
-                const value = desiredChangedSettings[setting]?.value;
+                const value = desiredChangedSettings[setting].hasOwnProperty('value') ? desiredChangedSettings[setting]?.value : desiredChangedSettings[setting];
 
                 switch (setting) {
                     case ObjectDetectorInterface.Setting.DetectionClasses: {

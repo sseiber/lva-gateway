@@ -234,10 +234,6 @@ export class ModuleService {
         [LvaGatewaySettings.DebugTelemetry]: false,
         [LvaGatewaySettings.DebugRoutedMessage]: false
     };
-    private moduleSettingsDefaults: ILvaGatewaySettings = {
-        [LvaGatewaySettings.DebugTelemetry]: false,
-        [LvaGatewaySettings.DebugRoutedMessage]: false
-    };
     private amsInferenceDeviceMap = new Map<string, AmsCameraDevice>();
     private dpsProvisioningHost: string = defaultDpsProvisioningHost;
     private healthCheckRetries: number = defaultHealthCheckRetries;
@@ -1034,104 +1030,46 @@ export class ModuleService {
 
     @bind
     private async onHandleModuleProperties(desiredChangedSettings: any) {
-        this.server.log(['ModuleService', 'info'], `onHandleModuleProperties`);
-        if (this.moduleSettings[LvaGatewaySettings.DebugTelemetry] === true) {
-            this.server.log(['ModuleService', 'info'], JSON.stringify(desiredChangedSettings, null, 4));
-        }
-
-        const patchedProperties = {};
-        const moduleSettingsForPatching = this.getModuleSettingsForPatching();
-
-        for (const desiredSettingsKey in desiredChangedSettings) {
-            if (!desiredChangedSettings.hasOwnProperty(desiredSettingsKey)) {
-                continue;
+        try {
+            this.server.log(['ModuleService', 'info'], `onHandleModuleProperties`);
+            if (this.moduleSettings[LvaGatewaySettings.DebugTelemetry] === true) {
+                this.server.log(['ModuleService', 'info'], `desiredChangedSettings:\n${JSON.stringify(desiredChangedSettings, null, 4)}`);
             }
 
-            if (desiredSettingsKey === '$version') {
-                continue;
-            }
+            const patchedProperties = {};
 
-            try {
-                let changedSettingResult;
+            for (const setting in desiredChangedSettings) {
+                if (!desiredChangedSettings.hasOwnProperty(setting)) {
+                    continue;
+                }
 
-                switch (desiredSettingsKey) {
+                if (setting === '$version') {
+                    continue;
+                }
+
+                const value = desiredChangedSettings[setting];
+
+                switch (setting) {
                     case LvaGatewayInterface.Setting.DebugTelemetry:
                     case LvaGatewayInterface.Setting.DebugRoutedMessage:
-                        changedSettingResult = await this.moduleSettingChange(moduleSettingsForPatching, desiredSettingsKey, desiredChangedSettings?.[desiredSettingsKey]);
+                        patchedProperties[setting] = this.moduleSettings[setting] = value || false;
                         break;
 
                     default:
-                        this.server.log(['ModuleService', 'error'], `Received desired property change for unknown setting '${desiredSettingsKey}'`);
+                        this.server.log(['ModuleService', 'error'], `Received desired property change for unknown setting '${setting}'`);
                         break;
                 }
-
-                if (changedSettingResult?.status === true) {
-                    patchedProperties[desiredSettingsKey] = changedSettingResult?.value;
-                }
             }
-            catch (ex) {
-                this.server.log(['ModuleService', 'error'], `Exception while handling desired properties: ${ex.message}`);
+
+            if (!emptyObj(patchedProperties)) {
+                await this.updateModuleProperties(patchedProperties);
             }
         }
-
-        for (const moduleSettingsKey in moduleSettingsForPatching) {
-            if (!moduleSettingsForPatching.hasOwnProperty(moduleSettingsKey)) {
-                continue;
-            }
-
-            if (!moduleSettingsForPatching[moduleSettingsKey].handled) {
-                this.server.log(['ModuleService', 'info'], `Adding patched property '${moduleSettingsKey}' setting value to: '${this.moduleSettingsDefaults[moduleSettingsKey]}'`);
-                patchedProperties[moduleSettingsKey] = this.moduleSettingsDefaults[moduleSettingsKey];
-            }
-
-            this.moduleSettings[moduleSettingsKey] = moduleSettingsForPatching[moduleSettingsKey].value;
-        }
-
-        if (!emptyObj(patchedProperties)) {
-            await this.updateModuleProperties(patchedProperties);
+        catch (ex) {
+            this.server.log(['ModuleService', 'error'], `Exception while handling desired properties: ${ex.message}`);
         }
 
         this.deferredStart.resolve();
-    }
-
-    private getModuleSettingsForPatching() {
-        const moduleSettingsForPatching = {};
-
-        for (const moduleSettingsKey in this.moduleSettings) {
-            if (!this.moduleSettings.hasOwnProperty(moduleSettingsKey)) {
-                continue;
-            }
-
-            moduleSettingsForPatching[moduleSettingsKey] = {
-                handled: false,
-                value: this.moduleSettings[moduleSettingsKey]
-            };
-        }
-
-        return moduleSettingsForPatching;
-    }
-
-    private async moduleSettingChange(moduleSettingsForPatching: any, setting: string, value: any): Promise<any> {
-        this.server.log(['ModuleService', 'info'], `Handle module setting change for '${setting}': ${typeof value === 'object' && value !== null ? JSON.stringify(value, null, 4) : value}`);
-
-        const result = {
-            value: undefined,
-            status: true
-        };
-
-        switch (setting) {
-            case LvaGatewayInterface.Setting.DebugTelemetry:
-            case LvaGatewayInterface.Setting.DebugRoutedMessage:
-                result.value = moduleSettingsForPatching[setting].value = value || false;
-                moduleSettingsForPatching[setting].handled = true;
-                break;
-
-            default:
-                this.server.log(['ModuleService', 'info'], `Unknown module setting change request '${setting}'`);
-                result.status = false;
-        }
-
-        return result;
     }
 
     @bind
