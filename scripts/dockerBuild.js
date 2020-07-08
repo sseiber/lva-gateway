@@ -41,7 +41,7 @@ async function start() {
     try {
         const imageConfigFilePath = path.resolve(workspaceRootFolder, `configs/imageConfig.json`);
         const imageConfig = fse.readJSONSync(imageConfigFilePath);
-        const dockerVersion = process.env.npm_package_version || processArgs.imageVersion || 'latest';
+        const dockerVersion = imageConfig.versionTag || process.env.npm_package_version || processArgs.imageVersion || 'latest';
         const dockerArch = imageConfig.arch || '';
         const dockerImage = `${imageConfig.imageName}:${dockerVersion}-${dockerArch}`;
 

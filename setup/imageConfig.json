@@ -1,4 +1,5 @@
 {
     "arch": "amd64",
-    "imageName": "meshams.azurecr.io/lva-edge-gateway"
+    "imageName": "meshams.azurecr.io/lva-edge-gateway",
+    "versionTag": "latest"
 }
