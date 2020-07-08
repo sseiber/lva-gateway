@@ -100,8 +100,10 @@
         "iotah": "[parameters('iotCentralAppHost')]",
         "iotat": "[parameters('iotCentralAppApiToken')]",
         "iotpk": "[parameters('iotCentralDeviceProvisioningKey')]",
-        "model":  "[parameters('vmSize')]",
-        "networkSecurityGroupName": "[concat('nsg-', uniquestring(parameters('dnsLabelPrefix')))]"
+        "model": "[parameters('vmSize')]",
+        "networkSecurityGroupName": "[concat('nsg-', uniquestring(parameters('dnsLabelPrefix')))]",
+        "mediaservicesName": "[toLower(concat('ms', uniquestring(parameters('dnsLabelPrefix'))))]",
+        "storageAccountName": "[toLower(concat('mssa', uniquestring(parameters('dnsLabelPrefix'))))]"
     },
     "resources": [
         {
@@ -248,12 +250,43 @@
             "sku": {
                 "name": "[variables('diagnosticsStorageAccountType')]"
             }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2019-06-01",
+            "name": "[variables('storageAccountName')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Standard_LRS"
+            },
+            "kind": "StorageV2"
+        },
+        {
+            "type": "Microsoft.Media/mediaservices",
+            "apiVersion": "2015-10-01",
+            "name": "[variables('mediaservicesName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[ resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')) ]"
+            ],
+            "properties": {
+                "storageAccounts": [
+                    {
+                        "id": "[ resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')) ]",
+                        "isPrimary": true
+                    }
+                ]
+            }
         }
     ],
     "outputs": {
         "adminUsername": {
             "type": "string",
             "value": "[parameters('adminUsername')]"
+        },
+         "mediaServiceResourceId": {
+            "type": "string",
+            "value": "[ resourceId('Microsoft.Media/mediaservices', toLower(variables('mediaservicesName'))) ]"
         }
     }
 }
