@@ -103,7 +103,7 @@
         "model": "[parameters('vmSize')]",
         "networkSecurityGroupName": "[concat('nsg-', uniquestring(parameters('dnsLabelPrefix')))]",
         "mediaservicesName": "[toLower(concat('ms-', uniquestring(parameters('dnsLabelPrefix'))))]",
-        "storageAccountName": "[toLower(concat('mssa-', uniquestring(parameters('dnsLabelPrefix'))))]"
+        "storageAccountName": "[toLower(concat('mssa', uniquestring(parameters('dnsLabelPrefix'))))]"
     },
     "resources": [
         {
