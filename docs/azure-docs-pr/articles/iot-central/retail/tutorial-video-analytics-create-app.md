@@ -178,7 +178,7 @@ To prepare the deployment manifest:
 
     | Module name | Image | Description |
     | ----------- | ----- | ------------|
-    |LvaEdgeGatewayModule|   meshams.azurecr.io/lva-edge-gateway:2.0.48-amd64| Bridge to connect the device twins to IoT central|
+    |LvaEdgeGatewayModule|   meshams.azurecr.io/lva-edge-gateway:latest-amd64| Bridge to connect the device twins to IoT central|
     |lvaYolov3|              mcr.microsoft.com/lva-utilities/yolov3-onnx:1.0| Models to detect inference classes using object graphs |
     |lvaEdge|                mcr.microsoft.com/media/live-video-analytics:1| Pipe to route the Video Analytics with Yolo3 | 
 
@@ -299,6 +299,7 @@ To add a view to the device template:
 1. Add the following tiles to the view:
 
     * A tile with the **Device Info** properties. <!--TODO - specify which are the Device Info properties -->
+      * Include: Device model, Manufacturer, Operating system, Processor architecture, Software version Total memory and Total storage
     * A line chart tile with the **Free Memory** and the **System Heartbeat** telemetry values.
     * An event history tile with the following events: **Create Camera**, **Delete Camera**, **Module Restart**, **Module Started**, **Module Stopped**.
     * A 2x1 last known value tile showing the **IoT Central Client State** telemetry.
