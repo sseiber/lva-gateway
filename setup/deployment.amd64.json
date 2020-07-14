@@ -56,7 +56,7 @@
                     },
                     "lvaYolov3": {
                         "settings": {
-                            "image": "<IMAGE_NAME_OF_HTTPEXTENSION_MODULE_FOR_YOLO3>",
+                            "image": "mcr.microsoft.com/lva-utilities/yolov3-onnx:1.0",
                             "createOptions": "{\"HostConfig\":{\"CpuShares\": \"512\"}}"
                         },
                         "type": "docker",
