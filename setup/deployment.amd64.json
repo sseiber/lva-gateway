@@ -106,7 +106,7 @@
         "lvaEdge": {
             "properties.desired": {
                 "applicationDataDirectory": "/var/lib/azuremediaservices",
-                "azureMediaServicesArmId": "<FROM_AZURE_PORTAL>",
+                "azureMediaServicesArmId": "/subscriptions/[Subscription ID]/resourceGroups/[Resource Group]/providers/microsoft.media/mediaservices/[AMS account name]",
                 "aadEndpoint": "https://login.microsoftonline.com",
                 "aadTenantId": "<FROM_AZURE_PORTAL>",
                 "aadServicePrincipalAppId": "<FROM_AZURE_PORTAL>",
