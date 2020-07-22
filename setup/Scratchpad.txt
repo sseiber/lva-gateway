@@ -1,11 +1,17 @@
 /*************************************************************************
-* Use this scratchpad to collect all the IDs, secretes and relevant resource information 
-* from AMS and IoT Central to complete the Live Video Analytics deployment
-* There is a reference to tutorial, section and paragraph
+* Use this scratchpad to collect all the IDs, secrets and relevant resource information 
+* from AMS and IoT Central to complete the Live Video Analytics deployment.
+* There is a reference to tutorial, section, and paragraph.
 *************************************************************************/
 
 # Tutorial: Create a video analytics - security and safety application in Azure IoT Central
 ## Deploy and configure Azure Media Services
+
+Make a note of your Media Services account name:
+
+------------------------------------
+[Media Services account name]
+------------------------------------
 
 When the deployment is complete, navigate to the Properties page for your Media Services account. Make a note of the Resource Id, you use this value later when you configure the IoT Edge module.
 
